@@ -1,0 +1,11 @@
+{
+  "name": "ggshield",
+  "description": "Catch hardcoded secrets in your code with ggshield, GitGuardian's open-source secret scanner.",
+  "author": {
+    "name": "GitGuardian",
+    "url": "https://www.gitguardian.com"
+  },
+  "homepage": "https://github.com/GitGuardian/ggshield",
+  "repository": "https://github.com/GitGuardian/agent-skills",
+  "license": "MIT"
+}
