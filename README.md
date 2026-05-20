@@ -14,6 +14,8 @@ Catch secrets before they ship. This repo packages GitGuardian's [`ggshield`](ht
 - Guides remediation: removal vs. rotation, history rewriting, false-positive handling via `# ggignore` and `.gitguardian.yaml`.
 - Handles first-time setup: detects the user's package manager, installs `ggshield`, and walks through OAuth or token authentication.
 
+The Claude Code plugin also ships a `/scan` slash command for explicit scans — `/scan` (current files), `/scan history` (full git history), `/scan staged` (pre-commit), or `/scan <path>`.
+
 ## Repository layout
 
 ```
@@ -22,6 +24,7 @@ plugins/
   ggshield/
     .claude-plugin/plugin.json      # plugin metadata
     skills/ggshield-secret-scanner/ # the Claude skill
+    commands/scan.md                # /scan slash command
 kiro/
   ggshield-secret-scanner/          # the Kiro power
 ```
