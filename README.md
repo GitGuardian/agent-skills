@@ -9,7 +9,7 @@ Catch secrets before they ship. This repo packages GitGuardian's [`ggshield`](ht
 
 ## What the skill does
 
-- Scans files, directories, full git history, specific commits, commit ranges, Docker images, and PyPI packages for 500+ secret types — AWS keys, GitHub tokens, database URLs, JWTs, Stripe keys, private keys, and more.
+- Scans files, directories, full git history, specific commits, commit ranges, Docker images, and PyPI packages for 700+ secret types — AWS keys, GitHub tokens, database URLs, JWTs, Stripe keys, private keys, and more.
 - Runs proactively whenever the agent is writing or modifying code that handles credentials, `.env` files, CI/CD pipelines, Dockerfiles, or deployment scripts.
 - Guides remediation: removal vs. rotation, history rewriting, false-positive handling via `# ggignore` and `.gitguardian.yaml`.
 - Handles first-time setup: detects the user's package manager, installs `ggshield`, and walks through OAuth or token authentication.

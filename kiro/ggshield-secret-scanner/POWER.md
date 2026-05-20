@@ -1,7 +1,7 @@
 ---
 name: "ggshield-secret-scanner"
 displayName: "GitGuardian Secret Scanner"
-description: "Detect and prevent hardcoded secrets and credentials before they reach git — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 500+ other secret types. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, deployment scripts, or anywhere a credential could be inadvertently committed. Uses the ggshield CLI to scan files, directories, git history, commits, commit ranges, Docker images, and PyPI packages, and to install pre-commit / pre-push hooks."
+description: "Detect and prevent hardcoded secrets and credentials before they reach git — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 700+ other secret types. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, deployment scripts, or anywhere a credential could be inadvertently committed. Uses the ggshield CLI to scan files, directories, git history, commits, commit ranges, Docker images, and PyPI packages, and to install pre-commit / pre-push hooks."
 keywords: [
   "ggshield", "gitguardian",
   "secrets", "credentials", "keys", "tokens", "passwords",
@@ -15,7 +15,7 @@ author: "GitGuardian"
 
 ## Overview
 
-This power gives you the `ggshield` CLI for finding hardcoded secrets and credentials. It detects 500+ secret types — AWS keys, GitHub tokens, database connection strings, private keys, Stripe keys, Slack webhooks, and more.
+This power gives you the `ggshield` CLI for finding hardcoded secrets and credentials. It detects 700+ secret types — AWS keys, GitHub tokens, database connection strings, private keys, Stripe keys, Slack webhooks, and more.
 
 What `ggshield` lets you do here:
 - Scan files and directories on disk for secrets
