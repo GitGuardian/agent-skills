@@ -1,3 +1,8 @@
+---
+name: ggshield-remediation
+description: Interpret `ggshield` scan output — the JSON shape, fields like `policy_break_type`, `validity`, `match`, `line_no` — and the remediation flow: when to rotate vs. only remove a secret, rewriting git history to purge a leaked credential, and managing false positives via `# ggignore` comments and `.gitguardian.yaml`. Load after a scan reports findings, when a user asks how to fix or rotate a leaked secret, or when triaging false positives.
+---
+
 # GGShield: Interpreting Results and Remediation
 
 ## Understanding Scan Output

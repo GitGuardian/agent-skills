@@ -1,3 +1,8 @@
+---
+name: ggshield-scan-workflows
+description: CLI command variants for ggshield secret scanning — scanning the working tree, full git history, a specific commit or commit range, staged changes, Docker images, PyPI packages — plus required flags (`--json`, `-r -y`), exit-code handling, and CI integration. Load when running a `ggshield secret scan` command, deciding which scan variant fits the situation, building a CI gate, or installing pre-commit / pre-push hooks.
+---
+
 # GGShield Scanning Workflows
 
 > **Recursive scans need `-y`.** Every `ggshield secret scan path -r ...` command triggers an interactive `Confirm recursive scan.` prompt. Agents cannot respond to it, so always pair `-r` with `-y` (auto-confirm). All recursive examples below include `-y`.

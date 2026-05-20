@@ -5,7 +5,7 @@ Catch secrets before they ship. This repo packages GitGuardian's [`ggshield`](ht
 | Agent | What to install |
 |---|---|
 | [Claude Code](https://claude.ai/code) | `/plugin marketplace add GitGuardian/agent-skills` then `/plugin install ggshield` |
-| [Kiro](https://kiro.dev) | Copy `kiro/ggshield-secret-scanner/` into your project |
+| [Kiro](https://kiro.dev) | In Kiro: **Add power from GitHub** → `GitGuardian/agent-skills` (subdirectory: `kiro`) |
 
 ## What the skill does
 
@@ -25,8 +25,9 @@ plugins/
     .claude-plugin/plugin.json      # plugin metadata
     skills/ggshield-secret-scanner/ # the Claude skill
     commands/scan.md                # /scan slash command
-kiro/
-  ggshield-secret-scanner/          # the Kiro power
+kiro/                               # the Kiro power
+  POWER.md
+  steering/                         # contextually-loaded guidance
 ```
 
 ## Requirements

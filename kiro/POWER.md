@@ -33,8 +33,8 @@ Trigger a scan proactively whenever:
 
 ## Available Steering Files
 
-- **workflows** — CLI scan command variants, CI integration, git hook setup, expected output format
-- **remediation** — interpreting scan output fields, rotating secrets, cleaning git history, ignoring false positives, `.gitguardian.yaml` configuration
+- **ggshield-scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
+- **ggshield-remediation** — interpreting scan output fields, rotating vs. removing secrets, cleaning git history, ignoring false positives, `.gitguardian.yaml` configuration
 
 ## Scan commands
 
