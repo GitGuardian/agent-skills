@@ -135,6 +135,7 @@ Prerequisites beyond the standard scan setup:
 ## Configuration
 
 ### Prerequisites
+- ggshield 1.49.0 or later (required for full feature support including agent hooks)
 - A GitGuardian account (free tier available at https://dashboard.gitguardian.com/signup)
 
 ### Setup (first use)
