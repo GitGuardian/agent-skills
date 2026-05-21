@@ -257,3 +257,9 @@ ggshield auth login --method token --instance https://dashboard.eu1.gitguardian.
 ```bash
 ggshield api-status
 ```
+
+## License and support
+
+This power uses [ggshield](https://github.com/GitGuardian/ggshield) (MIT).
+- [Privacy Policy](https://www.gitguardian.com/privacy-policy)
+- [Support](https://github.com/GitGuardian/ggshield/issues)
