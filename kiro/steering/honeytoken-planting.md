@@ -1,3 +1,8 @@
+---
+name: honeytoken-planting
+description: Where to plant `ggshield` honeytokens for highest signal — example configs (`.env.example`), pre-publication open-source repos, internal wikis (Confluence / Notion), deploy scripts and CI configs, archived repos, container images and public artifacts. Includes naming and description conventions, response when a honeytoken fires (alert investigation, hunt for adjacent leaks), and ongoing maintenance. Load when generating a honeytoken via `ggshield honeytoken create` or `create-with-context`, when a honeytoken alert fires on the dashboard, or when planning where to plant decoys.
+---
+
 # Honeytoken Planting Strategy
 
 Heavy reference for the `ggshield` power. Covers where to plant honeytokens for highest signal, naming and description conventions, what happens when one fires, and how to respond to an alert.

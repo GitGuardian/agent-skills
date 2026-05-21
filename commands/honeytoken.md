@@ -39,9 +39,11 @@ The honeytoken commands need stricter setup than scanning:
 - The user must have **Manager** access level on their GitGuardian workspace.
 - The PAT must include the **`honeytokens:write`** scope (verify with `ggshield api-status` — look at the `Token scopes:` line).
 
-If `ggshield --version` fails, follow the install section in the `scan-secrets` skill first. If `api-status` shows the PAT lacks `honeytokens:write`, the user needs to issue a new PAT at https://dashboard.gitguardian.com/api/personal-access-tokens with both `scan` and `honeytokens:write` scopes, then re-authenticate via `ggshield auth login --method token`.
+If `ggshield --version` fails, follow the install section in the `scan-secrets` skill first.
 
-Do not proceed with `ggshield honeytoken create` until both checks pass.
+If `api-status` shows the PAT lacks `honeytokens:write`, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write` — the agent can drive `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` directly, the user only approves in the browser. The same file covers the Manager-role caveat and headless `--method token` fallback.
+
+Do not proceed with `ggshield honeytoken create` until both the version check and `api-status` (scope line) pass.
 
 ## After generation
 

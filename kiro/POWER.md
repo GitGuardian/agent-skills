@@ -49,6 +49,7 @@ Suggest a honeytoken proactively whenever:
 
 ## Available Steering Files
 
+- **gitguardian-platform** — public docs URL pattern (append `.md` to any HTML page), auth scope recovery (logout + login `--scopes`), instance URLs (SaaS US / EU / self-hosted), headless setup, role/scope matrix. Load whenever a `ggshield` command fails with permission/scope errors or the user shares a `docs.gitguardian.com` URL.
 - **scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
 - **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, when (and when not) to rewrite git history, ignoring false positives, `.gitguardian.yaml` configuration
 - **honeytoken-planting** — where to plant decoys for highest signal, naming and description conventions, alert response, maintenance
@@ -123,6 +124,8 @@ Prerequisites beyond the standard scan setup:
 
 **`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
 
+**`403 Forbidden` / "Insufficient permissions" on any ggshield action** — the token is valid but is missing a scope this action requires. See the `gitguardian-platform` steering file for the full recovery flow (`ggshield auth logout` + `ggshield auth login --scopes <scope>`, agent-runnable on the user's behalf).
+
 **`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead (the `-y` skips the recursive-scan confirmation prompt).
 
 **Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
@@ -131,7 +134,7 @@ Prerequisites beyond the standard scan setup:
 
 **Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
 
-**`403 Forbidden` / "Insufficient permissions" on `honeytoken create`** — the PAT does not include `honeytokens:write`, or the user is not a Manager. Verify with `ggshield api-status` (check the `Token scopes:` line). To fix the scope, issue a new PAT at https://dashboard.gitguardian.com/api/personal-access-tokens with both `scan` and `honeytokens:write`, then re-authenticate with `ggshield auth login --method token`.
+**`403 Forbidden` / "Insufficient permissions" on `honeytoken create`** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role. The recovery flow is the same as for any other scope mismatch — `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`, runnable on the user's behalf. See the `gitguardian-platform` steering file for the full procedure, the Manager-role caveat, and the headless `--method token` fallback.
 
 ## Configuration
 

@@ -31,6 +31,7 @@ What `ggshield` covers:
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
 For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
+For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
 
 ## Scan commands
 
@@ -72,6 +73,8 @@ Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected e
 **`ggshield: command not found`** — `ggshield` is not on PATH. See the install section below.
 
 **`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
+
+**`403 Forbidden` / "Insufficient permissions"** — the token is valid but is missing a scope this action requires. See `/references/gitguardian-platform.md` (at the repo root) for the recovery flow — `ggshield auth logout` + `ggshield auth login --scopes <scope>`, runnable on the user's behalf, no manual PAT creation needed.
 
 **`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead.
 
