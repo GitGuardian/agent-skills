@@ -54,15 +54,14 @@ Once installed, Kiro will activate the power based on its keywords (`ggshield`, 
 ## Repository layout
 
 ```
-.claude-plugin/marketplace.json     # Claude Code marketplace manifest
-plugins/
-  ggshield/
-    .claude-plugin/plugin.json      # plugin metadata
-    skills/ggshield-secret-scanner/ # the Claude skill
-    commands/scan.md                # /scan slash command
-kiro/                               # the Kiro power
+.claude-plugin/marketplace.json       # Claude Code marketplace manifest (required at root)
+claude-code/                          # Claude Code plugin
+  .claude-plugin/plugin.json
+  skills/ggshield-secret-scanner/
+  commands/scan.md                    # /ggshield:scan slash command
+kiro/                                 # Kiro power
   POWER.md
-  steering/                         # contextually-loaded guidance
+  steering/                           # contextually-loaded guidance
 ```
 
 ## Requirements
