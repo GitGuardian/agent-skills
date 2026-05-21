@@ -41,6 +41,14 @@ Suggest a honeytoken proactively whenever:
 - The user is writing internal docs / runbooks (Confluence, Notion) that reference credentials
 - The user mentions honeytokens, canary tokens, decoys, or intrusion detection
 
+## Quick Start (if ggshield is already installed)
+
+```bash
+ggshield api-status                                       # verify auth
+ggshield secret scan path -r -y . --json                 # scan current files
+ggshield honeytoken create --type AWS --name "my-decoy" --description "test"
+```
+
 ## Onboarding
 
 ### Prerequisites
