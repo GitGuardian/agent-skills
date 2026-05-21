@@ -1,7 +1,7 @@
 ---
 name: "ggshield"
 displayName: "ggshield by GitGuardian"
-description: "Use GitGuardian's ggshield CLI for two capabilities: (1) detecting hardcoded secrets — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 700+ other secret types — in files, git history, commits, Docker images, and PyPI packages, and (2) generating honeytokens, decoy AWS credentials planted in attractive locations (.env.example files, internal wikis, deploy scripts, abandoned repos, pre-publication open-source repos) that alert when used. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts; when the user is about to commit or push; when preparing to open-source a repository; or when the user mentions secrets, credentials, honeytokens, canary tokens, decoys, or intrusion detection."
+description: "Detect hardcoded secrets — API keys, tokens, database URLs, and 700+ other types — in files, git history, commits, Docker images, and PyPI packages using GitGuardian's ggshield CLI. Also generates honeytokens (decoy AWS credentials) to plant in attractive locations that alert when accessed. Triggers proactively when writing code that handles credentials or when preparing to publish."
 keywords: [
   "ggshield", "gitguardian",
   "secrets", "credentials", "keys", "tokens", "passwords",
