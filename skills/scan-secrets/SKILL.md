@@ -30,7 +30,7 @@ What `ggshield` covers:
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
-For interpreting scan output, rotation rules, history rewriting, and false-positive workflows, see `references/remediation.md`.
+For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
 
 ## Scan commands
 

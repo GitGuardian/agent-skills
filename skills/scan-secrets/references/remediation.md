@@ -62,8 +62,8 @@ ggshield secret scan path -r -y . --minimum-severity high --json
 
 Before acting, determine whether the secret has been pushed to a remote:
 
-- **Local only (never pushed)** — remove from code. No rotation needed.
-- **Pushed to a remote** — rotate the credential first, then remove from code and clean history.
+- **Local only (never pushed)** — remove from code; if already committed locally, see Step 4 for cleanly scrubbing it from the unpushed commits. No rotation needed.
+- **Pushed to a remote** — rotate the credential and remove it from the current code. **Do not attempt to rewrite already-pushed history** — see Step 4 for why; rotation is the actual remediation.
 
 ### Step 2: Rotate the secret (if exposed on a remote)
 
@@ -85,31 +85,38 @@ import os
 api_key = os.environ["MY_SERVICE_API_KEY"]
 ```
 
-### Step 4: Remove from git history
+### Step 4: Removing from git history — usually don't
 
-If the secret was committed and pushed, removing it from the current file is not enough — it still exists in git history.
+If the secret has already been pushed to a remote, **we generally advise against rewriting git history**. Once a credential has been on a remote, it must be rotated regardless — and rotation alone is the actual remediation. Rewriting history on top of that:
 
-**Option A: BFG Repo Cleaner (recommended for large repos)**
+- Requires a force-push that breaks every fork, clone, and open pull request
+- Does not retrieve the credential from systems that already mirrored or indexed the commit — other forks, search caches, archive sites, CI artifacts, log aggregators all keep their own copies
+- Demands hard coordination with every collaborator (each has to re-clone or carefully rebase)
 
-```bash
-# Replace the secret value in all history
-bfg --replace-text secrets.txt
-git reflog expire --expire=now --all
-git gc --prune=now --aggressive
-git push --force
-```
+The rotated credential is dead — that is what stops the attack. Scrubbing history on top is a cosmetic step that buys very little for a high coordination cost.
 
-**Option B: git filter-repo**
+**The exception — secret committed but not yet pushed.** If the commits are still on a local branch and have not propagated to any remote, rewriting is cheap and worth doing — there is no force-push fallout and the credential never left the machine.
+
+For that local-only case:
 
 ```bash
-git filter-repo --path-glob '*.env' --invert-paths
+# Most recent commit only — amend before pushing
+# 1) edit the file to remove the secret, then:
+git add <file>
+git commit --amend --no-edit
+
+# Multiple unpushed commits — interactive rebase
+# squash, fixup, or edit out the commits that introduced the secret
+git rebase -i <base>
 ```
 
-**Option C: For small repos — squash or rebase**
+After the rewrite, confirm the secret is gone everywhere:
 
-If the secret was introduced recently, an interactive rebase may be simpler.
+```bash
+ggshield secret scan repo . --json
+```
 
-> ⚠️ Rewriting git history requires a force push and coordination with all collaborators.
+**If you are forced to scrub already-pushed history** (regulatory or legal obligation, contractually-required data deletion), the tooling exists — BFG Repo Cleaner for large repos, `git filter-repo` for surgical removal — but only pursue this path *after* rotation, with explicit buy-in from every collaborator, and with the understanding that mirrors / forks / caches outside your control still hold the old credential.
 
 ### Step 5: Verify the fix
 

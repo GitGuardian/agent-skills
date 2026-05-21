@@ -50,7 +50,7 @@ Suggest a honeytoken proactively whenever:
 ## Available Steering Files
 
 - **scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
-- **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, cleaning git history, ignoring false positives, `.gitguardian.yaml` configuration
+- **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, when (and when not) to rewrite git history, ignoring false positives, `.gitguardian.yaml` configuration
 - **honeytoken-planting** — where to plant decoys for highest signal, naming and description conventions, alert response, maintenance
 
 ## Scan commands

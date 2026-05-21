@@ -51,7 +51,7 @@ Once installed, Kiro will activate the power based on its keywords (`ggshield`, 
 
 - Scans files, directories, full git history, specific commits, commit ranges, Docker images, and PyPI packages for 700+ secret types — AWS keys, GitHub tokens, database URLs, JWTs, Stripe keys, private keys, and more.
 - Runs proactively whenever the agent is writing or modifying code that handles credentials, `.env` files, CI/CD pipelines, Dockerfiles, or deployment scripts.
-- Guides remediation: removal vs. rotation, history rewriting, false-positive handling via `# ggignore` and `.gitguardian.yaml`.
+- Guides remediation: removal vs. rotation, when (and when not) to rewrite git history, false-positive handling via `# ggignore` and `.gitguardian.yaml`.
 
 **`create-honeytokens`** (auto-triggers when creating example configs, preparing to publish, or planting decoys)
 
