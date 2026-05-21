@@ -26,7 +26,7 @@ What `ggshield` covers:
 - Scan a specific commit, a commit range, or staged changes
 - Scan Docker images and PyPI packages
 - Run as a CI gate that fails on findings
-- Install pre-commit / pre-push git hooks
+- Install git hooks (pre-commit / pre-push) and AI agent hooks (Claude Code, Cursor, Copilot) — the agent hooks scan the prompt, tool calls, and tool outputs from inside the agent itself
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `workflows.md`.
@@ -98,7 +98,7 @@ Step 2 ends with the `ggshield api-status` verification. Reach that point before
 
 - Scan code for hardcoded secrets — automatically when handling credentials, or on request for a specific file or directory.
 - Audit a repository's git history, a commit range, a single commit, a Docker image, or a PyPI package for leaked secrets.
-- Block secrets at commit time by scanning staged changes (`scan pre-commit`) or installing a git hook (`ggshield install`).
+- Block secrets *before they are written* by installing the Claude Code agent hook (`ggshield install -t claude-code -m global`), which scans prompts, tool calls, and tool outputs from inside Claude Code. Also supports git hooks (`ggshield install --mode local`) and ad-hoc scans of staged changes (`scan pre-commit`).
 - Manage false positives via inline `# ggignore` comments or `.gitguardian.yaml` rules.
 
 Keep the brief tight; the detailed command reference is for the agent to consult, not for the user to read. Once the user has the picture, proceed to Step 1.

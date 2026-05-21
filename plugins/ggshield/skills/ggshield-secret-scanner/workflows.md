@@ -175,9 +175,16 @@ Requires `docker` to be installed and running.
 
 ---
 
-## Workflow 8: Install Git Hooks
+## Workflow 8: Install Hooks
 
-Automate scanning on every commit or push in the current repository:
+`ggshield install` covers two distinct kinds of hooks. They are complementary — installing both gives the strongest coverage.
+
+- **Git hooks** (pre-commit / pre-push) — fire on `git commit` / `git push`. Block secrets at version-control time regardless of which agent (or human) wrote the code.
+- **AI agent hooks** (Claude Code, Cursor, Copilot) — fire *inside* the agent. Scan the user's prompt before it goes to the model, scan commands / file reads / MCP calls before the agent runs them, and scan tool outputs after execution. Catches secrets the agent is about to write or about to read into context. Requires ggshield 1.49.0+.
+
+When recommending hooks to a user, default to suggesting both: git hooks for the repo, plus the agent hook matching the tool they're using right now.
+
+### Git hooks
 
 ```bash
 # Pre-commit hook (runs on every git commit)
@@ -193,11 +200,41 @@ ggshield install --mode global
 ggshield install --mode global --hook-type pre-push
 ```
 
-To uninstall:
+### AI agent hooks
+
+`-t` picks the tool, `-m` picks the scope. `global` writes to the user's home config (covers every project); `local` writes to the current project only.
 
 ```bash
-ggshield uninstall --mode local
+# Claude Code — hooks merged into ~/.claude/settings.json (global) or .claude/settings.json (local)
+ggshield install -t claude-code -m global
+ggshield install -t claude-code -m local
+
+# Cursor — hooks merged into .cursor/hooks.json
+ggshield install -t cursor -m global
+ggshield install -t cursor -m local
+
+# VS Code with GitHub Copilot
+ggshield install -t copilot -m global
+ggshield install -t copilot -m local
 ```
+
+ggshield merges its entries into any existing config without touching other hooks. Pass `--force` to overwrite previously-installed ggshield entries that the user has customized.
+
+> See https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools for the up-to-date list of supported tools.
+
+### Uninstall
+
+```bash
+# Git hooks
+ggshield uninstall --mode local
+ggshield uninstall --mode global
+```
+
+For AI agent hooks, remove the `ggshield` entries from the tool's config file manually:
+
+- Claude Code: `~/.claude/settings.json` (global) or `.claude/settings.json` (local)
+- Cursor: `.cursor/hooks.json`
+- Copilot: VS Code settings file
 
 ---
 
@@ -207,6 +244,8 @@ ggshield uninstall --mode local
 |---|---|
 | Full repo audit (git history) | `ggshield secret scan repo . --json` |
 | Scan current files | `ggshield secret scan path -r -y . --json` |
+| Install git pre-commit hook | `ggshield install --mode local` |
+| Install Claude Code agent hook | `ggshield install -t claude-code -m global` |
 | Scan a single file | `ggshield secret scan path <file> --json` |
 | Scan staged changes | `ggshield secret scan pre-commit --json` |
 | Scan a commit range | `ggshield secret scan commit-range HEAD~5..HEAD --json` |
