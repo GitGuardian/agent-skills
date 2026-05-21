@@ -30,6 +30,16 @@ ggshield install -t claude-code -m global
 
 Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (global) or `.claude/settings.json` (local) — uninstall by removing the `ggshield` entries from that file.
 
+### Cursor, Codex, Copilot, and 50+ other agents
+
+Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
+
+```bash
+npx skills add gitguardian/agent-skills
+```
+
+Works with Cursor, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
+
 ### Kiro
 
 1. Open Kiro and go to **Powers → Add Power**.
