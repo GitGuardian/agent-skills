@@ -2,11 +2,20 @@
 
 Catch secrets before they ship. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source secret scanner CLI — when to scan, which flags to use, how to interpret findings, and how to walk the user through removal and rotation. The agent invokes `ggshield` directly; the skills are the missing instructions.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
 
 ## Installation
 
 ### Claude Code
+
+Add this repo as a plugin marketplace, then install the `ggshield` plugin:
+
+```
+/plugin marketplace add GitGuardian/agent-skills
+/plugin install ggshield
+```
+
+### Cursor
 
 Add this repo as a plugin marketplace, then install the `ggshield` plugin:
 
@@ -54,12 +63,17 @@ Once installed, Kiro will activate the power based on its keywords (`ggshield`, 
 ## Repository layout
 
 ```
-.claude-plugin/marketplace.json       # Claude Code marketplace manifest (required at root)
-claude-code/                          # Claude Code plugin
-  .claude-plugin/plugin.json
-  skills/ggshield-secret-scanner/
-  commands/scan.md                    # /ggshield:scan slash command
-kiro/                                 # Kiro power
+.claude-plugin/                       # Claude Code plugin manifest
+  marketplace.json
+  plugin.json
+.cursor-plugin/                       # Cursor plugin manifest
+  marketplace.json
+  plugin.json
+skills/                               # SKILL.md files — shared by Claude Code & Cursor
+  ggshield-secret-scanner/
+commands/                             # slash commands — /ggshield:scan
+  scan.md
+kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
 ```

@@ -29,15 +29,29 @@ jobs:
       - name: Check Claude Code plugin.json has required fields
         run: |
           set -e
-          F=claude-code/.claude-plugin/plugin.json
+          F=.claude-plugin/plugin.json
           test -f "$F" || { echo "missing $F"; exit 1; }
           jq -e '.name and .description' "$F" > /dev/null
+
+      - name: Check Cursor plugin.json has required fields
+        run: |
+          set -e
+          F=.cursor-plugin/plugin.json
+          test -f "$F" || { echo "missing $F"; exit 1; }
+          jq -e '.name and .description' "$F" > /dev/null
+
+      - name: Check Cursor marketplace.json required fields
+        run: |
+          set -e
+          F=.cursor-plugin/marketplace.json
+          jq -e '.name and .owner.name and (.plugins | type == "array" and length > 0)' "$F" > /dev/null
+          jq -e '.plugins | all(.name and .description and .source)' "$F" > /dev/null
 
       - name: Check each skill has SKILL.md with frontmatter
         run: |
           set -e
           shopt -s globstar nullglob
-          for f in claude-code/skills/*/SKILL.md; do
+          for f in skills/*/SKILL.md; do
             head -1 "$f" | grep -q '^---$' || { echo "missing frontmatter in $f"; exit 1; }
             grep -q '^name:' "$f" || { echo "missing 'name:' in $f"; exit 1; }
             grep -q '^description:' "$f" || { echo "missing 'description:' in $f"; exit 1; }
