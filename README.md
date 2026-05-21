@@ -15,15 +15,6 @@ Add this repo as a plugin marketplace, then install the `ggshield` plugin:
 /plugin install ggshield
 ```
 
-### Cursor
-
-Add this repo as a plugin marketplace, then install the `ggshield` plugin:
-
-```
-/plugin marketplace add GitGuardian/agent-skills
-/plugin install ggshield
-```
-
 That's it. The skill auto-triggers when you write or edit code that handles credentials. You can also run scans explicitly with the `/ggshield:scan` slash command:
 
 - `/ggshield:scan` — scan the working tree
