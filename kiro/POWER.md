@@ -164,10 +164,10 @@ ggshield api-status
 
 ## Available Steering Files
 
-- **gitguardian-platform** — public docs URL pattern (append `.md` to any HTML page), auth scope recovery (logout + login `--scopes`), instance URLs (SaaS US / EU / self-hosted), headless setup, role/scope matrix. Load whenever a `ggshield` command fails with permission/scope errors or the user shares a `docs.gitguardian.com` URL.
-- **scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
-- **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, when (and when not) to rewrite git history, ignoring false positives, `.gitguardian.yaml` configuration
-- **honeytoken-planting** — where to plant decoys for highest signal, naming and description conventions, alert response, maintenance
+- **gitguardian-platform** — auth, scopes, instance URLs, and headless setup for ggshield
+- **scan-workflows** — scan command variants, required flags, exit codes, and CI/hook integration
+- **scan-remediation** — interpreting scan output and fixing leaks: rotate, remove, git history, false positives
+- **honeytoken-planting** — where to plant decoys, naming conventions, alert response, and maintenance
 
 ## Scan commands
 
