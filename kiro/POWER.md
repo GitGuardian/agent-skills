@@ -230,7 +230,8 @@ Key flags:
 
 **Confirm the planting surface with the user before generating.** A honeytoken sitting only on the user's laptop is wasted. See `honeytoken-planting` for placement strategy.
 
-**Never plant in an importable code path on the default branch.** `ggshield honeytoken create-with-context -o services/Foo.ts` (or any path the production build resolves) is a classic foot-gun — the file looks real to attackers, but also gets imported by real code, firing your own decoy from CI. Prefer non-importable surfaces (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch. Full tactics in the `honeytoken-planting` steering file under "Avoiding self-triggering".
+> ⚠ Never plant in an importable code path on the default branch.
+> See `honeytoken-planting` steering file for full tactics.
 
 Prerequisites beyond the standard scan setup:
 - The user must have **Manager** access level (or higher) on their GitGuardian workspace.
