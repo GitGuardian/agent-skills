@@ -1,5 +1,5 @@
 ---
-name: ggshield-scan-workflows
+name: scan-workflows
 description: CLI command variants for ggshield secret scanning — scanning the working tree, full git history, a specific commit or commit range, staged changes, Docker images, PyPI packages — plus required flags (`--json`, `-r -y`), exit-code handling, and CI integration. Load when running a `ggshield secret scan` command, deciding which scan variant fits the situation, building a CI gate, or installing pre-commit / pre-push hooks.
 ---
 
