@@ -1,5 +1,5 @@
 ---
-name: ggshield-secret-scanner
+name: scan-secrets
 description: Use when writing or editing code that handles credentials (API keys, OAuth tokens, database URLs, JWTs, AWS keys, GitHub tokens, Stripe keys, private keys), .env files, dotfiles, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts. Use when the user asks to scan files, directories, git history, commits, Docker images, or PyPI packages for secrets. Use before committing or pushing code that could contain hardcoded secrets, when seeing `401 Unauthorized` from `ggshield`, when a recursive scan hangs, and when investigating false positives via `# ggignore` or `.gitguardian.yaml`.
 ---
 
@@ -29,8 +29,8 @@ What `ggshield` covers:
 - Install git hooks (pre-commit / pre-push) and AI agent hooks (Claude Code, Cursor, Copilot) — the agent hooks scan the prompt, tool calls, and tool outputs from inside the agent itself
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
-For detailed command variants, expected JSON output shapes, and CI integration, see `workflows.md`.
-For interpreting scan output, rotation rules, history rewriting, and false-positive workflows, see `remediation.md`.
+For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
+For interpreting scan output, rotation rules, history rewriting, and false-positive workflows, see `references/remediation.md`.
 
 ## Scan commands
 

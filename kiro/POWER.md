@@ -1,23 +1,29 @@
 ---
-name: "ggshield-secret-scanner"
-displayName: "GitGuardian Secret Scanner"
-description: "Detect and prevent hardcoded secrets and credentials before they reach git — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 700+ other secret types. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, deployment scripts, or anywhere a credential could be inadvertently committed. Uses the ggshield CLI to scan files, directories, git history, commits, commit ranges, Docker images, and PyPI packages, and to install pre-commit / pre-push hooks."
+name: "ggshield"
+displayName: "ggshield by GitGuardian"
+description: "Use GitGuardian's ggshield CLI for two capabilities: (1) detecting hardcoded secrets — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 700+ other secret types — in files, git history, commits, Docker images, and PyPI packages, and (2) generating honeytokens, decoy AWS credentials planted in attractive locations (.env.example files, internal wikis, deploy scripts, abandoned repos, pre-publication open-source repos) that alert when used. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts; when the user is about to commit or push; when preparing to open-source a repository; or when the user mentions secrets, credentials, honeytokens, canary tokens, decoys, or intrusion detection."
 keywords: [
   "ggshield", "gitguardian",
   "secrets", "credentials", "keys", "tokens", "passwords",
   "env-file", "dotenv", "config",
-  "security", "scan"
+  "security", "scan",
+  "honeytoken", "honeytokens", "canary", "decoy", "tripwire", "intrusion-detection"
 ]
 author: "GitGuardian"
 ---
 
-# GitGuardian Secret Scanner
+# ggshield by GitGuardian
 
 ## Overview
 
-This power gives you the `ggshield` CLI for finding hardcoded secrets and credentials. It detects 700+ secret types — AWS keys, GitHub tokens, database connection strings, private keys, Stripe keys, Slack webhooks, and more.
+This power gives you the `ggshield` CLI for two complementary jobs:
 
-What `ggshield` lets you do here:
+1. **Detect hardcoded secrets** — find credentials before they ship (or after they've shipped) across files, git history, commits, Docker images, and PyPI packages.
+2. **Plant honeytokens** — generate decoy AWS credentials and drop them in attractive locations (example configs, internal wikis, deploy scripts, abandoned repos) so any unauthorized read of that location fires an alert on the GitGuardian dashboard.
+
+Both rely on the same `ggshield` CLI and the same GitGuardian account — auth is shared. The two capabilities are otherwise independent: use scanning for *detection of leaks that already happened*, and honeytokens for *detection of leaks that haven't happened yet*.
+
+What you can do with the scanner side:
 - Scan files and directories on disk for secrets
 - Audit a repository's full git history (catches secrets that were committed and later deleted)
 - Scan a specific commit, a commit range, or staged changes (pre-commit)
@@ -26,15 +32,26 @@ What `ggshield` lets you do here:
 - Install git hooks (pre-commit / pre-push) — and AI agent hooks for users who also run Claude Code, Cursor, or Copilot alongside Kiro (those hooks scan prompts, tool calls, and tool outputs from inside the agent)
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
+What you can do with the honeytoken side:
+- Generate a bare honeytoken (just the AWS access key + secret) to drop into example configs or wiki pages
+- Generate a honeytoken wrapped in realistic-looking code (Python, JavaScript, Bash, Terraform, …) so the decoy reads as a real credential in source code
+
 Trigger a scan proactively whenever:
 - The user asks to scan a file, directory, or repository for secrets or credentials
 - You are writing or modifying code that handles API keys, tokens, passwords, connection strings, or any credentials — scan before presenting the result
 - The user is about to commit or push — scan staged changes first
 
+Suggest a honeytoken proactively whenever:
+- The user is creating a `.env.example`, sample config, or template file
+- The user is preparing to open-source a previously-private repo, or publish artifacts (Docker images, S3 buckets)
+- The user is writing internal docs / runbooks (Confluence, Notion) that reference credentials
+- The user mentions honeytokens, canary tokens, decoys, or intrusion detection
+
 ## Available Steering Files
 
-- **ggshield-scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
-- **ggshield-remediation** — interpreting scan output fields, rotating vs. removing secrets, cleaning git history, ignoring false positives, `.gitguardian.yaml` configuration
+- **scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
+- **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, cleaning git history, ignoring false positives, `.gitguardian.yaml` configuration
+- **honeytoken-planting** — where to plant decoys for highest signal, naming and description conventions, alert response, maintenance
 
 ## Scan commands
 
@@ -64,6 +81,35 @@ Key flags:
 
 Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
 
+## Honeytoken commands
+
+Two forms. Use `create-with-context` when the honeytoken will live inside a code file (`ggshield` wraps the credentials in a plausible code snippet); use the bare `create` form when the honeytoken will live in plain text (an `.env.example` line, a Notion page, a runbook).
+
+```bash
+# Bare honeytoken
+ggshield honeytoken create --type AWS --name <name> --description "<purpose>"
+
+# Honeytoken wrapped in a realistic-looking file (preferred when planting in code)
+ggshield honeytoken create-with-context --type AWS --name <name> \
+  --description "<purpose>" --language python -o <path>
+```
+
+Key flags:
+
+| Flag | Effect |
+|---|---|
+| `--type AWS` | **Required.** Only AWS is currently supported |
+| `--name <text>` | Honeytoken name. Auto-generated with a `ggshield-` prefix if omitted |
+| `--description <text>` | Up to 250 characters. Record *where you planted it* and *why* — this is what the alert shows months later |
+| `-o, --output <file>` | Append (or create) the honeytoken at this path |
+| `--language <lang>` | (`create-with-context` only) Force the wrapper language. Inferred from output filename if not set |
+
+**Confirm the planting surface with the user before generating.** A honeytoken sitting only on the user's laptop is wasted. See `honeytoken-planting` for placement strategy.
+
+Prerequisites beyond the standard scan setup:
+- The user must have **Manager** access level (or higher) on their GitGuardian workspace.
+- The PAT must include the **`honeytokens:write`** scope (verify with `ggshield api-status` — look at the `Token scopes:` line).
+
 ## Best Practices
 
 - Call a scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
@@ -84,6 +130,8 @@ Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected e
 **OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see the auth section below.
 
 **Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
+
+**`403 Forbidden` / "Insufficient permissions" on `honeytoken create`** — the PAT does not include `honeytokens:write`, or the user is not a Manager. Verify with `ggshield api-status` (check the `Token scopes:` line). To fix the scope, issue a new PAT at https://dashboard.gitguardian.com/api/personal-access-tokens with both `scan` and `honeytokens:write`, then re-authenticate with `ggshield auth login --method token`.
 
 ## Configuration
 
