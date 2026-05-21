@@ -61,7 +61,7 @@ Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / per
 - **One honeytoken per planting location.** Don't reuse the same token in multiple places — when it fires, you want to know exactly which surface was compromised.
 - **Prefer `create-with-context` for code files.** A naked credential string in a Python file looks fake; a `boto3.client()` call with the credentials inline looks real. Real-looking decoys catch real attackers.
 - **Plant in the source of truth.** A honeytoken in `.env.example` only helps if devs actually use that template. Walk through the user's deploy story to find the *real* attractive surfaces (internal wikis, abandoned repos, deploy scripts, container images).
-- **Never plant a honeytoken in active production code paths** — if real application logic ever evaluates the credential, you create a self-trigger.
+- **Never plant a honeytoken anywhere your production import graph can reach.** If a teammate can legitimately `import` the honeytoken-containing module from production code, the next CI run fires your own decoy. `ggshield honeytoken create-with-context -o services/Foo.ts` is a classic foot-gun — the file looks real to attackers, but also gets imported by real code. Plant in non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch instead. Full tactics in `references/planting-strategy.md` → "Avoiding self-triggering".
 
 ## Prerequisites
 
