@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "gitguardian-agent-skills",
   "description": "Official GitGuardian skills for AI coding agents — secret scanning powered by ggshield",
   "owner": {
