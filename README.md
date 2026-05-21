@@ -1,6 +1,6 @@
 # GitGuardian Agent Skills
 
-Catch secrets before they ship. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source secret scanner CLI — when to scan, which flags to use, how to interpret findings, and how to walk the user through removal and rotation. The agent invokes `ggshield` directly; the skills are the missing instructions.
+Catch secrets before they ship. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source secret scanner CLI — when to scan, which flags to use, how to interpret findings, and how to walk the user through removal and rotation. The agent invokes `ggshield` directly.
 
 Supported agents: [Claude Code](https://claude.ai/code), [Kiro](https://kiro.dev). Install instructions below.
 
