@@ -30,6 +30,8 @@ What you can do with the honeytoken side:
 - Generate a bare honeytoken (just the AWS access key + secret) to drop into example configs or wiki pages
 - Generate a honeytoken wrapped in realistic-looking code (Python, JavaScript, Bash, Terraform, …) so the decoy reads as a real credential in source code
 
+## When to Trigger
+
 Trigger a scan proactively whenever:
 - The user asks to scan a file, directory, or repository for secrets or credentials
 - You are writing or modifying code that handles API keys, tokens, passwords, connection strings, or any credentials — scan before presenting the result
