@@ -48,7 +48,7 @@ Suggest a honeytoken proactively whenever:
 ```bash
 ggshield api-status                                       # verify auth
 ggshield secret scan path -r -y . --json                 # scan current files
-ggshield honeytoken create --type AWS --name "my-decoy" --description "test"
+ggshield honeytoken create --type AWS --name "my-decoy" --description "test"  # generate honeytoken
 ```
 
 ## Onboarding
@@ -267,5 +267,5 @@ Prerequisites beyond the standard scan setup:
 ## License and support
 
 This power uses [ggshield](https://github.com/GitGuardian/ggshield) (MIT).
-- [Privacy Policy](https://www.gitguardian.com/privacy-policy)
+- [Privacy Policy](https://www.gitguardian.com/legal/privacy-policy)
 - [Support](https://github.com/GitGuardian/ggshield/issues)
