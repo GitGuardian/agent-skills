@@ -25,6 +25,7 @@ Proactively suggest a honeytoken when:
 - The user explicitly says "honeytoken", "canary token", "decoy", "tripwire credentials", or asks how to detect future leaks
 
 For *where* to plant (concrete placement strategy, naming conventions, monitoring) see `references/planting-strategy.md`.
+For auth/scope recovery, instance URLs, headless setup, and the GitGuardian public docs URL pattern, see `/references/gitguardian-platform.md` at the repo root.
 
 ## Commands
 
@@ -60,7 +61,7 @@ Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / per
 - **One honeytoken per planting location.** Don't reuse the same token in multiple places — when it fires, you want to know exactly which surface was compromised.
 - **Prefer `create-with-context` for code files.** A naked credential string in a Python file looks fake; a `boto3.client()` call with the credentials inline looks real. Real-looking decoys catch real attackers.
 - **Plant in the source of truth.** A honeytoken in `.env.example` only helps if devs actually use that template. Walk through the user's deploy story to find the *real* attractive surfaces (internal wikis, abandoned repos, deploy scripts, container images).
-- **Never plant a honeytoken in active production code paths** — if real application logic ever evaluates the credential, you create a self-trigger.
+- **Never plant a honeytoken anywhere your production import graph can reach.** If a teammate can legitimately `import` the honeytoken-containing module from production code, the next CI run fires your own decoy. `ggshield honeytoken create-with-context -o services/Foo.ts` is a classic foot-gun — the file looks real to attackers, but also gets imported by real code. Plant in non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch instead. Full tactics in `references/planting-strategy.md` → "Avoiding self-triggering".
 
 ## Prerequisites
 
@@ -73,21 +74,14 @@ If either is missing, `ggshield honeytoken create` exits with `403 Forbidden` or
 
 ## Troubleshooting
 
-**`403 Forbidden` / "Insufficient permissions"** — the PAT does not have `honeytokens:write`. Generate a new PAT at https://dashboard.gitguardian.com/api/personal-access-tokens with both `scan` and `honeytokens:write` scopes, then re-authenticate with `ggshield auth login --method token`.
+**`403 Forbidden` / "Insufficient permissions"** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role.
 
-**"User is not a Manager"** — the GitGuardian account lacks the required role. Ask a workspace admin to upgrade the seat to Manager, or have a Manager-level user run the command instead.
+The fix is the standard scope-recovery flow: `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`. See `/references/gitguardian-platform.md` at the repo root for the full procedure — both commands are runnable on the user's behalf, the OAuth flow handles scope upgrade without any manual PAT creation, and the same file covers the Manager-role caveat and headless `--method token` fallback.
 
 **`--type` is required** — pass `--type AWS`. No other types are supported yet (this will change).
 
-**`api-status` shows missing scope** — the `Token scopes:` line in `ggshield api-status` output must include `honeytokens:write` alongside `scan`. If it shows only `scan`, regenerate the PAT with both scopes.
-
 ## Setup (first use)
 
-If the standard `ggshield` setup is already complete (see the `scan-secrets` skill) but `ggshield api-status` does not show the `honeytokens:write` scope, the user only needs to **re-issue the PAT with the additional scope** — no reinstall required:
+If the standard `ggshield` setup is already complete (see the `scan-secrets` skill) but `ggshield api-status` does not show the `honeytokens:write` scope, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write`.
 
-1. Open https://dashboard.gitguardian.com/api/personal-access-tokens (or the equivalent on the user's instance).
-2. Create a new PAT with both `scan` and `honeytokens:write` scopes.
-3. Re-authenticate: `ggshield auth login --method token` and paste the new token.
-4. Verify: `ggshield api-status` — confirm `Token scopes:` now lists `honeytokens:write`.
-
-If `ggshield` itself is not installed or not authenticated at all, follow the full setup section in the `scan-secrets` skill first, then perform the scope upgrade above.
+If `ggshield` itself is not installed or not authenticated at all, follow the full setup section in the `scan-secrets` skill first, then run the scope-recovery flow.

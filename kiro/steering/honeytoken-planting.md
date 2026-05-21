@@ -1,8 +1,27 @@
+---
+name: honeytoken-planting
+description: Where to plant `ggshield` honeytokens for highest signal — example configs (`.env.example`), pre-publication open-source repos, internal wikis (Confluence / Notion), deploy scripts and CI configs, archived repos, container images and public artifacts. Includes naming and description conventions, response when a honeytoken fires (alert investigation, hunt for adjacent leaks), and ongoing maintenance. Load when generating a honeytoken via `ggshield honeytoken create` or `create-with-context`, when a honeytoken alert fires on the dashboard, or when planning where to plant decoys.
+---
+
 # Honeytoken Planting Strategy
 
 Heavy reference for the `ggshield` power. Covers where to plant honeytokens for highest signal, naming and description conventions, what happens when one fires, and how to respond to an alert.
 
 A honeytoken is only as useful as the place it sits. This file is the planting playbook.
+
+## Dual audience: real to attackers, decoy to defenders
+
+Every honeytoken has **two readers** at the same time, and the planting choice must work for both:
+
+- **The attacker** scanning the repo for valid credentials — must find the surrounding context convincing enough to copy the credential and try to use it. They are skimming for high-entropy strings near `aws-sdk`, `boto3`, `S3Client`, `getCredentials`, `.env` filenames, etc. They are *not* reading comments or studying code structure.
+- **An engineer on the defending team** browsing the repo for legitimate work — must immediately recognize the file as a decoy and **never import, instantiate, or execute** it. If a teammate accidentally `import`s a honeytoken-containing module and calls its function in real code, the honeytoken fires on every CI run.
+
+Both audiences read the same file. You optimize the placement, naming, and surrounding content so that the realism the attacker needs and the inertness the defender needs are not in conflict. Concretely:
+
+- **Real to the attacker:** the credentials look real (they are — issued by GitGuardian), the file looks plausible (a config, a service, a deploy script), the name suggests something useful (`s3-backup`, `billing-config`, `deploy-keys`).
+- **Decoy to the team:** the file's *location* is outside your production import graph (test fixtures, archived folders, non-default branches, wiki pages), its *name* doesn't appear in any working code path's resolver, and its *entry point* is either non-importable (data file) or visibly inert (early throw, missing imports, deprecated comment block).
+
+Concrete tactics for keeping the dual audience honest are in **Avoiding self-triggering** below; the GitGuardian dashboard's [Deployment jobs](https://docs.gitguardian.com/honeytoken/deploy-honeytokens/deployment-jobs.md) feature implements this principle at scale by opening pull requests that don't have to be merged — the honeytoken is "deployed" the moment the PR exists, but your team's main branch never imports it.
 
 ## Where to plant (in order of typical signal)
 
@@ -60,10 +79,50 @@ Docker images on Docker Hub, GHCR, internal registries. Public S3 buckets. Relea
 
 **How to plant:** include the honeytoken in a config file baked into the image at build time. Use `create-with-context` with `--language dockerfile` or the relevant language for the embedded config.
 
+## Avoiding self-triggering (when planting in code files)
+
+`ggshield honeytoken create-with-context` generates a fully-functional-looking module. For example, with `--language typescript` and an `-o services/AwsBackupService.ts`, it can produce a file that imports `aws-sdk`, instantiates an `S3` client with the honeytoken credentials, and exports something like `uploadToS3Bucket`. That is exactly what makes the decoy convincing to an attacker — and exactly what creates a risk that a teammate later types `import { uploadToS3Bucket } from './services/AwsBackupService'` in real code, calls it, and fires the honeytoken from your own CI pipeline.
+
+The fix is not to write less-realistic code. It is to plant the realistic-looking file **where your production import graph cannot reach it**. Pick one of these tactics:
+
+### Prefer non-importable surfaces when possible
+
+Generic file types — `.env`, `.yaml`, `.json`, `.csv`, `.txt`, plus markdown runbooks, Notion / Confluence pages, and README snippets — can't be `import`-ed or `require`-d by code. The credentials still look real to an attacker scanning the file. Use the bare `ggshield honeytoken create` (without `-o` pointing at code) for these surfaces. This is also the strategy the GitGuardian dashboard's Deployment jobs feature uses by default ("Generic" contexts: `.env`, `.json`, `.yaml`, `.csv`, `.txt`).
+
+### If a code file is required, isolate it from your import graph
+
+Place the file under a path that your production build, dev runtime, and test runner do **not** resolve from:
+
+- `tests/fixtures/`, `tests/data/`, `__fixtures__/` — test data, not imported by application code
+- `examples/`, `samples/`, `docs/snippets/` — documentation surfaces, not in the build
+- `archived/`, `legacy/`, `deprecated/`, `_old/` — explicitly retired code paths
+- A **non-default branch** that is never merged. The file is visible to attackers cloning all refs (including PR branches), but absent from your team's working tree on `main`. This mirrors what GitGuardian's Deployment jobs do automatically — they open a PR, and the honeytoken is "deployed" the moment the PR is created, regardless of whether you merge.
+
+Inside one of those locations, the file's name can still be plausible — `AwsBackupService.ts` in `tests/fixtures/aws/` reads "test fixture for AWS code" to a teammate and "valid AWS credentials in a real-looking module" to an attacker.
+
+### Make the entry point obviously non-functional to a reader
+
+Even when isolation is in place, belt-and-braces is cheap. Tactics that don't degrade attacker-realism (they're skimming for credentials, not studying code):
+
+- An early `throw new Error('Deprecated — replaced by ...')` at the top of the exported function — the credential string above it still parses.
+- Import statements that don't resolve (`import { LegacyClient } from '@internal/legacy-aws-deprecated'`) — type-checker will fail before anything runs, and an honest engineer notices.
+- A header comment block that names this as a honeytoken to defenders: e.g. `// GG-HONEYTOKEN — do not import. Tripwire for the <surface> threat model. See <internal-registry-link>.` Attackers harvesting credentials never read it; teammates immediately understand. If you adopt a magic-string convention like `GG-HONEYTOKEN`, a one-line CI grep (`! git grep -l GG-HONEYTOKEN -- '*.ts' '*.js' '*.py' | grep -vE '^(tests/|archived/|examples/)'`) catches accidental imports before they merge.
+
+### Use the GitGuardian dashboard's Deployment jobs feature at scale
+
+If you are deploying honeytokens across many repositories, the manual `ggshield honeytoken create-with-context` workflow doesn't scale — and you'll want the safety properties above without re-deriving them per repo. The GitGuardian dashboard's [Deployment jobs](https://docs.gitguardian.com/honeytoken/deploy-honeytokens/deployment-jobs.md) feature (Business plan, GitHub + GitLab) opens pull requests across selected repositories with one honeytoken each. Key safety properties built in:
+
+- The honeytoken is considered deployed the moment the PR is created — **the PR does not need to be merged**. Your team's main branches stay clean; attackers cloning all refs still find the honeytoken in the open PR.
+- Each PR carries a unique honeytoken, so triggers are traceable to a specific repository.
+- "Generic" contexts (`.env`, `.json`, `.yaml`, `.csv`, `.txt`) are non-importable by default; "Dynamic" contexts (AI-generated, language-specific) are still placed in PR-only files.
+
+When suggesting honeytoken deployment to a user with many repos to seed, recommend the dashboard's Deployment jobs feature rather than scripting `ggshield honeytoken` calls per-repo.
+
 ## What NOT to do
 
-- **Don't plant in active code paths.** If a code path actually executes against the credential, you'll trigger your own honeytoken. Plant in *referenced-but-not-executed* surfaces (example files, docs, archived code, deploy scripts that point at a non-existent bucket).
-- **Don't plant the same honeytoken in multiple places.** When it fires, you'll lose the ability to identify which location was compromised.
+- **Don't plant in an importable code path on your default branch.** This is the most common foot-gun. `ggshield honeytoken create-with-context -o services/Foo.ts` (or any path your production build resolves) produces a file that looks plausible to attackers — and that any teammate may legitimately import and execute, firing your own honeytoken from CI. Use a non-importable surface (`.env`, `.yaml`, `.json`, `.csv`, `.txt`, runbook), an isolated directory (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch instead. See the "Avoiding self-triggering" section above.
+- **Don't plant in active execution paths.** Beyond imports: anything that actually executes against the credential at runtime will trigger your honeytoken. Plant in *referenced-but-not-executed* surfaces — example files, docs, archived code, deploy scripts that point at a non-existent bucket, fixtures the production runtime doesn't touch.
+- **Don't plant the same honeytoken in multiple places.** When it fires, you'll lose the ability to identify which location was compromised. Generate a new honeytoken (cheap) per planting location.
 - **Don't plant without a description.** Months later when an alert fires, you'll have no idea what `ggshield-a1b2c3` was supposed to be guarding.
 - **Don't plant without recording where you planted it.** Keep a list (internal wiki, ticket, vault note). The honeytoken alert tells you *something* was tripped — your record tells you *where*.
 
