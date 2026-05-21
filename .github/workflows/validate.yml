@@ -56,13 +56,3 @@ jobs:
             grep -q '^name:' "$f" || { echo "missing 'name:' in $f"; exit 1; }
             grep -q '^description:' "$f" || { echo "missing 'description:' in $f"; exit 1; }
           done
-
-      - name: Check Kiro POWER.md has frontmatter
-        run: |
-          set -e
-          F=kiro/POWER.md
-          test -f "$F" || { echo "missing $F"; exit 1; }
-          head -1 "$F" | grep -q '^---$' || { echo "missing frontmatter in $F"; exit 1; }
-          for k in name displayName description keywords; do
-            grep -q "^$k:" "$F" || { echo "missing '$k:' in $F"; exit 1; }
-          done

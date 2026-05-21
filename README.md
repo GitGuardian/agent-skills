@@ -2,7 +2,7 @@
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code) directly, plus [Cursor](https://cursor.com), [Kiro](https://kiro.dev), Codex, Copilot, and ~50 other agents via [skills.sh](https://skills.sh). Install instructions below.
 
 ## Installation
 
@@ -31,29 +31,15 @@ ggshield install -t claude-code -m global
 
 Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (global) or `.claude/settings.json` (local) — uninstall by removing the `ggshield` entries from that file.
 
-### Cursor, Codex, Copilot, and 50+ other agents
+### Cursor, Kiro, Codex, Copilot, and 50+ other agents
 
-Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
+Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine and drops the skills into the right place:
 
 ```bash
 npx skills add gitguardian/agent-skills
 ```
 
-Works with Cursor, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
-
-### Kiro
-
-1. Open Kiro and go to **Powers → Add Power**.
-2. Choose **Add power from GitHub URL** and enter:
-
-   ```
-   https://github.com/GitGuardian/agent-skills/tree/main/kiro
-   ```
-
-   The `kiro/` subdirectory holds `POWER.md` and the steering files.
-3. If the GitHub install does not accept a subdirectory in your version of Kiro, fall back to **Add power from local path**: clone this repo and point Kiro at the `kiro/` folder.
-
-Once installed, Kiro will activate the power based on its keywords (`ggshield`, `secrets`, `credentials`, etc.) and load the steering files in `kiro/steering/` contextually as you work.
+Works with Cursor, Kiro CLI, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents). For Kiro specifically, the skills land in `~/.kiro/skills/` (with `-g`) or `.kiro/skills/` (project-scoped) — Kiro's default agent auto-loads them, no `POWER.md` setup needed.
 
 ## What the skills do
 
@@ -93,12 +79,8 @@ skills/                               # one folder per skill — shared by Claud
 commands/                             # slash commands
   scan.md                             # /ggshield:scan
   honeytoken.md                       # /ggshield:honeytoken
-kiro/                                 # Kiro power (separate format)
-  POWER.md
-  steering/                           # contextually-loaded guidance
-    scan-workflows.md
-    scan-remediation.md
-    honeytoken-planting.md
+references/                           # shared, cross-skill reference
+  gitguardian-platform.md             # docs URL pattern, auth/scope recovery, instance URLs
 ```
 
 ## Requirements
