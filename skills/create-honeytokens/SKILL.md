@@ -1,6 +1,6 @@
 ---
 name: create-honeytokens
-description: Use when the user wants to plant decoy credentials to detect intrusions or future leaks — when creating `.env.example` or sample config files, when preparing to open-source a previously-private repository, when seeding internal wikis/runbooks/Confluence pages with credentials, when writing deploy scripts or CI configs, or when the user mentions honeytokens, canary tokens, decoys, intrusion detection, or "tripwire" credentials. Use when the user explicitly asks to create a honeytoken via `ggshield honeytoken create` or `create-with-context`. Use when seeing `403 Forbidden` or "Insufficient permissions" from `ggshield honeytoken` (PAT is missing the `honeytokens:write` scope or the user is not a Manager).
+description: Use when the user wants to plant decoy credentials to detect intrusions or future leaks — when creating `.env.example` or sample config files, when preparing to open-source a previously-private repository, when seeding internal wikis or runbooks with credentials, or when the user mentions honeytokens, canary tokens, or decoys. Use when the user explicitly asks to create a honeytoken via `ggshield honeytoken create` or `create-with-context`.
 ---
 
 # ggshield — Create Honeytokens
