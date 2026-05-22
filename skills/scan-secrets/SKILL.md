@@ -41,60 +41,9 @@ ggshield secret scan path -r -y . --json         # scan current files
 ggshield secret scan repo . --json               # audit full git history
 ```
 
-If `api-status` errors or `ggshield --version` fails, jump to **Setup (first use)** below.
+If `api-status` errors or `ggshield --version` fails, jump to **Onboarding (first use)** below.
 
-## Scan commands
-
-Always pass `--json` for structured output. Recursive scans (`-r`) trigger an interactive `Confirm recursive scan.` prompt — pair `-r` with `-y` whenever an agent invokes it, otherwise the CLI hangs waiting on stdin.
-
-```bash
-ggshield secret scan repo . --json                       # full git history
-ggshield secret scan path -r -y . --json                 # current files, no git required
-ggshield secret scan path <file> --json                  # single file (no -r needed)
-ggshield secret scan pre-commit --json                   # staged changes
-ggshield secret scan commit-range HEAD~5..HEAD --json    # commit range
-ggshield secret scan commit <sha> --json                 # specific commit
-ggshield secret scan docker <image> --json               # Docker image
-ggshield secret scan pypi <package> --json               # PyPI package
-```
-
-Key flags:
-
-| Flag | Effect |
-|---|---|
-| `--json` | Structured JSON output — always use in automated contexts |
-| `-y` / `--yes` | Auto-confirm interactive prompts. **Required whenever `-r` is used in agent contexts** |
-| `--exit-zero` | Always exit 0, report findings without blocking CI |
-| `--ignore-known-secrets` | Skip secrets already tracked in the GitGuardian dashboard |
-| `--minimum-severity <level>` | Only report findings at or above the given severity (`info`, `low`, `medium`, `high`, `critical`) |
-| `--output <file>` | Write results to a file instead of stdout |
-
-Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
-
-## Best Practices
-
-- Scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
-- When a credential is found: always remove it from the code. Rotation is only necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that is purely local and has never left the machine does not need rotation, only removal.
-- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding (file, line, secret type, validity), then fix and re-scan.
-- For false positives, add `# ggignore` on the offending line, or run `ggshield secret ignore --last-found` to record it in `.gitguardian.yaml`.
-
-## Troubleshooting
-
-**`ggshield: command not found`** — `ggshield` is not on PATH. See the install section below.
-
-**`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
-
-**`403 Forbidden` / "Insufficient permissions"** — the token is valid but is missing a scope this action requires. See `/references/gitguardian-platform.md` (at the repo root) for the recovery flow — `ggshield auth logout` + `ggshield auth login --scopes <scope>`, runnable on the user's behalf, no manual PAT creation needed.
-
-**`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead.
-
-**Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
-
-**OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see the headless section below.
-
-**Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
-
-## Setup (first use)
+## Onboarding (first use)
 
 If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip this section.
 
@@ -203,3 +152,54 @@ ggshield api-status
 ```
 
 For CI pipelines (stateless jobs without a persistent home directory), skip the login step and set `GITGUARDIAN_API_KEY` as a pipeline secret instead — `ggshield` reads it directly.
+
+## Scan commands
+
+Always pass `--json` for structured output. Recursive scans (`-r`) trigger an interactive `Confirm recursive scan.` prompt — pair `-r` with `-y` whenever an agent invokes it, otherwise the CLI hangs waiting on stdin.
+
+```bash
+ggshield secret scan repo . --json                       # full git history
+ggshield secret scan path -r -y . --json                 # current files, no git required
+ggshield secret scan path <file> --json                  # single file (no -r needed)
+ggshield secret scan pre-commit --json                   # staged changes
+ggshield secret scan commit-range HEAD~5..HEAD --json    # commit range
+ggshield secret scan commit <sha> --json                 # specific commit
+ggshield secret scan docker <image> --json               # Docker image
+ggshield secret scan pypi <package> --json               # PyPI package
+```
+
+Key flags:
+
+| Flag | Effect |
+|---|---|
+| `--json` | Structured JSON output — always use in automated contexts |
+| `-y` / `--yes` | Auto-confirm interactive prompts. **Required whenever `-r` is used in agent contexts** |
+| `--exit-zero` | Always exit 0, report findings without blocking CI |
+| `--ignore-known-secrets` | Skip secrets already tracked in the GitGuardian dashboard |
+| `--minimum-severity <level>` | Only report findings at or above the given severity (`info`, `low`, `medium`, `high`, `critical`) |
+| `--output <file>` | Write results to a file instead of stdout |
+
+Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
+
+## Best Practices
+
+- Scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
+- When a credential is found: always remove it from the code. Rotation is only necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that is purely local and has never left the machine does not need rotation, only removal.
+- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding (file, line, secret type, validity), then fix and re-scan.
+- For false positives, add `# ggignore` on the offending line, or run `ggshield secret ignore --last-found` to record it in `.gitguardian.yaml`.
+
+## Troubleshooting
+
+**`ggshield: command not found`** — `ggshield` is not on PATH. See **Onboarding (first use)** above.
+
+**`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
+
+**`403 Forbidden` / "Insufficient permissions"** — the token is valid but is missing a scope this action requires. See `/references/gitguardian-platform.md` (at the repo root) for the recovery flow — `ggshield auth logout` + `ggshield auth login --scopes <scope>`, runnable on the user's behalf, no manual PAT creation needed.
+
+**`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead.
+
+**Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
+
+**OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see **Onboarding → Headless / non-interactive environments** above.
+
+**Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
