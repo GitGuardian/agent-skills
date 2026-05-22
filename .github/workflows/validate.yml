@@ -66,3 +66,13 @@ jobs:
           for k in name displayName description keywords; do
             grep -q "^$k:" "$F" || { echo "missing '$k:' in $F"; exit 1; }
           done
+
+      - name: Run claude plugin validate
+        # Runs the same validator Anthropic's community-marketplace
+        # submission pipeline uses. Local file-system check only — no
+        # auth or network access required.
+        # See: https://code.claude.com/docs/en/plugins#submit-your-plugin-to-the-community-marketplace
+        run: |
+          set -e
+          npm install -g @anthropic-ai/claude-code@latest
+          claude plugin validate .
