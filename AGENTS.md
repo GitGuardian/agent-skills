@@ -173,6 +173,62 @@ To add a new slash invocation:
 
 Add a top-level section if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`.
 
+## Versioning
+
+We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** and stays pre-1.0 until the public surface is stable enough that a breaking change truly warrants a major bump.
+
+### Source of truth
+
+The plugin version lives in **four files** that must move together:
+
+- `.claude-plugin/plugin.json` → `version`
+- `.claude-plugin/marketplace.json` → `metadata.version`
+- `.cursor-plugin/plugin.json` → `version`
+- `.cursor-plugin/marketplace.json` → `metadata.version`
+
+Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+
+### When to bump
+
+| Bump | Trigger |
+|---|---|
+| **patch** (`0.1.0 → 0.1.1`) | Doc fixes, typo corrections, internal cleanup, dependency bumps, README rewrites, CI tweaks — anything with no user-visible behavior change. |
+| **minor** (`0.1.0 → 0.2.0`) | A new skill, a new slash command, a new MCP tool surfaced, a new manifest field that adds a capability. **While pre-1.0, also covers breaking changes** — renames, restructures, removed surfaces. Example: the `ggshield`-plugin → `gitguardian`-plugin rename was minor-bump material, not a major. |
+| **major** (`0.x → 1.0.0`, then `1.x → 2.0.0`, …) | Reserved. The first `1.0.0` lands once: Cursor marketplace listing is approved and live, the GitGuardian public API integration ships, and we have enough usage data to be confident the public surface is stable. After 1.0, every breaking change becomes a major bump. |
+
+The "while pre-1.0, breaking changes are minor" rule is explicit because SemVer leaves it ambiguous and reviewers will otherwise argue about it on each rename PR.
+
+### Release flow (current)
+
+For each release:
+
+1. Bump `version` in all four manifest files in a single commit. Use `0.x.0` for minor, `0.0.x` for patch (until `1.0.0`).
+2. Run `claude plugin validate .` — must still pass.
+3. Open the PR, get it merged via the normal review flow.
+4. On `main`, create an annotated tag with release notes inline:
+   ```bash
+   git tag -a v0.X.0 -m "v0.X.0 — <one-line summary>
+
+   <bullet points of what changed>"
+   git push origin v0.X.0
+   ```
+5. Publish a GitHub Release linked to the tag:
+   ```bash
+   gh release create v0.X.0 --title "v0.X.0 — <summary>" --notes-file release-notes.md
+   ```
+   Or use `--generate-notes` to seed from merged PRs and edit before publishing.
+
+Once we accumulate enough monthly cadence, the bump-and-tag steps can be automated via [Release Please](https://github.com/googleapis/release-please) (the pattern Supabase uses on `supabase/agent-skills`) — it reads Conventional Commits, opens a release PR with the version bump, and tags on merge. Not worth the setup cost yet at our cadence.
+
+### What does NOT need a version bump
+
+- New PR description rewrites
+- AGENTS.md additions that don't change the user-facing plugin surface
+- Comments, internal renames within a SKILL.md body
+- Anything that wouldn't show up as a behavior change for someone running the installed plugin
+
+If unsure, the test: *would a user who already installed the plugin notice this change after running `/plugin marketplace update`?* If no, it's a patch (or doesn't need its own release).
+
 ## Plugin distribution & validation
 
 This repo ships a plugin to two different ecosystems (Claude Code + Cursor) that share most of the structure but have different distribution models and submission gates. The following is the working knowledge needed to build, validate, and publish.
