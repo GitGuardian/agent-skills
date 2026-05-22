@@ -63,6 +63,27 @@ Replace with the actual model that authored the work. This is non-negotiable on 
 
 These are repo-wide rules. Not preferences, conventions — break them and a reviewer will push back.
 
+### Naming layers (brand vs capability vs tool)
+
+The repo's user-facing surface has three distinct layers, and the right name lives at the right layer:
+
+| Layer | What it names | Tool-agnostic? | Examples |
+|---|---|---|---|
+| **Brand / plugin** | The thing users install | yes — it's a namespace, not a feature | `gitguardian` (plugin), `GitGuardian` (displayName), `gitguardian-agent-skills` (marketplace) |
+| **Capability / skill** | What the agent learns to do | yes — verb-noun describing the action | `scan-secrets`, `create-honeytokens`, future `triage-incidents` |
+| **Tool / implementation** | What actually does the work | no — real product name | `ggshield` CLI, `ggmcp` (Developer MCP server), GitGuardian public API |
+
+Layer 3 is plumbing. It appears in each skill's `## Overview`, `## Commands`, and `## Troubleshooting` sections — because users need to know which tool runs and how to install it — but **never** in a skill folder name, command name, or plugin namespace.
+
+Concretely:
+
+- Skill folder is `scan-secrets/`, not `ggshield-scan-secrets/`. If we add API-backed scanning later, the same skill teaches both paths.
+- Slash command is `/gitguardian:scan`, not `/ggshield:scan`. The plugin namespace is the brand; the verb after `:` is the action; nothing in between says which tool runs it.
+- The plugin description is broad ("via ggshield, the Developer MCP server, and the GitGuardian API") so it doesn't lock us into one tool.
+- The `ggshield` keyword stays in `plugin.json` so users searching the marketplace for "ggshield" still find this plugin — discovery is a separate concern from naming.
+
+When in doubt, ask: *would this name still be right if we swapped the underlying tool?* If no, the tool name is in the wrong layer.
+
 ### Skill folder naming
 
 **Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
