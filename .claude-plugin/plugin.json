@@ -12,5 +12,5 @@
   "repository": "https://github.com/GitGuardian/agent-skills",
   "license": "MIT",
   "keywords": ["ggshield", "gitguardian", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"],
-  "logo": "assets/logo.svg"
+  "logo": "assets/logo.png"
 }
