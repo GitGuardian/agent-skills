@@ -1,6 +1,6 @@
 ---
 name: create-honeytokens
-description: Use when the user wants to plant decoy credentials to detect intrusions or future leaks — when creating `.env.example` or sample config files, when preparing to open-source a previously-private repository, when seeding internal wikis/runbooks/Confluence pages with credentials, when writing deploy scripts or CI configs, or when the user mentions honeytokens, canary tokens, decoys, intrusion detection, or "tripwire" credentials. Use when the user explicitly asks to create a honeytoken via `ggshield honeytoken create` or `create-with-context`. Use when seeing `403 Forbidden` or "Insufficient permissions" from `ggshield honeytoken` (PAT is missing the `honeytokens:write` scope or the user is not a Manager).
+description: Use when the user wants to plant decoy credentials to detect intrusions or future leaks — when creating `.env.example` or sample config files, when preparing to open-source a previously-private repository, when seeding internal wikis or runbooks with credentials, or when the user mentions honeytokens, canary tokens, or decoys. Use when the user explicitly asks to create a honeytoken via `ggshield honeytoken create` or `create-with-context`.
 ---
 
 # ggshield — Create Honeytokens
@@ -26,6 +26,34 @@ Proactively suggest a honeytoken when:
 
 For *where* to plant (concrete placement strategy, naming conventions, monitoring) see `references/planting-strategy.md`.
 For auth/scope recovery, instance URLs, headless setup, and the GitGuardian public docs URL pattern, see `/references/gitguardian-platform.md` at the repo root.
+
+## Quick Start (if ggshield is already installed and authorized)
+
+```bash
+ggshield api-status                                      # verify the PAT includes honeytokens:write
+ggshield honeytoken create --type AWS \
+  --name "<planting-surface>-<YYYY-MM>" \
+  --description "<where it was planted and why>"
+```
+
+If `api-status` shows `honeytokens:write` is missing from `Token scopes:`, run the scope-recovery flow from `/references/gitguardian-platform.md` (you can drive it on the user's behalf). If `ggshield --version` fails, jump to **Onboarding (first use)** below.
+
+## Onboarding (first use)
+
+### Prerequisites
+
+`ggshield honeytoken` requires more than the standard scan setup:
+
+1. **GitGuardian role:** the user must have **Manager** access level (or higher) on their GitGuardian workspace. Free tier and lower-permission seats cannot create honeytokens. Check via Settings → Members on the GitGuardian dashboard.
+2. **Personal Access Token scope:** the PAT used by `ggshield` must include the **`honeytokens:write`** scope. Verify with `ggshield api-status` (the response lists active scopes).
+
+If either is missing, `ggshield honeytoken create` exits with `403 Forbidden` or "Insufficient permissions" — see Troubleshooting.
+
+### Setup
+
+If the standard `ggshield` setup is already complete (see the `scan-secrets` skill) but `ggshield api-status` does not show the `honeytokens:write` scope, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write`.
+
+If `ggshield` itself is not installed or not authenticated at all, follow the full **Onboarding (first use)** section in the `scan-secrets` skill first, then run the scope-recovery flow.
 
 ## Commands
 
@@ -63,15 +91,6 @@ Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / per
 - **Plant in the source of truth.** A honeytoken in `.env.example` only helps if devs actually use that template. Walk through the user's deploy story to find the *real* attractive surfaces (internal wikis, abandoned repos, deploy scripts, container images).
 - **Never plant a honeytoken anywhere your production import graph can reach.** If a teammate can legitimately `import` the honeytoken-containing module from production code, the next CI run fires your own decoy. `ggshield honeytoken create-with-context -o services/Foo.ts` is a classic foot-gun — the file looks real to attackers, but also gets imported by real code. Plant in non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch instead. Full tactics in `references/planting-strategy.md` → "Avoiding self-triggering".
 
-## Prerequisites
-
-`ggshield honeytoken` requires more than the standard scan setup:
-
-1. **GitGuardian role:** the user must have **Manager** access level (or higher) on their GitGuardian workspace. Free tier and lower-permission seats cannot create honeytokens. Check via Settings → Members on the GitGuardian dashboard.
-2. **Personal Access Token scope:** the PAT used by `ggshield` must include the **`honeytokens:write`** scope. Verify with `ggshield api-status` (the response lists active scopes).
-
-If either is missing, `ggshield honeytoken create` exits with `403 Forbidden` or "Insufficient permissions" — see Troubleshooting.
-
 ## Troubleshooting
 
 **`403 Forbidden` / "Insufficient permissions"** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role.
@@ -79,9 +98,3 @@ If either is missing, `ggshield honeytoken create` exits with `403 Forbidden` or
 The fix is the standard scope-recovery flow: `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`. See `/references/gitguardian-platform.md` at the repo root for the full procedure — both commands are runnable on the user's behalf, the OAuth flow handles scope upgrade without any manual PAT creation, and the same file covers the Manager-role caveat and headless `--method token` fallback.
 
 **`--type` is required** — pass `--type AWS`. No other types are supported yet (this will change).
-
-## Setup (first use)
-
-If the standard `ggshield` setup is already complete (see the `scan-secrets` skill) but `ggshield api-status` does not show the `honeytokens:write` scope, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write`.
-
-If `ggshield` itself is not installed or not authenticated at all, follow the full setup section in the `scan-secrets` skill first, then run the scope-recovery flow.
