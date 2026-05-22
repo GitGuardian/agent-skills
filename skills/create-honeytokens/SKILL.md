@@ -13,6 +13,15 @@ A honeytoken is a **decoy credential** that does nothing useful but raises an al
 
 **Core rule:** every honeytoken must be planted somewhere an attacker might actually find. A honeytoken sitting only on the user's laptop is wasted. Always confirm the planting location with the user before generating one.
 
+## Start Here — Read This Before Doing Anything
+
+**Do not skip this section.** Before you call `ggshield honeytoken create`:
+
+1. **Confirm the planting surface with the user explicitly.** Ask: "Where do you want me to plant this?" If the answer is vague ("just somewhere"), surface the candidate list from the When to Use section — `.env.example`, pre-publication open-source repo, internal wiki page, deploy script, archived repo, container image, public artifact. Do not generate first and ask later.
+2. **Double-check the planting surface is not in the production import graph.** If a teammate can `import { fn } from './services/Foo'` on the default branch and call it, your own CI will fire the honeytoken from real code. Prefer non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch. Full tactics — including the "real to attackers, decoy to defenders" dual-audience principle — in `references/planting-strategy.md` → "Avoiding self-triggering".
+3. **Always pass a meaningful `--description`.** The alert fires months later, often to a different on-call. `"planted in repo X / file Y on 2026-MM-DD"` beats `"test"` by a wide margin. If the user doesn't supply one, propose one before generating.
+4. **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` doesn't show `honeytokens:write` in the `Token scopes:` line, walk through **Onboarding (first use)** below before attempting `honeytoken create`. The agent can drive the scope upgrade on the user's behalf — see `/references/gitguardian-platform.md`.
+
 ## When to Use
 
 Proactively suggest a honeytoken when:

@@ -11,6 +11,16 @@ description: Use when writing or editing code that handles credentials (API keys
 
 **Core rule:** when working on code that handles credentials, run `ggshield` *before* presenting the result. Do not commit or surface code that contains a detected secret.
 
+## Start Here — Read This Before Doing Anything
+
+**Do not skip this section.**
+
+- **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
+- **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
+- **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, walk through **Onboarding (first use)** below before attempting any scan. Every command in the reference is useless until the CLI is installed and authenticated.
+- **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per `references/remediation.md` — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
+
 ## When to Use
 
 Trigger a scan when:
