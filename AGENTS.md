@@ -27,8 +27,8 @@ skills/                               # one folder per skill — discovered by C
     references/
       planting-strategy.md
 commands/                             # slash commands (Claude Code / Cursor)
-  scan.md                             # /ggshield:scan
-  honeytoken.md                       # /ggshield:honeytoken
+  scan.md                             # /gitguardian:scan
+  honeytoken.md                       # /gitguardian:honeytoken
 references/                           # shared cross-skill reference
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
@@ -46,8 +46,8 @@ LICENSE                               # MIT
 
 | Command | Description |
 |---|---|
-| `/ggshield:scan` | Run a scan: working tree, full history, staged changes, or a specific path |
-| `/ggshield:honeytoken` | Generate a honeytoken (bare or context-wrapped), with planting-surface confirmation |
+| `/gitguardian:scan` | Run a scan: working tree, full history, staged changes, or a specific path |
+| `/gitguardian:honeytoken` | Generate a honeytoken (bare or context-wrapped), with planting-surface confirmation |
 
 ## Commit attribution
 
@@ -63,9 +63,30 @@ Replace with the actual model that authored the work. This is non-negotiable on 
 
 These are repo-wide rules. Not preferences, conventions — break them and a reviewer will push back.
 
+### Naming layers (brand vs capability vs tool)
+
+The repo's user-facing surface has three distinct layers, and the right name lives at the right layer:
+
+| Layer | What it names | Tool-agnostic? | Examples |
+|---|---|---|---|
+| **Brand / plugin** | The thing users install | yes — it's a namespace, not a feature | `gitguardian` (plugin), `GitGuardian` (displayName), `gitguardian-agent-skills` (marketplace) |
+| **Capability / skill** | What the agent learns to do | yes — verb-noun describing the action | `scan-secrets`, `create-honeytokens`, future `triage-incidents` |
+| **Tool / implementation** | What actually does the work | no — real product name | `ggshield` CLI, `ggmcp` (Developer MCP server), GitGuardian public API |
+
+Layer 3 is plumbing. It appears in each skill's `## Overview`, `## Commands`, and `## Troubleshooting` sections — because users need to know which tool runs and how to install it — but **never** in a skill folder name, command name, or plugin namespace.
+
+Concretely:
+
+- Skill folder is `scan-secrets/`, not `ggshield-scan-secrets/`. If we add API-backed scanning later, the same skill teaches both paths.
+- Slash command is `/gitguardian:scan`, not `/ggshield:scan`. The plugin namespace is the brand; the verb after `:` is the action; nothing in between says which tool runs it.
+- The plugin description is broad ("via ggshield, the Developer MCP server, and the GitGuardian API") so it doesn't lock us into one tool.
+- The `ggshield` keyword stays in `plugin.json` so users searching the marketplace for "ggshield" still find this plugin — discovery is a separate concern from naming.
+
+When in doubt, ask: *would this name still be right if we swapped the underlying tool?* If no, the tool name is in the wrong layer.
+
 ### Skill folder naming
 
-**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `ggshield` — prefixing every skill with `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
+**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
 
 ### Long-form content goes under `references/`
 
@@ -224,7 +245,7 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 | Surface | Where it lives | We ship? | What it does |
 |---|---|---|---|
 | `skills/<name>/SKILL.md` | plugin root | ✅ | Model-invoked skills (Claude triggers on description match) |
-| `commands/*.md` | plugin root | ✅ | Slash commands (`/ggshield:scan`, `/ggshield:honeytoken`) |
+| `commands/*.md` | plugin root | ✅ | Slash commands (`/gitguardian:scan`, `/gitguardian:honeytoken`) |
 | `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ (PR #11) | Auto-configure the GitGuardian Developer MCP server on install |
 | `assets/logo.png` | plugin root | ✅ (PR #12) | Marketplace card icon |
 | `rules/*.mdc` | plugin root | ❌ | Cursor's always-on coding rules (different concept from skills — rules apply even when no skill triggers). Worth adding if we want a Cursor-side always-on "never commit a detected secret" rule beyond what's already in each SKILL.md's Core rule. |
@@ -245,13 +266,13 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 
 ### CLI hints (future-only — official marketplace required)
 
-If we land in `claude-plugins-official`, ggshield itself can prompt Claude Code users to install us. When `CLAUDECODE=1` is set, the CLI emits a self-closing XML tag to stderr:
+If the plugin lands in `claude-plugins-official`, the ggshield CLI itself can prompt Claude Code users to install us. When `CLAUDECODE=1` is set, the CLI emits a self-closing XML tag to stderr:
 
 ```
-<claude-code-hint v="1" type="plugin" value="ggshield@claude-plugins-official" />
+<claude-code-hint v="1" type="plugin" value="gitguardian@claude-plugins-official" />
 ```
 
-Claude Code scans output, strips the hint line before passing to the model, validates it targets an official-marketplace plugin, then shows an install prompt (dismisses as "No" after 30s, prompted once per session). That's a ggshield-repo change, not this repo's.
+Claude Code scans output, strips the hint line before passing to the model, validates it targets an official-marketplace plugin, then shows an install prompt (dismisses as "No" after 30s, prompted once per session). That's a change in the ggshield CLI repo, not this one. Same idea applies to future GitGuardian CLIs.
 
 Reference: https://code.claude.com/docs/en/plugin-hints
 

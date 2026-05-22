@@ -8,20 +8,20 @@ Supported agents: [Claude Code](https://claude.ai/code), [Cursor](https://cursor
 
 ### Claude Code
 
-Add this repo as a plugin marketplace, then install the `ggshield` plugin:
+Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 
 ```
 /plugin marketplace add GitGuardian/agent-skills
-/plugin install ggshield
+/plugin install gitguardian
 ```
 
 That's it. The skills auto-trigger when you write or edit code that handles credentials, or when you're about to publish something where a decoy would help. You can also invoke them explicitly:
 
-- `/ggshield:scan` — scan the working tree
-- `/ggshield:scan history` — audit the full git history
-- `/ggshield:scan staged` — scan staged changes (pre-commit)
-- `/ggshield:scan <path>` — scan a specific file or directory
-- `/ggshield:honeytoken` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
+- `/gitguardian:scan` — scan the working tree
+- `/gitguardian:scan history` — audit the full git history
+- `/gitguardian:scan staged` — scan staged changes (pre-commit)
+- `/gitguardian:scan <path>` — scan a specific file or directory
+- `/gitguardian:honeytoken` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
 
@@ -100,8 +100,8 @@ skills/                               # one folder per skill — shared by Claud
     references/
       planting-strategy.md
 commands/                             # slash commands
-  scan.md                             # /ggshield:scan
-  honeytoken.md                       # /ggshield:honeytoken
+  scan.md                             # /gitguardian:scan
+  honeytoken.md                       # /gitguardian:honeytoken
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
