@@ -55,21 +55,30 @@ Works with Cursor, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI,
 
 Once installed, Kiro will activate the power based on its keywords (`ggshield`, `secrets`, `credentials`, etc.) and load the steering files in `kiro/steering/` contextually as you work.
 
-## What the skills do
+## What you can ask
 
-**`scan-secrets`** (auto-triggers when writing code that handles credentials, or on request)
+**Scan for secrets** — auto-triggers when you write or edit code that touches credentials, runs on demand for any path, history, or artifact. Reports findings with file, line, secret type, and validity. Walks you through removal and rotation.
 
-- Scans files, directories, full git history, specific commits, commit ranges, Docker images, and PyPI packages for 700+ secret types — AWS keys, GitHub tokens, database URLs, JWTs, Stripe keys, private keys, and more.
-- Runs proactively whenever the agent is writing or modifying code that handles credentials, `.env` files, CI/CD pipelines, Dockerfiles, or deployment scripts.
-- Guides remediation: removal vs. rotation, when (and when not) to rewrite git history, false-positive handling via `# ggignore` and `.gitguardian.yaml`.
+```
+Scan this repo for hardcoded credentials
+Audit the full git history for leaked secrets
+Check this Dockerfile and the CI config for AWS keys
+Did I just commit any tokens? Scan the staged changes first
+Find the secrets I leaked in commit abc1234
+Scan the working tree before I push
+Scan this Docker image for embedded credentials
+```
 
-**`create-honeytokens`** (auto-triggers when creating example configs, preparing to publish, or planting decoys)
+**Plant a honeytoken** — generates an AWS decoy credential, suggests where to plant it for highest signal, and avoids the foot-gun of dropping it in a code path real engineers will import.
 
-- Generates AWS honeytokens — bare credentials or wrapped in realistic-looking code — via `ggshield honeytoken create` / `create-with-context`.
-- Suggests planting surfaces for highest signal: `.env.example`, pre-publication repos, internal wikis, deploy scripts, abandoned repos, public artifacts.
-- Walks the user through naming, description conventions, and alert response when a honeytoken fires.
+```
+Drop a honeytoken in my .env.example before I publish this repo
+Generate a decoy AWS credential for my Confluence runbook
+Plant a tripwire credential so I know if anyone clones our archived repos
+Create a honeytoken for the staging deploy script
+```
 
-**Shared setup** — both skills handle first-time install: detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally require Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope.
+Both skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Repository layout
 
