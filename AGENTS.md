@@ -27,8 +27,8 @@ skills/                               # one folder per skill — discovered by C
     references/
       planting-strategy.md
 commands/                             # slash commands (Claude Code / Cursor)
-  scan.md                             # /ggshield:scan
-  honeytoken.md                       # /ggshield:honeytoken
+  scan.md                             # /gitguardian:scan
+  honeytoken.md                       # /gitguardian:honeytoken
 references/                           # shared cross-skill reference
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
@@ -46,8 +46,8 @@ LICENSE                               # MIT
 
 | Command | Description |
 |---|---|
-| `/ggshield:scan` | Run a scan: working tree, full history, staged changes, or a specific path |
-| `/ggshield:honeytoken` | Generate a honeytoken (bare or context-wrapped), with planting-surface confirmation |
+| `/gitguardian:scan` | Run a scan: working tree, full history, staged changes, or a specific path |
+| `/gitguardian:honeytoken` | Generate a honeytoken (bare or context-wrapped), with planting-surface confirmation |
 
 ## Commit attribution
 
@@ -65,7 +65,7 @@ These are repo-wide rules. Not preferences, conventions — break them and a rev
 
 ### Skill folder naming
 
-**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `ggshield` — prefixing every skill with `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
+**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
 
 ### Long-form content goes under `references/`
 
@@ -224,7 +224,7 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 | Surface | Where it lives | We ship? | What it does |
 |---|---|---|---|
 | `skills/<name>/SKILL.md` | plugin root | ✅ | Model-invoked skills (Claude triggers on description match) |
-| `commands/*.md` | plugin root | ✅ | Slash commands (`/ggshield:scan`, `/ggshield:honeytoken`) |
+| `commands/*.md` | plugin root | ✅ | Slash commands (`/gitguardian:scan`, `/gitguardian:honeytoken`) |
 | `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ (PR #11) | Auto-configure the GitGuardian Developer MCP server on install |
 | `assets/logo.png` | plugin root | ✅ (PR #12) | Marketplace card icon |
 | `rules/*.mdc` | plugin root | ❌ | Cursor's always-on coding rules (different concept from skills — rules apply even when no skill triggers). Worth adding if we want a Cursor-side always-on "never commit a detected secret" rule beyond what's already in each SKILL.md's Core rule. |
@@ -245,13 +245,13 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 
 ### CLI hints (future-only — official marketplace required)
 
-If we land in `claude-plugins-official`, ggshield itself can prompt Claude Code users to install us. When `CLAUDECODE=1` is set, the CLI emits a self-closing XML tag to stderr:
+If the plugin lands in `claude-plugins-official`, the ggshield CLI itself can prompt Claude Code users to install us. When `CLAUDECODE=1` is set, the CLI emits a self-closing XML tag to stderr:
 
 ```
-<claude-code-hint v="1" type="plugin" value="ggshield@claude-plugins-official" />
+<claude-code-hint v="1" type="plugin" value="gitguardian@claude-plugins-official" />
 ```
 
-Claude Code scans output, strips the hint line before passing to the model, validates it targets an official-marketplace plugin, then shows an install prompt (dismisses as "No" after 30s, prompted once per session). That's a ggshield-repo change, not this repo's.
+Claude Code scans output, strips the hint line before passing to the model, validates it targets an official-marketplace plugin, then shows an install prompt (dismisses as "No" after 30s, prompted once per session). That's a change in the ggshield CLI repo, not this one. Same idea applies to future GitGuardian CLIs.
 
 Reference: https://code.claude.com/docs/en/plugin-hints
 
