@@ -15,7 +15,7 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 /plugin install gitguardian
 ```
 
-That's it. The skills auto-trigger when you write or edit code that handles credentials, or when you're about to publish something where a decoy would help. You can also invoke them explicitly:
+You then have access to 2 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
