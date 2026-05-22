@@ -89,18 +89,61 @@ If not installed, **detect what's already on the user's machine and use that** �
 | Linux (Debian/Ubuntu) | `apt --version` | Set up the Cloudsmith repo at https://cloudsmith.io/~gitguardian/repos/ggshield/setup/, then `apt install ggshield` |
 | Linux (RHEL/Fedora) | `dnf --version` | Set up the Cloudsmith repo at the same URL (rpm tab), then `dnf install ggshield` |
 
-**2. Cross-platform Python-based managers** (use whichever the user already has):
+**2. Direct download from GitHub releases** (do what the user would do manually — pick the right artifact, download it with whatever HTTP tool is on hand, install via the platform-native installer):
+
+Use this tier when option 1's package manager isn't installed, or when its setup adds friction the user wants to skip (the Cloudsmith repo on Linux is the common case — that's a one-time setup the user may not want to do just for one binary).
+
+**Pick the artifact** by detecting the OS and architecture (`uname -s` / `uname -m` on Unix shells; `$Env:PROCESSOR_ARCHITECTURE` on PowerShell; `/etc/os-release` for Linux distro family):
+
+| OS / arch | Artifact (`<v>` = latest version) | Install command after download |
+|---|---|---|
+| macOS Apple Silicon (`Darwin arm64`) | `ggshield-<v>-arm64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
+| macOS Intel (`Darwin x86_64`) | `ggshield-<v>-x86_64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
+| Debian/Ubuntu (`Linux x86_64`, `apt --version` works) | `ggshield_<v>-1_amd64.deb` | `sudo apt install ./<file>.deb` |
+| RHEL/Fedora (`Linux x86_64`, `dnf --version` works) | `ggshield-<v>-1.x86_64.rpm` | `sudo dnf install <file>.rpm` |
+| Windows x86_64 | `ggshield-<v>-x86_64-pc-windows-msvc.msi` | `msiexec /i <file>.msi /quiet` (or run interactively) |
+| Other Linux x86_64 (Alpine glibc-compatible, Arch, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` (ensure `~/.local/bin` is on `$PATH`) |
+
+**Download with whatever HTTP tool is available**, probing in this priority order:
+
+1. **`gh`** (cleanest — auto-resolves latest version, no API parsing). Probe with `gh --version && gh auth status`:
+   ```bash
+   gh release download --repo GitGuardian/ggshield --pattern "*arm64-apple-darwin.pkg"
+   ```
+2. **`curl`** (universal on macOS, Linux, and Windows 10+). Discover the latest version's asset URL via the GitHub API, then download:
+   ```bash
+   url=$(curl -sL https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
+         | grep -o '"browser_download_url": *"[^"]*arm64-apple-darwin.pkg"' \
+         | cut -d'"' -f4)
+   curl -L -o ggshield.pkg "$url"
+   ```
+3. **`wget`** (Linux fallback when `curl` is absent — rare on modern distros):
+   ```bash
+   url=$(wget -qO- https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
+         | grep -o '"browser_download_url": *"[^"]*_amd64.deb"' \
+         | cut -d'"' -f4)
+   wget "$url"
+   ```
+4. **PowerShell `Invoke-WebRequest`** (Windows fallback when `gh` and `curl` aren't on PATH):
+   ```powershell
+   $latest = Invoke-RestMethod https://api.github.com/repos/GitGuardian/ggshield/releases/latest
+   $asset = $latest.assets | Where-Object { $_.name -like '*x86_64-pc-windows-msvc.msi' }
+   Invoke-WebRequest -Uri $asset.browser_download_url -OutFile ggshield.msi
+   ```
+
+If none of `gh`, `curl`, `wget`, or `Invoke-WebRequest` are available, fall through to option 3.
+
+**Not supported by this tier:** Linux ARM (no published binary), Windows ARM (no published binary). Fall through to option 3 for those.
+
+**No auto-update.** This tier installs the artifact directly without registering an upstream package-manager repo (because we deliberately skipped Cloudsmith / brew / choco etc. in this tier). Future ggshield versions require re-running the download + install. If the user wants auto-updates, prefer option 1 (which does register the upstream repo).
+
+**3. Cross-platform Python-based managers** (use whichever the user already has):
 
 | Probe | Install command | Notes |
 |---|---|---|
 | `uv --version` | `uv tool install ggshield` | Upgrade later with `uv tool upgrade ggshield` |
 | `pipx --version` | `pipx install ggshield` | Isolated environment |
 | `pip --version` | `pip install --user ggshield` | Last resort. May fail on externally-managed Python (Debian 12+, recent Ubuntu, modern Fedora) |
-
-**3. Standalone packages** (no Python required, manual upgrades):
-
-- macOS: `.pkg` from https://github.com/GitGuardian/ggshield/releases
-- Windows: `.zip` from the releases page — unpack and add to `%PATH%`
 
 **4. If nothing above is available**, install `uv` (the lightest dependency, works on all platforms) and use it:
 
