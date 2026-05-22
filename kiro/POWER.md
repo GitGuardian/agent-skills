@@ -1,14 +1,8 @@
 ---
 name: "ggshield"
 displayName: "ggshield by GitGuardian"
-description: "Use GitGuardian's ggshield CLI for two capabilities: (1) detecting hardcoded secrets — API keys, OAuth tokens, database URLs, JWTs, AWS credentials, GitHub tokens, Stripe keys, private keys, and 700+ other secret types — in files, git history, commits, Docker images, and PyPI packages, and (2) generating honeytokens, decoy AWS credentials planted in attractive locations (.env.example files, internal wikis, deploy scripts, abandoned repos, pre-publication open-source repos) that alert when used. Relevant whenever the agent writes or edits code that handles authentication, environment variables, .env files, configuration files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts; when the user is about to commit or push; when preparing to open-source a repository; or when the user mentions secrets, credentials, honeytokens, canary tokens, decoys, or intrusion detection."
-keywords: [
-  "ggshield", "gitguardian",
-  "secrets", "credentials", "keys", "tokens", "passwords",
-  "env-file", "dotenv", "config",
-  "security", "scan",
-  "honeytoken", "honeytokens", "canary", "decoy", "tripwire", "intrusion-detection"
-]
+description: "Detect hardcoded secrets — API keys, tokens, database URLs, and 700+ other types — in files, git history, commits, Docker images, and PyPI packages using GitGuardian's ggshield CLI. Also generates honeytokens (decoy AWS credentials) to plant in attractive locations that alert when accessed. Triggers proactively when writing code that handles credentials or when preparing to publish."
+keywords: ["ggshield", "gitguardian", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"]
 author: "GitGuardian"
 ---
 
@@ -36,6 +30,8 @@ What you can do with the honeytoken side:
 - Generate a bare honeytoken (just the AWS access key + secret) to drop into example configs or wiki pages
 - Generate a honeytoken wrapped in realistic-looking code (Python, JavaScript, Bash, Terraform, …) so the decoy reads as a real credential in source code
 
+## When to Trigger
+
 Trigger a scan proactively whenever:
 - The user asks to scan a file, directory, or repository for secrets or credentials
 - You are writing or modifying code that handles API keys, tokens, passwords, connection strings, or any credentials — scan before presenting the result
@@ -47,100 +43,18 @@ Suggest a honeytoken proactively whenever:
 - The user is writing internal docs / runbooks (Confluence, Notion) that reference credentials
 - The user mentions honeytokens, canary tokens, decoys, or intrusion detection
 
-## Available Steering Files
-
-- **gitguardian-platform** — public docs URL pattern (append `.md` to any HTML page), auth scope recovery (logout + login `--scopes`), instance URLs (SaaS US / EU / self-hosted), headless setup, role/scope matrix. Load whenever a `ggshield` command fails with permission/scope errors or the user shares a `docs.gitguardian.com` URL.
-- **scan-workflows** — CLI scan command variants, required flags, exit codes, CI integration, git hook setup
-- **scan-remediation** — interpreting scan output fields, rotating vs. removing secrets, when (and when not) to rewrite git history, ignoring false positives, `.gitguardian.yaml` configuration
-- **honeytoken-planting** — where to plant decoys for highest signal, naming and description conventions, alert response, maintenance
-
-## Scan commands
-
-Always pass `--json` for structured output. Recursive scans (`-r`) trigger an interactive `Confirm recursive scan.` prompt — pass `-y` whenever you use `-r` so the agent doesn't hang on confirmation.
+## Quick Start (if ggshield is already installed)
 
 ```bash
-ggshield secret scan repo . --json                       # full git history
-ggshield secret scan path -r -y . --json                 # current files, no git required
-ggshield secret scan path <file> --json                  # single file (no -r needed)
-ggshield secret scan pre-commit --json                   # staged changes
-ggshield secret scan commit-range HEAD~5..HEAD --json    # commit range
-ggshield secret scan commit <sha> --json                 # specific commit
-ggshield secret scan docker <image> --json               # Docker image
-ggshield secret scan pypi <package> --json               # PyPI package
+ggshield api-status                                       # verify auth
+ggshield secret scan path -r -y . --json                 # scan current files
+ggshield honeytoken create --type AWS --name "my-decoy" --description "test"  # generate honeytoken
 ```
 
-Key flags:
-
-| Flag | Effect |
-|---|---|
-| `--json` | Structured JSON output — always use in automated contexts |
-| `-y` / `--yes` | Auto-confirm interactive prompts. **Required whenever `-r` is used in agent contexts** |
-| `--exit-zero` | Always exit 0, report findings without blocking CI |
-| `--ignore-known-secrets` | Skip secrets already tracked in the GitGuardian dashboard |
-| `--minimum-severity <level>` | Only report findings at or above the given severity (`info`, `low`, `medium`, `high`, `critical`) |
-| `--output <file>` | Write results to a file instead of stdout |
-
-Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
-
-## Honeytoken commands
-
-Two forms. Use `create-with-context` when the honeytoken will live inside a code file (`ggshield` wraps the credentials in a plausible code snippet); use the bare `create` form when the honeytoken will live in plain text (an `.env.example` line, a Notion page, a runbook).
-
-```bash
-# Bare honeytoken
-ggshield honeytoken create --type AWS --name <name> --description "<purpose>"
-
-# Honeytoken wrapped in a realistic-looking file (preferred when planting in code)
-ggshield honeytoken create-with-context --type AWS --name <name> \
-  --description "<purpose>" --language python -o <path>
-```
-
-Key flags:
-
-| Flag | Effect |
-|---|---|
-| `--type AWS` | **Required.** Only AWS is currently supported |
-| `--name <text>` | Honeytoken name. Auto-generated with a `ggshield-` prefix if omitted |
-| `--description <text>` | Up to 250 characters. Record *where you planted it* and *why* — this is what the alert shows months later |
-| `-o, --output <file>` | Append (or create) the honeytoken at this path |
-| `--language <lang>` | (`create-with-context` only) Force the wrapper language. Inferred from output filename if not set |
-
-**Confirm the planting surface with the user before generating.** A honeytoken sitting only on the user's laptop is wasted. See `honeytoken-planting` for placement strategy.
-
-**Never plant in an importable code path on the default branch.** `ggshield honeytoken create-with-context -o services/Foo.ts` (or any path the production build resolves) is a classic foot-gun — the file looks real to attackers, but also gets imported by real code, firing your own decoy from CI. Prefer non-importable surfaces (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch. Full tactics in the `honeytoken-planting` steering file under "Avoiding self-triggering".
-
-Prerequisites beyond the standard scan setup:
-- The user must have **Manager** access level (or higher) on their GitGuardian workspace.
-- The PAT must include the **`honeytokens:write`** scope (verify with `ggshield api-status` — look at the `Token scopes:` line).
-
-## Best Practices
-
-- Call a scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
-- When finding a crdential: always remove it from the code. Rotation is only necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that is purely local and has never left the machine does not need rotation, only removal.
-- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding with file, line, secret type, and validity, then fix and re-scan.
-- For false positives, add `# ggignore` on the offending line, or run `ggshield secret ignore --last-found` to record it in `.gitguardian.yaml`.
-
-## Troubleshooting
-
-**`ggshield: command not found`** — `ggshield` is not on PATH. See the install section below.
-
-**`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
-
-**`403 Forbidden` / "Insufficient permissions" on any ggshield action** — the token is valid but is missing a scope this action requires. See the `gitguardian-platform` steering file for the full recovery flow (`ggshield auth logout` + `ggshield auth login --scopes <scope>`, agent-runnable on the user's behalf).
-
-**`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead (the `-y` skips the recursive-scan confirmation prompt).
-
-**Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
-
-**OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see the auth section below.
-
-**Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
-
-**`403 Forbidden` / "Insufficient permissions" on `honeytoken create`** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role. The recovery flow is the same as for any other scope mismatch — `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`, runnable on the user's behalf. See the `gitguardian-platform` steering file for the full procedure, the Manager-role caveat, and the headless `--method token` fallback.
-
-## Configuration
+## Onboarding
 
 ### Prerequisites
+- ggshield 1.49.0 or later (required for full feature support including agent hooks)
 - A GitGuardian account (free tier available at https://dashboard.gitguardian.com/signup)
 
 ### Setup (first use)
@@ -257,3 +171,101 @@ ggshield auth login --method token --instance https://dashboard.eu1.gitguardian.
 ```bash
 ggshield api-status
 ```
+
+## Available Steering Files
+
+- **gitguardian-platform** — auth, scopes, instance URLs, and headless setup for ggshield
+- **scan-workflows** — scan command variants, required flags, exit codes, and CI/hook integration
+- **scan-remediation** — interpreting scan output and fixing leaks: rotate, remove, git history, false positives
+- **honeytoken-planting** — where to plant decoys, naming conventions, alert response, and maintenance
+
+## Scan commands
+
+Always pass `--json` for structured output. Recursive scans (`-r`) trigger an interactive `Confirm recursive scan.` prompt — pass `-y` whenever you use `-r` so the agent doesn't hang on confirmation.
+
+```bash
+ggshield secret scan repo . --json                       # full git history
+ggshield secret scan path -r -y . --json                 # current files, no git required
+ggshield secret scan path <file> --json                  # single file (no -r needed)
+ggshield secret scan pre-commit --json                   # staged changes
+ggshield secret scan commit-range HEAD~5..HEAD --json    # commit range
+ggshield secret scan commit <sha> --json                 # specific commit
+ggshield secret scan docker <image> --json               # Docker image
+ggshield secret scan pypi <package> --json               # PyPI package
+```
+
+Key flags:
+
+| Flag | Effect |
+|---|---|
+| `--json` | Structured JSON output — always use in automated contexts |
+| `-y` / `--yes` | Auto-confirm interactive prompts. **Required whenever `-r` is used in agent contexts** |
+| `--exit-zero` | Always exit 0, report findings without blocking CI |
+| `--ignore-known-secrets` | Skip secrets already tracked in the GitGuardian dashboard |
+| `--minimum-severity <level>` | Only report findings at or above the given severity (`info`, `low`, `medium`, `high`, `critical`) |
+| `--output <file>` | Write results to a file instead of stdout |
+
+Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
+
+## Honeytoken commands
+
+Two forms. Use `create-with-context` when the honeytoken will live inside a code file (`ggshield` wraps the credentials in a plausible code snippet); use the bare `create` form when the honeytoken will live in plain text (an `.env.example` line, a Notion page, a runbook).
+
+```bash
+# Bare honeytoken
+ggshield honeytoken create --type AWS --name <name> --description "<purpose>"
+
+# Honeytoken wrapped in a realistic-looking file (preferred when planting in code)
+ggshield honeytoken create-with-context --type AWS --name <name> \
+  --description "<purpose>" --language python -o <path>
+```
+
+Key flags:
+
+| Flag | Effect |
+|---|---|
+| `--type AWS` | **Required.** Only AWS is currently supported |
+| `--name <text>` | Honeytoken name. Auto-generated with a `ggshield-` prefix if omitted |
+| `--description <text>` | Up to 250 characters. Record *where you planted it* and *why* — this is what the alert shows months later |
+| `-o, --output <file>` | Append (or create) the honeytoken at this path |
+| `--language <lang>` | (`create-with-context` only) Force the wrapper language. Inferred from output filename if not set |
+
+**Confirm the planting surface with the user before generating.** A honeytoken sitting only on the user's laptop is wasted. See `honeytoken-planting` for placement strategy.
+
+> ⚠ Never plant in an importable code path on the default branch.
+> See `honeytoken-planting` steering file for full tactics.
+
+Prerequisites beyond the standard scan setup:
+- The user must have **Manager** access level (or higher) on their GitGuardian workspace.
+- The PAT must include the **`honeytokens:write`** scope (verify with `ggshield api-status` — look at the `Token scopes:` line).
+
+## Best Practices
+
+- Call a scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
+- When finding a crdential: always remove it from the code. Rotation is only necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that is purely local and has never left the machine does not need rotation, only removal.
+- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding with file, line, secret type, and validity, then fix and re-scan.
+- For false positives, add `# ggignore` on the offending line, or run `ggshield secret ignore --last-found` to record it in `.gitguardian.yaml`.
+
+## Troubleshooting
+
+**`ggshield: command not found`** — `ggshield` is not on PATH. See the install section below.
+
+**`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
+
+**`403 Forbidden` / "Insufficient permissions" on any ggshield action** — the token is valid but is missing a scope this action requires. See the `gitguardian-platform` steering file for the full recovery flow (`ggshield auth logout` + `ggshield auth login --scopes <scope>`, agent-runnable on the user's behalf).
+
+**`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead (the `-y` skips the recursive-scan confirmation prompt).
+
+**Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
+
+**OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see the auth section below.
+
+**Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
+
+**`403 Forbidden` / "Insufficient permissions" on `honeytoken create`** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role. The recovery flow is the same as for any other scope mismatch — `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`, runnable on the user's behalf. See the `gitguardian-platform` steering file for the full procedure, the Manager-role caveat, and the headless `--method token` fallback.
+
+## License and support
+
+This power uses [ggshield](https://github.com/GitGuardian/ggshield) (MIT).
+- [Privacy Policy](https://www.gitguardian.com/legal/privacy-policy)
+- [Support](https://github.com/GitGuardian/ggshield/issues)
