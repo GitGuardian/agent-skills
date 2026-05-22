@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Use when writing or editing code that handles credentials (API keys, OAuth tokens, database URLs, JWTs, AWS keys, GitHub tokens, Stripe keys, private keys), .env files, dotfiles, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts. Use when the user asks to scan files, directories, git history, commits, Docker images, or PyPI packages for secrets. Use before committing or pushing code that could contain hardcoded secrets, when seeing `401 Unauthorized` from `ggshield`, when a recursive scan hangs, and when investigating false positives via `# ggignore` or `.gitguardian.yaml`.
+description: Use when writing or editing code that handles credentials (API keys, tokens, database URLs, private keys, and 700+ other types), `.env` files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts. Use when the user asks to scan files, directories, git history, commits, Docker images, or PyPI packages for secrets. Use before committing or pushing.
 ---
 
 # ggshield — GitGuardian Secret Scanner
