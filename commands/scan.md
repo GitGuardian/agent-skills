@@ -1,4 +1,5 @@
 ---
+name: scan
 description: Scan for hardcoded secrets with ggshield (current files, git history, a specific path, a commit, or staged changes).
 argument-hint: [path | repo | history | staged | <file>]
 ---

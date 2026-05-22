@@ -1,4 +1,5 @@
 ---
+name: honeytoken
 description: Create a GitGuardian honeytoken (decoy AWS credentials that alert when used) — bare or wrapped in a realistic file.
 argument-hint: [--name <name>] [--description <text>] [--language <lang>] [-o <file>]
 ---
