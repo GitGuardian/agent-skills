@@ -17,11 +17,8 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 
 That's it. The skills auto-trigger when you write or edit code that handles credentials, or when you're about to publish something where a decoy would help. You can also invoke them explicitly:
 
-- `/gitguardian:scan` — scan the working tree
-- `/gitguardian:scan history` — audit the full git history
-- `/gitguardian:scan staged` — scan staged changes (pre-commit)
-- `/gitguardian:scan <path>` — scan a specific file or directory
-- `/gitguardian:honeytoken` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
+- `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
+- `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
 
@@ -99,9 +96,6 @@ skills/                               # one folder per skill — shared by Claud
     SKILL.md
     references/
       planting-strategy.md
-commands/                             # slash commands
-  scan.md                             # /gitguardian:scan
-  honeytoken.md                       # /gitguardian:honeytoken
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance

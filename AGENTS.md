@@ -26,9 +26,6 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md
     references/
       planting-strategy.md
-commands/                             # slash commands (Claude Code / Cursor)
-  scan.md                             # /gitguardian:scan
-  honeytoken.md                       # /gitguardian:honeytoken
 references/                           # shared cross-skill reference
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
@@ -42,12 +39,16 @@ LICENSE                               # MIT
 | [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
 
-## Commands
+## Slash commands
 
-| Command | Description |
+Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Claude Code) or the equivalent in Cursor. We do **not** ship a separate `commands/` directory; that's the legacy "flat .md as skill" pattern Anthropic now recommends against (see [Critical structural rules](#critical-structural-rules) below).
+
+| Slash invocation | Powered by |
 |---|---|
-| `/gitguardian:scan` | Run a scan: working tree, full history, staged changes, or a specific path |
-| `/gitguardian:honeytoken` | Generate a honeytoken (bare or context-wrapped), with planting-surface confirmation |
+| `/gitguardian:scan-secrets` | `skills/scan-secrets/SKILL.md` |
+| `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
+
+The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
 ## Commit attribution
 
@@ -78,7 +79,7 @@ Layer 3 is plumbing. It appears in each skill's `## Overview`, `## Commands`, an
 Concretely:
 
 - Skill folder is `scan-secrets/`, not `ggshield-scan-secrets/`. If we add API-backed scanning later, the same skill teaches both paths.
-- Slash command is `/gitguardian:scan`, not `/ggshield:scan`. The plugin namespace is the brand; the verb after `:` is the action; nothing in between says which tool runs it.
+- Slash command is `/gitguardian:scan-secrets`, not `/ggshield:scan-secrets`. The plugin namespace is the brand; the suffix after `:` is the skill name (which is the action); nothing in between says which tool runs it.
 - The plugin description is broad ("via ggshield, the Developer MCP server, and the GitGuardian API") so it doesn't lock us into one tool.
 - The `ggshield` keyword stays in `plugin.json` so users searching the marketplace for "ggshield" still find this plugin — discovery is a separate concern from naming.
 
@@ -161,9 +162,12 @@ Keep skill output platform-neutral. Emojis vary in support across the ~50 target
 
 ## Adding a slash command
 
-1. Create `commands/<verb>.md` with frontmatter `description:` and `argument-hint:` fields.
-2. Reference the relevant skill in the body — "Use the `<skill-name>` skill for full command reference, output interpretation, and remediation guidance."
-3. Update `README.md` slash-command bullet list.
+Every skill is automatically invokable as `/gitguardian:<skill-name>` — that's the slash command. **Do not** create a `commands/` directory or flat `commands/*.md` files; Anthropic now frames those as the legacy "skills as flat Markdown files" pattern and recommends `skills/<name>/SKILL.md` for all new work (see [Critical structural rules](#critical-structural-rules)).
+
+To add a new slash invocation:
+1. Add the skill (see [Adding a new skill](#adding-a-new-skill) above).
+2. Phrase the skill's frontmatter `description:` so it reads cleanly as a slash-dropdown label — lead with the action verb, then list the auto-trigger conditions. The same string serves both audiences: humans browsing the dropdown and the model deciding when to auto-invoke.
+3. Update the [Slash commands table](#slash-commands) above and the README's slash-command bullets to reference the new invocation.
 
 ## Adding to the shared `references/gitguardian-platform.md`
 
@@ -244,9 +248,9 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 
 | Surface | Where it lives | We ship? | What it does |
 |---|---|---|---|
-| `skills/<name>/SKILL.md` | plugin root | ✅ | Model-invoked skills (Claude triggers on description match) |
-| `commands/*.md` | plugin root | ✅ | Slash commands (`/gitguardian:scan`, `/gitguardian:honeytoken`) |
-| `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ (PR #11) | Auto-configure the GitGuardian Developer MCP server on install |
+| `skills/<name>/SKILL.md` | plugin root | ✅ | Model-invoked skills (Claude auto-triggers on description match). Each skill is also manually invokable as `/gitguardian:<skill-name>`. |
+| `commands/*.md` | plugin root | ❌ | Anthropic's legacy "skills as flat Markdown files" pattern. We deliberately don't ship a `commands/` directory — see [Critical structural rules](#critical-structural-rules). |
+| `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ | Auto-configure the GitGuardian Developer MCP server on install |
 | `assets/logo.png` | plugin root | ✅ (PR #12) | Marketplace card icon |
 | `rules/*.mdc` | plugin root | ❌ | Cursor's always-on coding rules (different concept from skills — rules apply even when no skill triggers). Worth adding if we want a Cursor-side always-on "never commit a detected secret" rule beyond what's already in each SKILL.md's Core rule. |
 | `agents/*.md` | plugin root | ❌ | Specialized subagents. No strong use case yet. |
@@ -258,8 +262,8 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 
 ### Critical structural rules
 
-- **Only `plugin.json` goes inside `.claude-plugin/` / `.cursor-plugin/`.** Every other directory (`skills/`, `commands/`, `agents/`, `hooks/`, `mcp.json`, `assets/`) must be at the plugin root, NOT nested inside the manifest folder. Cursor's `add-a-plugin.md` and Anthropic's `plugins.md` both call this out as a common mistake.
-- **`commands/` is documented as legacy framing in Claude docs** — they recommend `skills/<name>/SKILL.md` for new content. Our `commands/*.md` are slash commands (a different concept from skills); those are still appropriate.
+- **Only `plugin.json` goes inside `.claude-plugin/` / `.cursor-plugin/`.** Every other directory (`skills/`, `agents/`, `hooks/`, `assets/`) must be at the plugin root, NOT nested inside the manifest folder. Cursor's `add-a-plugin.md` and Anthropic's `plugins.md` both call this out as a common mistake.
+- **No `commands/` directory.** Anthropic's plugin docs frame `commands/*.md` as "skills as flat Markdown files" and explicitly recommend `skills/<name>/SKILL.md` for new content. Shipping both at once creates duplicate slash-dropdown entries for the same capability (the flat command and the skill both show up). The skill primitive is strictly more capable (supports `references/`, `disable-model-invocation`, `allowed-tools`, folder structure). We migrated away from `commands/` in `refactor/remove-legacy-commands-directory` — don't re-introduce it.
 - **`disable-model-invocation: true`** in a SKILL.md's YAML frontmatter is the canonical Claude Code field for hiding a skill from the initial agent metadata. Used by the router pattern (see Future scaling below). Documented in the Claude Code Quickstart — not vendor-specific.
 - **Filename matters for MCP config**: Cursor specifically looks for `mcp.json` (not `.mcp.json`). Both files contain the same content; we ship both so each agent finds its expected filename.
 - **Symlink `CLAUDE.md` → `AGENTS.md`** at the repo root. AGENTS.md is the cross-vendor name (agents.md spec); CLAUDE.md is what Claude Code reads for project instructions. One file, two entry points — recent Claude Code versions also fall back to AGENTS.md natively but the symlink makes the intent explicit and supports older versions.
