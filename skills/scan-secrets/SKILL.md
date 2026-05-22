@@ -45,6 +45,13 @@ If `api-status` errors or `ggshield --version` fails, jump to **Onboarding (firs
 
 ## Onboarding (first use)
 
+### Prerequisites
+
+- **`ggshield` 1.49.0 or later** — required for full feature support including the AI agent hooks (`ggshield install -t claude-code`, `-t cursor`, `-t copilot`). Older `ggshield` versions can scan but can't install agent hooks.
+- A **GitGuardian account** (free tier available at https://dashboard.gitguardian.com/signup).
+
+### Setup
+
 If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip this section.
 
 **Run every step below in a single session before declaring setup complete.** Each step assumes the previous one succeeded; pausing midway leaves the user unable to use the tool. A "not installed" or "logged out" state at the start of a step is exactly what that step is there to resolve — keep going through it.
