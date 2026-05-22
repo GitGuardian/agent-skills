@@ -1,11 +1,16 @@
 {
   "name": "ggshield",
+  "displayName": "ggshield by GitGuardian",
+  "version": "0.1.0",
   "description": "Catch hardcoded secrets in your code with ggshield, GitGuardian's open-source secret scanner.",
   "author": {
     "name": "GitGuardian",
+    "email": "support@gitguardian.com",
     "url": "https://www.gitguardian.com"
   },
   "homepage": "https://github.com/GitGuardian/ggshield",
   "repository": "https://github.com/GitGuardian/agent-skills",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": ["ggshield", "gitguardian", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"],
+  "logo": "assets/logo.png"
 }
