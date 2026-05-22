@@ -28,6 +28,8 @@ ggshield install -t claude-code -m global
 
 Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (global) or `.claude/settings.json` (local) — uninstall by removing the `ggshield` entries from that file.
 
+**MCP server (bundled).** The plugin also ships a `.mcp.json` at the repo root that registers the [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp). Claude Code picks it up automatically on install — you get tools for incident triage, honeytoken management, and live scans against the GitGuardian API from inside the agent. Requires [`uvx`](https://docs.astral.sh/uv/) on your PATH (Claude Code will spawn the server with `uvx --from git+https://github.com/GitGuardian/ggmcp.git developer-mcp-server`). First run opens a browser for OAuth against your GitGuardian instance; subsequent runs reuse the cached token. For EU SaaS or self-hosted, set `GITGUARDIAN_URL` in the MCP server config (see the [ggmcp README](https://github.com/GitGuardian/ggmcp#configuration-for-different-gitguardian-instances)).
+
 ### Cursor, Codex, Copilot, and 50+ other agents
 
 Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
@@ -86,6 +88,8 @@ Both skills handle first-time setup — they detect the user's package manager, 
 .cursor-plugin/                       # Cursor plugin manifest
   marketplace.json
   plugin.json
+.mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
+mcp.json                              # same, for Cursor
 skills/                               # one folder per skill — shared by Claude Code & Cursor
   scan-secrets/
     SKILL.md
