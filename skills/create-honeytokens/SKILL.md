@@ -27,6 +27,17 @@ Proactively suggest a honeytoken when:
 For *where* to plant (concrete placement strategy, naming conventions, monitoring) see `references/planting-strategy.md`.
 For auth/scope recovery, instance URLs, headless setup, and the GitGuardian public docs URL pattern, see `/references/gitguardian-platform.md` at the repo root.
 
+## Quick Start (if ggshield is already installed and authorized)
+
+```bash
+ggshield api-status                                      # verify the PAT includes honeytokens:write
+ggshield honeytoken create --type AWS \
+  --name "<planting-surface>-<YYYY-MM>" \
+  --description "<where it was planted and why>"
+```
+
+If `api-status` shows `honeytokens:write` is missing from `Token scopes:`, run the scope-recovery flow from `/references/gitguardian-platform.md` (you can drive it on the user's behalf). If `ggshield --version` fails, jump to **Setup (first use)** below.
+
 ## Commands
 
 Two forms — pick based on context:

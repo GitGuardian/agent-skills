@@ -33,6 +33,16 @@ For detailed command variants, expected JSON output shapes, and CI integration, 
 For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
 For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
 
+## Quick Start (if ggshield is already installed)
+
+```bash
+ggshield api-status                              # verify auth
+ggshield secret scan path -r -y . --json         # scan current files
+ggshield secret scan repo . --json               # audit full git history
+```
+
+If `api-status` errors or `ggshield --version` fails, jump to **Setup (first use)** below.
+
 ## Scan commands
 
 Always pass `--json` for structured output. Recursive scans (`-r`) trigger an interactive `Confirm recursive scan.` prompt — pair `-r` with `-y` whenever an agent invokes it, otherwise the CLI hangs waiting on stdin.
