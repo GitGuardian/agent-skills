@@ -112,6 +112,50 @@ kiro/                                 # Kiro power (separate format)
 
 A [GitGuardian account](https://dashboard.gitguardian.com/signup) — the free tier is enough to get started. The skill handles installing the CLI and authenticating it on first use.
 
+## Testing locally
+
+When hacking on this repo, you don't need to publish to test changes — every plugin host has a "load this local directory as a plugin" path:
+
+### Claude Code
+
+```bash
+claude --plugin-dir /path/to/agent-skills
+```
+
+The session loads this repo as the `gitguardian` plugin (shadowing any installed version for the duration of the session). Edit a `SKILL.md`, then `/reload-plugins` to pick up the change without restarting.
+
+### Codex
+
+```bash
+codex plugin marketplace add file:///path/to/agent-skills
+codex plugin install gitguardian
+```
+
+The repo's `.agents/plugins/marketplace.json` is picked up directly. Use `codex plugin disable gitguardian` to swap back to the published version.
+
+### Cursor
+
+```bash
+ln -s /path/to/agent-skills ~/.cursor/plugins/local/gitguardian
+```
+
+Restart Cursor (or reload the plugins surface) so it picks up the symlinked local copy.
+
+### Sanity tests
+
+A behavioral install-flow test lives at [`test/sanity.test.ts`](test/sanity.test.ts). It runs `npx skills add` against this repo into a temp directory and asserts every skill installs, has a `SKILL.md`, and the `--skill <name>` filter works.
+
+```bash
+npm install        # one-time, installs vitest + tsx
+npm run test:sanity
+```
+
+CI runs the same suite on every PR via `.github/workflows/sanity.yml`. The full validation chain in CI is:
+
+- `validate.yml` — JSON schema + frontmatter checks + `claude plugin validate .` + [`skills-ref validate`](https://agentskills.io/specification) (the canonical cross-vendor agent-skills spec validator)
+- `sanity.yml` — install-flow behavior (this file)
+- `ggshield.yml` — scans the repo itself for any accidental secret
+
 ## License
 
 MIT
