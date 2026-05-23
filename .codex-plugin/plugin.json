@@ -12,7 +12,7 @@
   "license": "MIT",
   "keywords": ["gitguardian", "ggshield", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.codex-mcp.json",
   "interface": {
     "displayName": "GitGuardian",
     "shortDescription": "Secret scanning, honeytoken creation, and incident triage for AI coding agents.",
@@ -20,6 +20,6 @@
     "developerName": "GitGuardian",
     "category": "security",
     "websiteURL": "https://www.gitguardian.com",
-    "logo": "assets/logo.png"
+    "logo": "./assets/logo.png"
   }
 }

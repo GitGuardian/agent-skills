@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Scan code for hardcoded secrets via the ggshield CLI — 700+ types (AWS keys, GitHub tokens, database URLs, JWTs, private keys, Stripe keys, and more) across files, directories, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing or editing code that handles credentials, `.env` files, CI/CD pipelines, GitHub Actions workflows, Dockerfiles, or deployment scripts, or when the user asks to scan or audit a repo, history, image, or package before committing or pushing.
+description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing.
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -102,14 +102,21 @@ If not installed, **detect what's already on the user's machine and use that** �
 - macOS: `.pkg` from https://github.com/GitGuardian/ggshield/releases
 - Windows: `.zip` from the releases page — unpack and add to `%PATH%`
 
-**4. If nothing above is available**, install `uv` (the lightest dependency, works on all platforms) and use it:
+**4. If nothing above is available**, install `uv` (the lightest dependency, works on all platforms) and use it. Unlike package-manager installs, this fetches a shell script at runtime, so do not pipe it directly to `sh`. Download it first, let the user inspect it or verify it against the checksum published in the uv install docs, then execute only after they confirm:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.bashrc
+# Step 1: download the installer without executing it
+curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
+
+# Step 2: ask the user to inspect /tmp/uv-install.sh or verify its checksum
+# against https://docs.astral.sh/uv/getting-started/installation/
+
+# Step 3: once the user confirms, execute and load uv onto PATH
+sh /tmp/uv-install.sh && . ~/.bashrc
 uv tool install ggshield
 ```
 
-(Replace `~/.bashrc` with the appropriate file for the user's shell, e.g. `~/.zshrc`.)
+(Replace `~/.bashrc` with the appropriate file for the user's shell, e.g. `~/.zshrc`.) If the user prefers not to run an unverified remote installer, fall back to a platform-native option from the tables above instead.
 
 If a chosen method fails for an unexpected reason (network restrictions, missing tap, externally-managed Python), fall through to the next available option rather than retrying the same one. Once installed, confirm with `which ggshield` (or `where ggshield` on Windows) that the binary lives on the user's normal PATH.
 

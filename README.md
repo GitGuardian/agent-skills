@@ -2,7 +2,7 @@
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
 
 ## Installation
 
@@ -32,14 +32,15 @@ Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (gl
 
 ### Codex
 
-Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin:
+Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin from the plugin browser:
 
 ```
 codex plugin marketplace add GitGuardian/agent-skills
-codex plugin install gitguardian
+codex
+/plugins
 ```
 
-Requires Codex CLI v0.117.0 or later (plugin system). The skills auto-trigger the same way they do in Claude Code; the bundled `.mcp.json` is picked up automatically.
+Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
 
 ### Cursor, Copilot, and 50+ other agents
 
@@ -103,9 +104,10 @@ Both skills handle first-time setup — they detect the user's package manager, 
   plugin.json
 .agents/plugins/                      # Codex repo-scoped marketplace
   marketplace.json
-.mcp.json                             # GitGuardian Developer MCP server config (Claude Code + Codex)
+.codex-mcp.json                       # GitGuardian Developer MCP server config (Codex)
+.mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
 mcp.json                              # same, for Cursor
-skills/                               # one folder per skill — shared by Claude Code & Cursor
+skills/                               # one folder per skill — shared by Claude Code, Codex & Cursor
   scan-secrets/
     SKILL.md
     references/                       # heavy reference, loaded on demand
