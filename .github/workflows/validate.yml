@@ -47,6 +47,42 @@ jobs:
           jq -e '.name and .owner.name and (.plugins | type == "array" and length > 0)' "$F" > /dev/null
           jq -e '.plugins | all(.name and .description and .source)' "$F" > /dev/null
 
+      - name: Check Codex plugin.json required fields
+        run: |
+          set -e
+          F=.codex-plugin/plugin.json
+          test -f "$F" || { echo "missing $F"; exit 1; }
+          jq -e '.name and .version and .description and .skills and .mcpServers and .interface.displayName' "$F" > /dev/null
+          jq -e '(.skills | startswith("./")) and (.mcpServers | startswith("./")) and (.interface.logo | startswith("./"))' "$F" > /dev/null
+
+      - name: Check Codex marketplace.json required fields
+        run: |
+          set -e
+          F=.agents/plugins/marketplace.json
+          test -f "$F" || { echo "missing $F"; exit 1; }
+          jq -e '.name and (.plugins | type == "array" and length > 0)' "$F" > /dev/null
+          jq -e '.plugins | all(.name and .source and .policy.installation and .policy.authentication and .category)' "$F" > /dev/null
+
+      - name: Check Codex MCP config shape
+        run: |
+          set -e
+          MCP="$(jq -r '.mcpServers' .codex-plugin/plugin.json)"
+          test -f "$MCP" || { echo "missing Codex MCP config $MCP"; exit 1; }
+          jq -e '
+            if has("mcp_servers") then
+              (.mcp_servers | type == "object")
+            elif has("mcpServers") then
+              false
+            else
+              (type == "object")
+            end
+          ' "$MCP" > /dev/null
+
+      - name: Check Codex docs do not use stale install command
+        run: |
+          set -e
+          ! grep -R "codex plugin install" README.md AGENTS.md
+
       - name: Check each skill has SKILL.md with frontmatter
         run: |
           set -e
