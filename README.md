@@ -152,7 +152,7 @@ npm run test:sanity
 
 CI runs the same suite on every PR via `.github/workflows/sanity.yml`. The full validation chain in CI is:
 
-- `validate.yml` — JSON schema + frontmatter + `claude plugin validate .`
+- `validate.yml` — JSON schema + frontmatter checks + `claude plugin validate .` + [`skills-ref validate`](https://agentskills.io/specification) (the canonical cross-vendor agent-skills spec validator)
 - `sanity.yml` — install-flow behavior (this file)
 - `ggshield.yml` — scans the repo itself for any accidental secret
 

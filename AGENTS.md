@@ -199,6 +199,15 @@ node scripts/validate-template.mjs
 
 We don't currently run Cursor's validator in CI; the manual jq checks in `validate.yml` cover most of the same shape, and Cursor's submission review will catch the rest.
 
+The canonical **cross-vendor** validator for the agent-skills spec is `skills-ref` from [agentskills/agentskills](https://github.com/agentskills/agentskills/tree/main/skills-ref). It is the spec author's reference implementation — it validates every constraint defined at https://agentskills.io/specification (strict YAML, name = parent dir, name format rules, description length, etc.). Install once, then run against any skill:
+
+```bash
+pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+for d in skills/*/; do skills-ref validate "$d"; done
+```
+
+Our CI runs this on every PR (see the `Validate every skill against the agent-skills spec` step in `validate.yml`). The strict-YAML check there catches things the shell-level `grep ^name:` checks miss — e.g., an unquoted colon in a description field, uppercase letters in `name:`, consecutive hyphens, or a name that doesn't match the parent directory.
+
 ### Install-flow sanity tests
 
 `test/sanity.test.ts` runs `npx skills add` against this repo into a temp directory and asserts every skill installs, has a `SKILL.md`, and the `--skill <name>` filter works. This is the behavioral half of validation — it catches manifest-vs-disk drift (a skill folder renamed without updating something, a `SKILL.md` deleted, a malformed frontmatter that schema checks let through). Schema checks alone don't catch these.
