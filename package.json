@@ -1,0 +1,18 @@
+{
+  "name": "gitguardian-agent-skills",
+  "version": "0.1.0",
+  "description": "Tooling-only package for testing the GitGuardian agent-skills plugin locally and in CI. Skill content lives in skills/ and is independent of this package.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:sanity": "vitest run test/sanity.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

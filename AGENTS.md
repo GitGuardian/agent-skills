@@ -15,7 +15,10 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 ```
 .claude-plugin/                       # Claude Code plugin metadata (marketplace.json, plugin.json)
 .cursor-plugin/                       # Cursor plugin metadata (same two files)
-.github/workflows/                    # CI: JSON validation, frontmatter checks
+.github/workflows/                    # CI: JSON validation, frontmatter checks, install-flow sanity
+package.json                          # tooling-only — vitest for the sanity test (no runtime deps)
+test/                                 # install-flow sanity tests (vitest)
+  sanity.test.ts
 skills/                               # one folder per skill — discovered by Claude/Cursor and skills.sh
   scan-secrets/                       #   skill folder name = SKILL.md frontmatter `name:`
     SKILL.md                          #   what the agent reads first
@@ -195,6 +198,19 @@ node scripts/validate-template.mjs
 ```
 
 We don't currently run Cursor's validator in CI; the manual jq checks in `validate.yml` cover most of the same shape, and Cursor's submission review will catch the rest.
+
+### Install-flow sanity tests
+
+`test/sanity.test.ts` runs `npx skills add` against this repo into a temp directory and asserts every skill installs, has a `SKILL.md`, and the `--skill <name>` filter works. This is the behavioral half of validation — it catches manifest-vs-disk drift (a skill folder renamed without updating something, a `SKILL.md` deleted, a malformed frontmatter that schema checks let through). Schema checks alone don't catch these.
+
+```bash
+npm install                # one-time
+npm run test:sanity        # ~2 seconds — runs vitest against test/sanity.test.ts
+```
+
+CI runs the same suite on every PR (`.github/workflows/sanity.yml`). It needs no GitGuardian account, no network beyond the npm registry, and no auth — just `npx --yes skills add` against a local path.
+
+The test auto-discovers skills (no hard-coded skill list), so it stays correct as we add new skills without per-skill maintenance.
 
 ### Local development without installing
 
