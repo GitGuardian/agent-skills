@@ -5,7 +5,8 @@
 
 ### Features
 
-* **scan-secrets:** add direct-download install tier with any HTTP tool ([#19](https://github.com/GitGuardian/agent-skills/issues/19)) ([760ef80](https://github.com/GitGuardian/agent-skills/commit/760ef809a1463d3c43c50fe62fc054c547ae265c))
+* extract `references/ggshield-cli-setup.md` so all skills share one CLI install/auth/headless flow instead of duplicating it ([#19](https://github.com/GitGuardian/agent-skills/issues/19)) ([760ef80](https://github.com/GitGuardian/agent-skills/commit/760ef809a1463d3c43c50fe62fc054c547ae265c))
+* **scan-secrets:** add a direct-download install tier with `gh release download` plus `curl` / `wget` / PowerShell fallbacks and per-OS artifacts (`.pkg`, `.deb`, `.rpm`, `.msi`, `.tar.gz`) for machines without a usable package manager ([#19](https://github.com/GitGuardian/agent-skills/issues/19)) ([760ef80](https://github.com/GitGuardian/agent-skills/commit/760ef809a1463d3c43c50fe62fc054c547ae265c))
 
 ## [0.1.1](https://github.com/GitGuardian/agent-skills/compare/v0.1.0...v0.1.1) (2026-05-23)
 
