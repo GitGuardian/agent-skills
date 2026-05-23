@@ -21,7 +21,7 @@ Start with:
 ggshield --version
 ```
 
-If it fails, detect what already exists on the user's machine. Do not install a new package manager just to use it as the install vehicle. Probe in this order and use the first manager that responds to a `--version` check. Exception: on Linux, if `apt` or `dnf` exists but the Cloudsmith repo is not already configured and the user wants to skip that setup, fall through to direct download.
+If it fails, detect what already exists on the user's machine. Prefer install paths that keep upgrades easy. Probe in this order and use the first suitable manager that responds to a `--version` check.
 
 ### 1. Platform-native package manager
 
@@ -32,9 +32,30 @@ If it fails, detect what already exists on the user's machine. Do not install a 
 | Linux Debian/Ubuntu | `apt --version` | Set up the Cloudsmith repo at https://cloudsmith.io/~gitguardian/repos/ggshield/setup/, then `apt install ggshield` |
 | Linux RHEL/Fedora | `dnf --version` | Set up the Cloudsmith repo at the same URL, rpm tab, then `dnf install ggshield` |
 
-### 2. Direct download from GitHub releases
+### 2. Python-based managers
 
-Use this when option 1 is unavailable, or when Linux package-manager setup adds friction the user wants to skip.
+| Probe | Install command | Notes |
+|---|---|---|
+| `uv --version` | `uv tool install ggshield` | Upgrade later with `uv tool upgrade ggshield` |
+| `pipx --version` | `pipx install ggshield` | Isolated environment |
+| `pip --version` | `pip install --user ggshield` | Last resort among existing Python tools. May fail on externally managed Python |
+
+### 3. Install uv if no existing manager works
+
+Use this before direct download when no existing package manager can install `ggshield`. `uv` is lightweight, cross-platform, and keeps future upgrades simple:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.bashrc
+uv tool install ggshield
+```
+
+Replace `~/.bashrc` with the user's shell file, such as `~/.zshrc`.
+
+### 4. Direct download from GitHub releases
+
+Use this only as the final fallback when package managers and Python-based managers are unavailable or fail.
+
+Before using direct download, tell the user: this path installs a release artifact directly and does not register an upstream package repository or tool-manager environment. Future upgrades require manually rerunning the download and install steps, so this has more maintenance friction than `brew`, `choco`, `apt`/`dnf` with Cloudsmith, `uv`, `pipx`, or `pip`.
 
 Pick the artifact by detecting OS and architecture with `uname -s`, `uname -m`, `/etc/os-release`, or `$Env:PROCESSOR_ARCHITECTURE` on PowerShell:
 
@@ -77,26 +98,7 @@ $asset = $latest.assets | Where-Object { $_.name -like "*$AssetSuffix" }
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile ggshield.msi
 ```
 
-Not supported by direct download: Linux ARM, Windows ARM, and Alpine/musl Linux. Fall through to Python-based managers.
-
-Direct download does not register an upstream package repository, so future upgrades require rerunning download and install. Prefer option 1 when the user wants auto-updates.
-
-### 3. Python-based managers
-
-| Probe | Install command | Notes |
-|---|---|---|
-| `uv --version` | `uv tool install ggshield` | Upgrade later with `uv tool upgrade ggshield` |
-| `pipx --version` | `pipx install ggshield` | Isolated environment |
-| `pip --version` | `pip install --user ggshield` | Last resort. May fail on externally managed Python |
-
-### 4. Install uv as the final fallback
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.bashrc
-uv tool install ggshield
-```
-
-Replace `~/.bashrc` with the user's shell file, such as `~/.zshrc`.
+Not supported by direct download: Linux ARM, Windows ARM, and Alpine/musl Linux. If direct download is unsupported, stop and ask the user how they want to proceed.
 
 After any install path, confirm the binary is on the normal PATH:
 
