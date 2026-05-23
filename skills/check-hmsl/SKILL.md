@@ -11,18 +11,64 @@ HMSL ([hasmysecretleaked.com](https://www.hasmysecretleaked.com/)) is GitGuardia
 
 This is the inverse of `scan-secrets`. `scan-secrets` finds *unknown* secrets in files you control. `check-hmsl` checks *known* secrets you already have against the public-leak corpus: a `.env` you inherited from a former teammate, a token someone pasted into Slack, a credential dump from a possibly-compromised system, or the full inventory of a secret manager.
 
-**Core rule:** never let raw credential values flow into agent transcripts, prompts, or tool outputs. Always read secrets from a file (or stdin redirect) — do not paste a credential into the chat to "have the agent check it." The whole point of HMSL is that plaintext stays local.
+**Core rule:** raw credential values must never enter the LLM context — not via the conversation, not via tool output, not via file reads, not via shell output. The only thing that leaves the user's machine is a short SHA-256 prefix (~5 hex chars) produced locally by `ggshield`. The agent's job is to invoke `ggshield hmsl` against a file path; `ggshield` opens, hashes, queries — the agent never sees plaintext.
+
+### How `ggshield hmsl` keeps plaintext local (the model behind the rules)
+
+`ggshield hmsl check <file>` performs roughly this dance, entirely on the user's machine until the underlined step:
+
+1. Read the file.
+2. SHA-256 each secret.
+3. Take the first ~5 hex chars of each hash → "payload" (`1c6f3`, `495e1`, …).
+4. <ins>Send the payload to HMSL.</ins> ← only this leaves the machine
+5. HMSL returns all known leaked hashes that share each prefix.
+6. Locally, compare the returned full hashes against the user's hashes. Matches = leaked secrets.
+7. Print results using the agent-chosen `--naming-strategy`:
+   - `-n key` (env-mode) or `-n censored` (text-mode default) → safe hint, e.g. `AKIA************MPLE`
+   - `-n none` → uses the SHA-256 as the label (also safe, one-way)
+   - `-n cleartext` → **echoes the secret verbatim**. Forbidden in agent contexts.
+
+The `hash` field in HMSL output is a one-way SHA-256 of the user's secret — safe to surface. The `url` field points to a public source (e.g., a leaked GitHub commit) — also safe; this is precisely the information the user wants.
+
+The multi-stage `fingerprint` / `query` / `decrypt` flow uses the *same* wire protocol (prefix-only); its sole added value is that it persists `payload.txt` (the prefixes about to be sent) and `mapping.txt` (the local hash-to-hint lookup) as files the user can inspect before stage 2. `mapping.txt` is local — but with `-n cleartext` it would contain plaintext, so the cleartext ban applies to the multi-stage flow too.
 
 ## Start Here — Read This Before Doing Anything
 
-**Do not skip this section.**
+**Do not skip this section.** Each of these rules closes a known leakage path. Violating any one of them defeats the privacy property HMSL exists to provide.
 
-- **Never paste a raw secret into the conversation.** The user must put credentials in a file (or pipe them via stdin from a tool the user controls). The agent invokes `ggshield hmsl check <path>` against that file. If the user offers a secret inline, refuse and redirect: *"Drop it in a file and tell me the path — that way the value never enters the transcript."*
-- **Use `--naming-strategy key`** (the default) or `censored` for outputs. Never use `cleartext` — it would surface the secret in the agent's output. The `key` strategy emits the variable name (e.g., `AWS_SECRET_KEY`) as the hint; `censored` shows the first/last characters only.
+- **Never paste a raw secret into the conversation.** If the user offers a secret inline ("check `ghp_abc123…`"), refuse and redirect: *"Put it in a file and give me the path — that way the value never enters the transcript."* The conversation is part of the LLM context; anything pasted into it has already leaked.
+- **Never `Read`, `cat`, `head`, `tail`, `grep`, or otherwise display the credential file's contents.** The file is passed to `ggshield hmsl check <path>` as a **path**, not as content. `ggshield` reads and hashes locally — the agent must not. If you need to confirm the file exists or check its shape, use `ls -l <path>` (size + mode, never contents) or `wc -l <path>` (line count). Opening the file with any tool that produces text output puts plaintext into the agent's tool output, which is part of the LLM context. **This is the most common foot-gun.**
+- **Never pipe the credential file through anything that surfaces it.** No `cat secrets.txt | …`, no `echo $TOKEN | …`. If the user wants stdin-style invocation, hand them the command — let them run it in their own shell — and parse the resulting output (which contains only hashes and hints).
+- **`--naming-strategy cleartext` is forbidden in agent contexts.** It would echo each matched secret's plaintext into `ggshield`'s stdout, which becomes tool output, which becomes LLM context. The default `-n key` (variable name only) or `-n censored` (first + last few chars) is mandatory. `-n none` is also safe when even hints feel risky.
 - **Always pass `--json`** in agent contexts for parseable output.
-- **For sensitive secrets, use the multi-stage `fingerprint` / `query` / `decrypt` flow** instead of one-shot `check`. The multi-stage form keeps the plaintext on the user's machine and only sends hash prefixes to HMSL; the one-shot `check` form also hashes locally, but the fingerprint/query/decrypt split makes the privacy posture explicit and lets the user review hashes before sending.
-- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield hmsl api-status` errors, walk through **Onboarding (first use)** below before attempting any HMSL command.
+- **For sensitive bulk audits, prefer the multi-stage `fingerprint` / `query` / `decrypt` flow** to one-shot `check`. Both use the same wire protocol (prefix-only); multi-stage adds a chance to inspect `payload.txt` (what's about to be sent) before stage 2 and `mapping.txt` (local hint lookup) after. Use one-shot for small ad-hoc checks; multi-stage when the user wants to see what leaves their machine.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield hmsl api-status` errors, walk through **Onboarding (first use)** below before attempting any HMSL command. **Do not improvise an alternate check** (e.g., grepping a public-leak database manually, computing your own hashes, sending the secret to a different service). `ggshield hmsl` is the only sanctioned path.
 - **Quota matters.** HMSL has a daily credit quota (`ggshield hmsl quota` shows current). One file = one query bundle; large inventories may consume significant credits. Surface the remaining quota before launching bulk checks.
+
+### Foot-gun: file-read leakage
+
+The most likely failure mode is the agent "helpfully" opening the credential file before invoking `ggshield`. Concrete bad path:
+
+```
+User: "Check secrets.txt against HMSL"
+Agent: <Read secrets.txt>          ← plaintext now in tool output → LLM context
+Agent: <Bash: ggshield hmsl check secrets.txt --json>
+```
+
+The first step is the leak. By the time `ggshield` runs, the secrets have already entered the LLM's view, which is exactly what HMSL's local-hashing protocol exists to prevent. The correct path is:
+
+```
+User: "Check secrets.txt against HMSL"
+Agent: <Bash: ls -l secrets.txt>   ← optional: confirm file exists (no contents)
+Agent: <Bash: ggshield hmsl check secrets.txt --json -n key>
+Agent: <parses JSON, reports matches by hint/line — never by value>
+```
+
+If the user asks you to "show me what's in the file" before checking — refuse and explain why. The file's contents are precisely what we're trying to keep out of the LLM context.
+
+### Defense in depth
+
+The skill rules above are the first line of defense. The second is `ggshield`'s Claude Code / Cursor / Copilot agent hooks (`ggshield install -t claude-code -m global`), which scan the agent's prompts, tool calls, and tool outputs for detected secrets and block before they reach the model. Strongly recommend installing the hook on any machine where this skill will be used — see the `scan-secrets` skill's hook-install instructions, or the README's *Install secret-scanning hooks* prompts.
 
 ## When to Use
 
@@ -94,20 +140,20 @@ ggshield hmsl check secrets.txt --json -n none       # no hint, fully anonymous
 
 ### Multi-stage privacy-preserving check
 
-Use when the user is uncomfortable with even hash prefixes leaving their machine in one step, or wants to review what's being sent before sending. Three commands, two intermediate files:
+Same wire protocol as `check` (prefix-only), but split into three commands so the user can audit what's about to leave the machine. Two intermediate files:
 
 ```bash
-# Stage 1: compute hashes locally — produces payload.txt + mapping.txt
+# Stage 1: hash locally — produces payload.txt (hash prefixes) + mapping.txt (local hint lookup)
 ggshield hmsl fingerprint secrets.txt
 
-# Stage 2: send hash prefixes to HMSL — produces encrypted_matches.txt
+# Stage 2: send the prefixes — produces encrypted_matches.txt
 ggshield hmsl query payload.txt > encrypted_matches.txt
 
 # Stage 3: decrypt locally using the mapping — final human-readable output
 ggshield hmsl decrypt encrypted_matches.txt --mapping mapping.txt --json
 ```
 
-This flow gives the user a chance to inspect `payload.txt` (just hash prefixes, no plaintext) before stage 2.
+Between stage 1 and stage 2, the user (not the agent — see file-read rule) can inspect `payload.txt` to see exactly what's about to be sent: short hex prefixes only, e.g. `1c6f3` / `495e1`. **Do not inspect `mapping.txt`** — it contains the `<hash>:<hint>` table, which is safe with the default `-n key`/`censored` strategy but would contain plaintext if `-n cleartext` was passed to `fingerprint`. The agent must not open `mapping.txt` at all; let `decrypt` consume it.
 
 ### Audit a secret manager
 
