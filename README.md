@@ -97,7 +97,7 @@ Run an HMSL check on this list of API keys
 Show me which of these credentials have appeared in public leaks
 ```
 
-The scan-secrets and create-honeytokens skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented once in [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md). Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Repository layout
 
@@ -122,6 +122,9 @@ skills/                               # one folder per skill — shared by Claud
       planting-strategy.md
   check-hmsl/
     SKILL.md
+references/                           # shared cross-skill references
+  ggshield-cli-setup.md               # install/auth/headless setup for ggshield
+  gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
@@ -132,7 +135,7 @@ kiro/                                 # Kiro power (separate format)
 
 ## Requirements
 
-A [GitGuardian account](https://dashboard.gitguardian.com/signup) — the free tier is enough to get started. The skill handles installing the CLI and authenticating it on first use.
+A [GitGuardian account](https://dashboard.gitguardian.com/signup) — the free tier is enough to get started. The shared setup reference handles installing the CLI and authenticating it on first use.
 
 ## Testing locally
 

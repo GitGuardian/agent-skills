@@ -18,7 +18,7 @@ description: Scan code for hardcoded secrets via the ggshield CLI — 700+ types
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
-- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, walk through **Onboarding (first use)** below before attempting any scan. Every command in the reference is useless until the CLI is installed and authenticated.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow `/references/ggshield-cli-setup.md` before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per `references/remediation.md` — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
 
 ## When to Use
@@ -41,6 +41,7 @@ What `ggshield` covers:
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
 For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
+For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
 For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
 
 ## Onboarding (first use)
@@ -52,160 +53,16 @@ For platform-wide topics that span every GitGuardian skill (public docs URL patt
 
 ### Setup
 
-If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip this section.
+If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip shared setup. Otherwise follow `/references/ggshield-cli-setup.md` and return here once both checks pass.
 
-**Run every step below in a single session before declaring setup complete.** Each step assumes the previous one succeeded; pausing midway leaves the user unable to use the tool. A "not installed" or "logged out" state at the start of a step is exactly what that step is there to resolve — keep going through it.
-
-Pause only when:
-
-- A command must run in the user's own terminal (the browser-opening `ggshield auth login`) — surface the command, explain it, and resume once the user confirms it succeeded.
-- The documented fallbacks for a step are all exhausted and progress requires user input.
-
-Step 2 ends with the `ggshield api-status` verification. Reach that point before reporting setup is complete.
-
-**Before installing anything — brief the user on what the skill enables.** This skill runs on the `ggshield` CLI, which needs to be installed and authenticated against the user's GitGuardian account before any scan can run. Tell the user the next two steps install and authenticate `ggshield` on their behalf:
+Before installing anything, briefly tell the user what this skill enables:
 
 - Scan code for hardcoded secrets — automatically when handling credentials, or on request for a specific file or directory.
 - Audit a repository's git history, a commit range, a single commit, a Docker image, or a PyPI package for leaked secrets.
 - Block secrets *before they are written* by installing the Claude Code agent hook (`ggshield install -t claude-code -m global`), which scans prompts, tool calls, and tool outputs from inside Claude Code. Also supports git hooks (`ggshield install --mode local`) and ad-hoc scans of staged changes (`scan pre-commit`).
 - Manage false positives via inline `# ggignore` comments or `.gitguardian.yaml` rules.
 
-Keep the brief tight; the detailed command reference is for the agent to consult, not for the user to read. Once the user has the picture, proceed to Step 1.
-
-### Step 1 — Check / install ggshield
-
-```bash
-ggshield --version
-```
-
-If not installed, **detect what's already on the user's machine and use that** — don't install a new package manager just to use it as the install vehicle. Probe in this order, and use the first manager that responds to a `--version` check. Exception: on Linux, if `apt` or `dnf` exists but the Cloudsmith repo is not already configured and the user wants to skip that setup, fall through to option 2.
-
-**1. The user's platform-native package manager:**
-
-| Platform | Command to probe | Install command |
-|---|---|---|
-| macOS | `brew --version` | `brew install ggshield` |
-| Windows | `choco --version` | `choco install ggshield` |
-| Linux (Debian/Ubuntu) | `apt --version` | Set up the Cloudsmith repo at https://cloudsmith.io/~gitguardian/repos/ggshield/setup/, then `apt install ggshield` |
-| Linux (RHEL/Fedora) | `dnf --version` | Set up the Cloudsmith repo at the same URL (rpm tab), then `dnf install ggshield` |
-
-**2. Direct download from GitHub releases** (do what the user would do manually — pick the right artifact, download it with whatever HTTP tool is on hand, install via the platform-native installer):
-
-Use this tier when option 1's package manager isn't installed, or when its setup adds friction the user wants to skip (the Cloudsmith repo on Linux is the common case — that's a one-time setup the user may not want to do just for one binary).
-
-**Pick the artifact** by detecting the OS and architecture (`uname -s` / `uname -m` on Unix shells; `$Env:PROCESSOR_ARCHITECTURE` on PowerShell; `/etc/os-release` for Linux distro family):
-
-| OS / arch | Artifact (`<v>` = latest version) | Install command after download |
-|---|---|---|
-| macOS Apple Silicon (`Darwin arm64`) | `ggshield-<v>-arm64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
-| macOS Intel (`Darwin x86_64`) | `ggshield-<v>-x86_64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
-| Debian/Ubuntu (`Linux x86_64`, `apt --version` works) | `ggshield_<v>-1_amd64.deb` | `sudo apt install ./<file>.deb` |
-| RHEL/Fedora (`Linux x86_64`, `dnf --version` works) | `ggshield-<v>-1.x86_64.rpm` | `sudo dnf install <file>.rpm` |
-| Windows x86_64 | `ggshield-<v>-x86_64-pc-windows-msvc.msi` | `msiexec /i <file>.msi /quiet` (or run interactively) |
-| Other glibc-based Linux x86_64 (Arch, openSUSE, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` (ensure `~/.local/bin` is on `$PATH`) |
-
-**Download with whatever HTTP tool is available**, probing in this priority order:
-
-1. **`gh`** (cleanest — auto-resolves latest version, no API parsing). Probe with `gh --version && gh auth status`:
-   ```bash
-   ASSET_SUFFIX="<artifact-suffix-from-table>"
-   gh release download --repo GitGuardian/ggshield --pattern "*${ASSET_SUFFIX}"
-   ```
-2. **`curl`** (universal on macOS, Linux, and Windows 10+). Discover the latest version's asset URL via the GitHub API, then download:
-   ```bash
-   ASSET_SUFFIX="<artifact-suffix-from-table>"
-   url=$(curl -sL https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
-         | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_SUFFIX}\"" \
-         | cut -d'"' -f4)
-   curl -LO "$url"
-   ```
-3. **`wget`** (Linux fallback when `curl` is absent — rare on modern distros):
-   ```bash
-   ASSET_SUFFIX="<artifact-suffix-from-table>"
-   url=$(wget -qO- https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
-         | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_SUFFIX}\"" \
-         | cut -d'"' -f4)
-   wget "$url"
-   ```
-4. **PowerShell `Invoke-WebRequest`** (Windows fallback when `gh` and `curl` aren't on PATH):
-   ```powershell
-   $AssetSuffix = '<artifact-suffix-from-table>'
-   $latest = Invoke-RestMethod https://api.github.com/repos/GitGuardian/ggshield/releases/latest
-   $asset = $latest.assets | Where-Object { $_.name -like "*$AssetSuffix" }
-   Invoke-WebRequest -Uri $asset.browser_download_url -OutFile ggshield.msi
-   ```
-
-If none of `gh`, `curl`, `wget`, or `Invoke-WebRequest` are available, fall through to option 3.
-
-**Not supported by this tier:** Linux ARM (no published binary), Windows ARM (no published binary), and Alpine/musl Linux (the published Linux tarball targets GNU/glibc). Fall through to option 3 for those.
-
-**No auto-update.** This tier installs the artifact directly without registering an upstream package-manager repo (because we deliberately skipped Cloudsmith / brew / choco etc. in this tier). Future ggshield versions require re-running the download + install. If the user wants auto-updates, prefer option 1 (which does register the upstream repo).
-
-**3. Cross-platform Python-based managers** (use whichever the user already has):
-
-| Probe | Install command | Notes |
-|---|---|---|
-| `uv --version` | `uv tool install ggshield` | Upgrade later with `uv tool upgrade ggshield` |
-| `pipx --version` | `pipx install ggshield` | Isolated environment |
-| `pip --version` | `pip install --user ggshield` | Last resort. May fail on externally-managed Python (Debian 12+, recent Ubuntu, modern Fedora) |
-
-**4. If nothing above is available**, install `uv` (the lightest dependency, works on all platforms) and use it:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.bashrc
-uv tool install ggshield
-```
-
-(Replace `~/.bashrc` with the appropriate file for the user's shell, e.g. `~/.zshrc`.)
-
-If a chosen method fails for an unexpected reason (network restrictions, missing tap, externally-managed Python), fall through to the next available option rather than retrying the same one. Once installed, confirm with `which ggshield` (or `where ggshield` on Windows) that the binary lives on the user's normal PATH.
-
-### Step 2 — Authenticate and verify
-
-This step has two parts: hand the user the auth command (the only manual action they need to take), and verify the CLI is authenticated.
-
-**2a — Give the user the `ggshield auth login` command.** Present the command with the GitGuardian instance options inline. By default (no flag), it targets SaaS US:
-
-```bash
-# SaaS US — default
-ggshield auth login
-
-# SaaS EU — pass the EU dashboard URL
-ggshield auth login --instance https://dashboard.eu1.gitguardian.com
-
-# Self-hosted GitGuardian — pass the user's own instance URL
-ggshield auth login --instance https://<their-instance-url>
-```
-
-Tell the user the command opens a browser to authorize their workstation, and ask them to confirm once it succeeds.
-
-**2b — Verify the CLI is authenticated.** Once the user confirms `ggshield auth login` succeeded, run:
-
-```bash
-ggshield api-status
-```
-
-A successful response confirms the credentials are stored locally and the API is reachable.
-
-### Headless / non-interactive environments (no browser)
-
-When `ggshield auth login` can't open a browser (remote SSH, sandboxed dev container), use `--method token` instead. The user creates a Personal Access Token at https://dashboard.gitguardian.com/api/personal-access-tokens (or their instance's equivalent) with the `scan` scope, then runs:
-
-```bash
-# SaaS US — default
-ggshield auth login --method token
-
-# SaaS EU or self-hosted — pass the instance URL
-ggshield auth login --method token --instance https://dashboard.eu1.gitguardian.com
-```
-
-`ggshield` prompts for the token on stdin and stores it in the same local config the OAuth flow uses — no `GITGUARDIAN_API_KEY` export and no shell-profile edit needed. Verify with:
-
-```bash
-ggshield api-status
-```
-
-For CI pipelines (stateless jobs without a persistent home directory), skip the login step and set `GITGUARDIAN_API_KEY` as a pipeline secret instead — `ggshield` reads it directly.
+Keep the brief tight; the detailed setup reference is for the agent to consult, not for the user to read.
 
 ## Scan commands
 

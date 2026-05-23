@@ -34,6 +34,7 @@ skills/                               # one folder per skill — discovered by C
   check-hmsl/
     SKILL.md
 references/                           # shared cross-skill reference
+  ggshield-cli-setup.md               # install/auth/headless setup for ggshield
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
 LICENSE                               # MIT
@@ -104,7 +105,7 @@ Anything past ~150 lines, anything heavily detailed (alert response, planting st
 
 ### Cross-skill content goes in repo-root `references/`
 
-Topics that apply to multiple skills — public docs URL pattern, auth/scope recovery, instance URLs, headless setup — live in `references/gitguardian-platform.md` at the repo root, not duplicated per skill. Each SKILL.md points at it with one line.
+Topics that apply to multiple skills live in repo-root `references/`, not duplicated per skill. Use `references/ggshield-cli-setup.md` for shared CLI install/auth/headless setup, and `references/gitguardian-platform.md` for public docs URL pattern, auth/scope recovery, instance URLs, and platform concepts. Each SKILL.md points at the relevant shared reference with one line.
 
 ### SKILL.md section order
 
@@ -178,9 +179,9 @@ To add a new slash invocation:
 2. Phrase the skill's frontmatter `description:` so it reads cleanly as a slash-dropdown label — lead with the action verb, then list the auto-trigger conditions. The same string serves both audiences: humans browsing the dropdown and the model deciding when to auto-invoke.
 3. Update the [Slash commands table](#slash-commands) above and the README's slash-command bullets to reference the new invocation.
 
-## Adding to the shared `references/gitguardian-platform.md`
+## Adding to shared root references
 
-Add a top-level section if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`.
+Add or update a repo-root reference if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`. Use `references/ggshield-cli-setup.md` for shared CLI setup and `references/gitguardian-platform.md` for GitGuardian platform concepts.
 
 ## Versioning
 
