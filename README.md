@@ -19,6 +19,7 @@ You then have access to 2 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
+- `/gitguardian:check-hmsl` — check whether a *known* credential has been seen leaking publicly via HasMySecretLeaked
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
 
@@ -88,7 +89,15 @@ Install ggshield as a pre-push hook for this repo
 Set up the strongest secret-scanning coverage on this machine
 ```
 
-Both skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+**Check whether a known credential has been leaked publicly** — looks up a credential (or a whole file / vault inventory) against GitGuardian's public-leak database via HasMySecretLeaked. Plaintext never leaves the machine — only hash prefixes go over the wire. The inverse of *Scan for secrets*: that finds unknown secrets in code; this checks known secrets against the public-leak corpus.
+
+```
+I inherited a .env from a former teammate — check if any of these are compromised
+Run an HMSL check on this list of API keys
+Show me which of these credentials have appeared in public leaks
+```
+
+The scan-secrets and create-honeytokens skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Repository layout
 
@@ -111,6 +120,8 @@ skills/                               # one folder per skill — shared by Claud
     SKILL.md
     references/
       planting-strategy.md
+  check-hmsl/
+    SKILL.md
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
