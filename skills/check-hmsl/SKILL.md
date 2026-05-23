@@ -1,6 +1,6 @@
 ---
 name: check-hmsl
-description: Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service against GitGuardian's database of secrets harvested from public GitHub, gists, Docker Hub, and other public sources. Use when the user inherits credentials from a teammate, suspects a specific token may have leaked, wants to vet a secret-manager (HashiCorp Vault) inventory against public leaks, or asks "has this secret been leaked / is this credential compromised / check this against HMSL". Distinct from `scan-secrets`: that finds *unknown* secrets in code; this checks *known* secrets against the public-leak database.
+description: Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service against GitGuardian's database of secrets harvested from public GitHub, gists, Docker Hub, and other public sources. Use when the user inherits credentials from a teammate, suspects a specific token may have leaked, wants to vet a secret-manager (HashiCorp Vault) inventory against public leaks, or asks "has this secret been leaked / is this credential compromised / check this against HMSL". Distinct from `scan-secrets` — that finds *unknown* secrets in code; this checks *known* secrets against the public-leak database.
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)
