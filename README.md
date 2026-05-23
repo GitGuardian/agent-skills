@@ -77,6 +77,17 @@ Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
+**Install secret-scanning hooks** — wires `ggshield` into your editor and git workflow so secrets are caught before they reach a commit. The agent picks the right hook type (`claude-code`, `cursor`, `copilot`, `pre-commit`, `pre-push`) and scope (`global` for every project on this machine, `local` for the current repo) based on what you ask.
+
+```
+Install the ggshield hook for Claude Code
+Set up ggshield in Cursor so it scans my prompts and tool calls
+Wire up ggshield in VS Code with Copilot
+Add a pre-commit hook to block secrets before commit
+Install ggshield as a pre-push hook for this repo
+Set up the strongest secret-scanning coverage on this machine
+```
+
 Both skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Repository layout
