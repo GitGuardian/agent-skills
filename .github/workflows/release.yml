@@ -1,0 +1,41 @@
+name: release
+
+# Release Please automation.
+#
+# Every push to `main` runs this workflow. The action scans Conventional
+# Commit messages since the last release, infers the next semver bump,
+# and opens (or updates) a single "chore: release vX.Y.Z" PR that
+# contains:
+#   - version bumps in every JSON file listed in `release-please-config.json`
+#   - a CHANGELOG.md entry generated from the commits
+#
+# Reviewing and merging that release PR triggers this workflow again;
+# this second run sees the just-merged version bump, creates a `vX.Y.Z`
+# git tag, and publishes a GitHub Release with the changelog as notes.
+#
+# Auth note: we use the default `GITHUB_TOKEN`. The release PR will be
+# authored by `github-actions[bot]`, which means CI does not run on it
+# automatically (GitHub's safety against workflow loops). To trigger CI
+# on a release PR, push an empty commit (`git commit --allow-empty -m
+# "chore: trigger CI"`) or run the workflow manually from the Actions
+# tab. If release cadence grows, switch to a GitHub App or PAT.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
