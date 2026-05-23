@@ -19,6 +19,7 @@ That's it. The skills auto-trigger when you write or edit code that handles cred
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
+- `/gitguardian:scan-machine` — sweep the entire developer machine for credentials outside version control (dotfiles, `~/.aws`, shell history, AI agent caches). Requires GitGuardian Growth tier or higher
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
 
@@ -77,7 +78,17 @@ Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
-Both skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+**Sweep the whole machine for credentials outside git** — scans dotfiles, shell history, `~/.aws`, `~/.kube`, AI agent caches, browser profiles, and abandoned project trees for credentials that never made it into a repository. Distinct from the repo-scan use case: this is for *the laptop itself*. **Requires a paid GitGuardian plan (Growth tier or higher) — endpoint scanning is not on the Free tier.**
+
+```
+Audit my whole machine for credentials before I wipe it
+Scan my home folder for AWS keys and SSH credentials
+What credentials am I sitting on outside git?
+Inventory the secrets on this laptop before I hand it back
+Check ~/.aws, ~/.kube and my shell history for live tokens
+```
+
+The first two skills handle first-time setup — they detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Repository layout
 
@@ -100,6 +111,8 @@ skills/                               # one folder per skill — shared by Claud
     SKILL.md
     references/
       planting-strategy.md
+  scan-machine/
+    SKILL.md
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance

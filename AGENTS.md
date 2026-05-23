@@ -26,6 +26,8 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md
     references/
       planting-strategy.md
+  scan-machine/
+    SKILL.md
 references/                           # shared cross-skill reference
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
@@ -38,6 +40,7 @@ LICENSE                               # MIT
 |---|---|
 | [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
+| [`scan-machine`](skills/scan-machine/SKILL.md) | Sweep the entire developer machine for credentials lying outside version control — dotfiles, cloud CLI configs, shell history, AI agent caches, abandoned project trees. **Requires GitGuardian Growth tier or higher** (endpoint scanning is gated server-side; not available on Free). |
 
 ## Slash commands
 
@@ -47,6 +50,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 |---|---|
 | `/gitguardian:scan-secrets` | `skills/scan-secrets/SKILL.md` |
 | `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
+| `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
@@ -87,7 +91,7 @@ When in doubt, ask: *would this name still be right if we swapped the underlying
 
 ### Skill folder naming
 
-**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, future `scan-machine`, `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
+**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, `scan-machine`, future `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
 
 ### Long-form content goes under `references/`
 
