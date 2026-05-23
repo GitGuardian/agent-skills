@@ -11,7 +11,12 @@ description: Sweep a developer's entire machine for credentials lying around out
 
 This is distinct from `secret scan` (which targets a specific path, repo, image, or package). Machine scan is for *the machine itself*: "what credentials am I sitting on that aren't tracked in git anywhere?" GitGuardian positions it as **endpoint protection** — typically rolled out across a fleet via MDM (Intune, Jamf), but also runnable ad-hoc by an individual developer whose workspace has it enabled.
 
-**Plan requirement:** `ggshield machine scan` is gated server-side. It requires a GitGuardian workspace on the **Growth tier or higher** (paid). On the Free tier, the binary is installed but the command will fail with a permissions error from the API. Confirm the user's plan before walking them through a scan — if they're on Free, redirect them to `scan-secrets` (which works on Free for individual repos) and mention that machine scan is a paid endpoint-protection feature.
+**Two things have to be set up before `ggshield machine scan` runs at all:**
+
+1. **A paid GitGuardian plan** (Growth tier or higher). Endpoint scanning is gated server-side; on Free, the plugin install will fail.
+2. **The `machine_scan` plugin**, installed and enabled. Machine scan is not built into the base `ggshield` binary — it ships as a separate plugin that has to be installed via `ggshield plugin install` and enabled via `ggshield plugin enable machine_scan`. A fresh `ggshield` install does **not** include it. Until the plugin is enabled, `ggshield machine scan` will exit with "command not found" or a similar error.
+
+Confirm both prerequisites *before* walking the user through a scan. If they're on Free, redirect them to `scan-secrets` (which works on Free for individual repos) and mention that machine scan is a paid endpoint-protection feature.
 
 **Core rule:** confirm with the user *before* running. Machine scans inspect every file in `$HOME` including shell history and AI agent caches; that's invasive even when legitimate. State what will happen, ask once, then proceed.
 
@@ -20,6 +25,7 @@ This is distinct from `secret scan` (which targets a specific path, repo, image,
 **Do not skip this section.**
 
 - **Confirm the user is on a paid GitGuardian plan first.** Machine scan is gated to **Growth tier or higher** — it will not work on Free. If the user can't confirm they're on a paid plan, do not run the scan; redirect to `scan-secrets` (which covers individual repos on Free) and explain that endpoint scanning is a paid GitGuardian capability.
+- **Confirm the `machine_scan` plugin is installed and enabled.** Run `ggshield plugin list` *before* the first `ggshield machine scan` and look for `machine_scan` marked as enabled. If it isn't present or isn't enabled, run the **Setup → Step 3** flow below (install the plugin, then `ggshield plugin enable machine_scan`). Skipping this is the most common cause of `ggshield machine: command not found`.
 - **Confirm the scope with the user before launching.** Tell them which `--mode` you're about to use and why. `quick` (credentials-only) is the safe default; `standard` and `full` walk the entire home directory and may take many minutes.
 - **Do not run machine scans silently in the background.** They are long-running, produce large output, and may surface very personal credentials (browser saves, SSH keys). The user should be in front of the keyboard when this runs.
 - **Always pair `-f json` with `--show-findings`** in agent contexts. The default output is summary stats only (counts) — useless for the agent. `--show-findings` reveals individual findings; `-f json` makes them parseable.
@@ -52,30 +58,69 @@ What `ggshield machine` covers:
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
 For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation.md` applies — a found credential is a found credential regardless of which scanner found it.
 
-## Quick Start (if ggshield is already installed and authorized)
+## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
 
 ```bash
+ggshield plugin list | grep machine_scan                         # confirm plugin enabled
 ggshield api-status                                              # verify CLI is authenticated
 ggshield machine scan --mode quick -f json --show-findings       # safe default — credentials-only
 ```
 
-If `ggshield --version` fails, jump to **Onboarding (first use)** below.
+If `ggshield plugin list` doesn't show `machine_scan`, or `ggshield --version` fails, jump to **Onboarding (first use)** below.
 
 ## Onboarding (first use)
 
 ### Prerequisites
 
-- **GitGuardian plan: Growth tier or higher.** Endpoint scanning is gated server-side. On the Free tier the binary is installed but `ggshield machine scan` will fail with a permissions error from the API. Confirm before proceeding.
-- **`ggshield` 1.49.0 or later** — machine scan was introduced in this release.
-- For fleet rollouts (security teams managing endpoints across an org), deployment is typically handled via **MDM** (Intune, Jamf) — `ggshield` rolled out to managed endpoints with the auth config baked in. The skill below covers ad-hoc invocations by a developer with a paid workspace; fleet deployment is out of scope.
+- **GitGuardian plan: Growth tier or higher.** Endpoint scanning is gated server-side. On the Free tier the plugin install (and the scan command) will fail. Confirm before proceeding.
+- **`ggshield` 1.45.0 or later** — minimum version that supports the plugin system. (For agent hooks via `ggshield install -t claude-code`, the floor is 1.49.0, but that's a separate skill — `scan-secrets`.)
+- For fleet rollouts (security teams managing endpoints across an org), deployment is typically handled via **MDM** (Intune, Jamf) — `ggshield` and the plugin rolled out to managed endpoints with the auth config baked in. The skill below covers ad-hoc invocations by a developer with a paid workspace; fleet deployment is out of scope.
 
 ### Setup
 
-`scan-machine` reuses the same `ggshield` install and `auth login` flow as `scan-secrets`. If `ggshield --version` fails or `ggshield api-status` errors, follow the full **Onboarding (first use)** section in the `scan-secrets` skill — detect the user's package manager, install `ggshield`, run `ggshield auth login`. Return here once `ggshield api-status` reports OK.
+There are three things to set up in order: the `ggshield` binary, authentication, and the `machine_scan` plugin. Steps 1 and 2 are exactly the same as for `scan-secrets`. Step 3 is specific to this skill.
+
+#### Step 1 — Install or upgrade `ggshield` to 1.45.0+
+
+If `ggshield --version` fails or returns < 1.45.0, follow the full **Onboarding → Step 1 (Check / install ggshield)** section in the `scan-secrets` skill — detect the user's package manager, install or upgrade `ggshield`. Return here once `ggshield --version` reports 1.45.0 or later.
+
+#### Step 2 — Authenticate
+
+If `ggshield api-status` errors, follow the full **Onboarding → Step 2 (Authenticate and verify)** section in the `scan-secrets` skill — run `ggshield auth login` (or `--method token` for headless). Return here once `ggshield api-status` reports OK.
+
+#### Step 3 — Install and enable the `machine_scan` plugin
+
+Machine scan ships as a separate plugin, **not** as part of the base `ggshield` binary. It has to be installed and enabled before `ggshield machine scan` works.
+
+**Discover, install, enable:**
+
+```bash
+ggshield plugin status                  # what's available for this account; prints the install command
+ggshield plugin install machine_scan    # follow the command surfaced by `plugin status`
+ggshield plugin enable machine_scan
+```
+
+`ggshield plugin status` is the single source of truth — it queries the GitGuardian platform for the plugins available to the user's account and prints the exact `ggshield plugin install` command to run. Use whatever it says. If `plugin status` returns a 404, the user's workspace does not have the plugin system enabled — that's a workspace-level configuration issue, not a CLI fix. Have them contact their GitGuardian admin (or check `dashboard.gitguardian.com` Settings → Billing for the plan tier).
+
+#### Step 4 — Verify
+
+```bash
+ggshield plugin list          # confirm machine_scan shows up as enabled
+ggshield machine --help       # the help should now resolve — base ggshield no longer says "no such command"
+```
+
+Once these both succeed, the skill is ready. Proceed to **Commands**.
 
 ## Commands
 
 ```bash
+# Plugin operations — useful before/after scans
+ggshield plugin status                                           # available plugins for this account
+ggshield plugin list                                             # installed plugins + enabled state
+ggshield plugin update --check                                   # check for plugin updates
+ggshield plugin disable machine_scan                             # disable without uninstalling
+ggshield plugin uninstall machine_scan                           # full removal
+
 # Default scan modes — pick by scope
 ggshield machine scan --mode quick -f json --show-findings       # credentials-only, fastest
 ggshield machine scan --mode standard -f json --show-findings    # entire home with exclusions
@@ -132,6 +177,10 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 
 **`ggshield: command not found`** — see the `scan-secrets` skill's Onboarding section.
 
+**`ggshield machine: command not found` or `Error: No such command 'machine'`** — the `machine_scan` plugin isn't installed or isn't enabled. Run `ggshield plugin list` to confirm. If it's missing, return to **Onboarding → Step 3**. If it's listed as disabled, run `ggshield plugin enable machine_scan`.
+
+**`Failed to fetch plugins: 404` on `ggshield plugin status`** — the user's GitGuardian workspace does not have the plugin system enabled. This is a workspace-level configuration, not a CLI fix. Have them contact their GitGuardian admin or check the workspace's plan tier — endpoint scanning typically requires Growth tier or higher.
+
 **`401 Unauthorized`** — token missing or invalid. Run `ggshield api-status`. For scope recovery, see `/references/gitguardian-platform.md`.
 
 **`403 Forbidden` / "Endpoint scanning not available on your plan"** — the user's GitGuardian workspace is on Free tier (or another plan without endpoint scanning enabled). The fix is a workspace upgrade, not a CLI change. Direct the user to https://dashboard.gitguardian.com (Settings → Billing) or to contact their workspace administrator. There is no CLI workaround.
@@ -140,8 +189,14 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 
 **Scan runs but reports no findings on a machine you know has credentials** — `quick` mode only checks known credential files. Try `--mode standard` or add `--thorough`. Also confirm `~/.ggshield/ggshield_machine_scan.db` was created; if not, pass `--rescan`.
 
+**First scan takes many minutes** — expected. The plugin indexes every file in scope on first run, then caches. Subsequent scans only re-process new/modified files.
+
 **Cache returns stale findings** — pass `--rescan` to force re-analysis.
 
 **Dashboard won't open** — port 7890 is in use. Override with `ggshield machine dashboard --port <other>`.
 
-**Inventory upload fails with `403 Forbidden`** — the PAT lacks the scope required for inventory upload. See `/references/gitguardian-platform.md` for the scope-recovery flow.
+**Inventory upload fails with `403 Forbidden`** — the Personal Access Token lacks the `nhi:send-inventory` scope (or `nhi:write-vault`, which includes it). Generate a PAT with the right scope at `dashboard.gitguardian.com` → API → Personal Access Tokens, or run the scope-recovery flow in `/references/gitguardian-platform.md`.
+
+**Inventory hangs forever in a headless environment (CI, SSH, no browser)** — when the API key isn't on the command line, `ggshield machine inventory` spins up a localhost OAuth callback server and waits for a browser. Always pass `--api-key "$GITGUARDIAN_API_KEY"` explicitly in headless contexts; do not rely on the env var alone.
+
+**TLS / certificate errors behind a corporate proxy** — set `REQUESTS_CA_BUNDLE=/path/to/ca-bundle.pem` (or `SSL_CERT_FILE`, or pass `--ssl-certificate`) so the plugin trusts the proxy's CA. Priority: `--ssl-certificate` > `REQUESTS_CA_BUNDLE` > `SSL_CERT_FILE`.
