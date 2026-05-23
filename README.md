@@ -15,7 +15,7 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 /plugin install gitguardian
 ```
 
-You then have access to 2 commands:
+You then have access to 3 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
@@ -89,7 +89,7 @@ Install ggshield as a pre-push hook for this repo
 Set up the strongest secret-scanning coverage on this machine
 ```
 
-**Check whether a known credential has been leaked publicly** — looks up a credential (or a whole file / vault inventory) against GitGuardian's public-leak database via HasMySecretLeaked. Plaintext never leaves the machine — only hash prefixes go over the wire. The inverse of *Scan for secrets*: that finds unknown secrets in code; this checks known secrets against the public-leak corpus.
+**Check whether a known credential has been leaked publicly** — looks up a credential (or a whole file / vault inventory) against GitGuardian's HasMySecretLeaked corpus of indexed public GitHub leaks. Plaintext never leaves the machine — by default, only hash prefixes go over the wire. The inverse of *Scan for secrets*: that finds unknown secrets in code; this checks known secrets against HMSL.
 
 ```
 I inherited a .env from a former teammate — check if any of these are compromised
