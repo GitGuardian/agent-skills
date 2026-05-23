@@ -31,7 +31,18 @@ Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (gl
 
 **MCP server (bundled).** The plugin also ships a `.mcp.json` at the repo root that registers the [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp). Claude Code picks it up automatically on install — you get tools for incident triage, honeytoken management, and live scans against the GitGuardian API from inside the agent. Requires [`uvx`](https://docs.astral.sh/uv/) on your PATH (Claude Code will spawn the server with `uvx --from git+https://github.com/GitGuardian/ggmcp.git developer-mcp-server`). First run opens a browser for OAuth against your GitGuardian instance; subsequent runs reuse the cached token. For EU SaaS or self-hosted, set `GITGUARDIAN_URL` in the MCP server config (see the [ggmcp README](https://github.com/GitGuardian/ggmcp#configuration-for-different-gitguardian-instances)).
 
-### Cursor, Codex, Copilot, and 50+ other agents
+### Codex
+
+Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin:
+
+```
+codex plugin marketplace add GitGuardian/agent-skills
+codex plugin install gitguardian
+```
+
+Requires Codex CLI v0.117.0 or later (plugin system). The skills auto-trigger the same way they do in Claude Code; the bundled `.mcp.json` is picked up automatically.
+
+### Cursor, Copilot, and 50+ other agents
 
 Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
 
@@ -39,7 +50,7 @@ Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agent
 npx skills add gitguardian/agent-skills
 ```
 
-Works with Cursor, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
+Works with Cursor, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
 
 ### Kiro
 
@@ -108,7 +119,11 @@ All skills share the same `ggshield` setup flow — detect the user's package ma
 .cursor-plugin/                       # Cursor plugin manifest
   marketplace.json
   plugin.json
-.mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
+.codex-plugin/                        # Codex plugin manifest
+  plugin.json
+.agents/plugins/                      # Codex repo-scoped marketplace
+  marketplace.json
+.mcp.json                             # GitGuardian Developer MCP server config (Claude Code + Codex)
 mcp.json                              # same, for Cursor
 skills/                               # one folder per skill — shared by Claude Code & Cursor
   scan-secrets/
