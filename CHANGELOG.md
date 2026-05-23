@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/GitGuardian/agent-skills/compare/v0.1.1...v0.1.2) (2026-05-23)
+
+
+### Features
+
+* **scan-secrets:** add direct-download install tier with any HTTP tool ([#19](https://github.com/GitGuardian/agent-skills/issues/19)) ([760ef80](https://github.com/GitGuardian/agent-skills/commit/760ef809a1463d3c43c50fe62fc054c547ae265c))
+
 ## [0.1.1](https://github.com/GitGuardian/agent-skills/compare/v0.1.0...v0.1.1) (2026-05-23)
 
 
