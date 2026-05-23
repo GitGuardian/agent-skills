@@ -15,10 +15,12 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 ```
 .claude-plugin/                       # Claude Code plugin metadata (marketplace.json, plugin.json)
 .cursor-plugin/                       # Cursor plugin metadata (same two files)
-.github/workflows/                    # CI: JSON validation, frontmatter checks, install-flow sanity
+.github/workflows/                    # CI: JSON validation, frontmatter checks, install-flow sanity, release automation
 package.json                          # tooling-only — vitest for the sanity test (no runtime deps)
 test/                                 # install-flow sanity tests (vitest)
   sanity.test.ts
+release-please-config.json            # Release Please config (which files to bump on release)
+.release-please-manifest.json         # current released version (single source of truth)
 skills/                               # one folder per skill — discovered by Claude/Cursor and skills.sh
   scan-secrets/                       #   skill folder name = SKILL.md frontmatter `name:`
     SKILL.md                          #   what the agent reads first
@@ -201,27 +203,39 @@ Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag f
 
 The "while pre-1.0, breaking changes are minor" rule is explicit because SemVer leaves it ambiguous and reviewers will otherwise argue about it on each rename PR.
 
-### Release flow (current)
+### Release flow (automated via Release Please)
 
-For each release:
+Releases are driven by [Release Please](https://github.com/googleapis/release-please). The flow is two-step: a release PR appears automatically; merging it cuts the release.
 
-1. Bump `version` in all four manifest files in a single commit. Use `0.x.0` for minor, `0.0.x` for patch (until `1.0.0`).
-2. Run `claude plugin validate .` — must still pass.
-3. Open the PR, get it merged via the normal review flow.
-4. On `main`, create an annotated tag with release notes inline:
-   ```bash
-   git tag -a v0.X.0 -m "v0.X.0 — <one-line summary>
+**1. A release PR opens automatically.** Every push to `main` triggers `.github/workflows/release.yml`. The action scans Conventional Commits since the last release tag, infers the next semver bump, and opens (or updates) a single PR titled `chore: release vX.Y.Z` containing:
 
-   <bullet points of what changed>"
-   git push origin v0.X.0
-   ```
-5. Publish a GitHub Release linked to the tag:
-   ```bash
-   gh release create v0.X.0 --title "v0.X.0 — <summary>" --notes-file release-notes.md
-   ```
-   Or use `--generate-notes` to seed from merged PRs and edit before publishing.
+- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`). Bump every manifest in lockstep so the four sides of the plugin can never drift.
+- A `CHANGELOG.md` update with sections grouped by commit type (`Features` ← `feat:`, `Bug Fixes` ← `fix:`, etc.), each entry linked back to its commit.
 
-Once we accumulate enough monthly cadence, the bump-and-tag steps can be automated via [Release Please](https://github.com/googleapis/release-please) (the pattern Supabase uses on `supabase/agent-skills`) — it reads Conventional Commits, opens a release PR with the version bump, and tags on merge. Not worth the setup cost yet at our cadence.
+The semver bump is driven by Conventional Commit prefixes. Pre-1.0 the config is conservative:
+
+| Commit type | Pre-1.0 bump | Post-1.0 bump |
+|---|---|---|
+| `feat:` | patch (0.1.0 → 0.1.1) | minor (1.0.0 → 1.1.0) |
+| `fix:` | patch | patch |
+| `feat!:` or `BREAKING CHANGE:` | minor (0.1.0 → 0.2.0) | major (1.0.0 → 2.0.0) |
+| `chore:` / `docs:` / `ci:` / `refactor:` / `test:` | none (still appears in changelog) | none |
+
+(Toggles: `bump-patch-for-minor-pre-major` and `bump-minor-pre-major`, both `true` in our config. Flip to `false` once we cross 1.0.)
+
+**2. Review the release PR, then merge.**
+
+- Re-validate locally if you want: `claude plugin validate .` and `npm run test:sanity` against the release PR branch.
+- Edit `CHANGELOG.md` in the release PR if the auto-generated wording needs polishing.
+- Merging the release PR triggers the workflow again; this run sees the merged version bump, creates the `vX.Y.Z` git tag, and publishes the GitHub Release with the changelog as release notes.
+
+**Auth caveat.** The default `GITHUB_TOKEN` is used. GitHub does not run workflows on PRs created by `github-actions[bot]` (safety against workflow loops), so CI does not auto-run on the release PR. To trigger CI on a release PR, either push an empty commit:
+
+```bash
+git commit --allow-empty -m "chore: trigger CI" && git push
+```
+
+…or run the relevant workflow manually from the Actions tab. If release cadence grows, swap the workflow to use a GitHub App or PAT (replace `${{ secrets.GITHUB_TOKEN }}` with the app/PAT token).
 
 ### What does NOT need a version bump
 
