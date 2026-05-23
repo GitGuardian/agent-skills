@@ -78,7 +78,7 @@ Keep the brief tight; the detailed command reference is for the agent to consult
 ggshield --version
 ```
 
-If not installed, **detect what's already on the user's machine and use that** — don't install a new package manager just to use it as the install vehicle. Probe in this order, and use the first manager that responds to a `--version` check:
+If not installed, **detect what's already on the user's machine and use that** — don't install a new package manager just to use it as the install vehicle. Probe in this order, and use the first manager that responds to a `--version` check. Exception: on Linux, if `apt` or `dnf` exists but the Cloudsmith repo is not already configured and the user wants to skip that setup, fall through to option 2.
 
 **1. The user's platform-native package manager:**
 
@@ -102,38 +102,42 @@ Use this tier when option 1's package manager isn't installed, or when its setup
 | Debian/Ubuntu (`Linux x86_64`, `apt --version` works) | `ggshield_<v>-1_amd64.deb` | `sudo apt install ./<file>.deb` |
 | RHEL/Fedora (`Linux x86_64`, `dnf --version` works) | `ggshield-<v>-1.x86_64.rpm` | `sudo dnf install <file>.rpm` |
 | Windows x86_64 | `ggshield-<v>-x86_64-pc-windows-msvc.msi` | `msiexec /i <file>.msi /quiet` (or run interactively) |
-| Other Linux x86_64 (Alpine glibc-compatible, Arch, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` (ensure `~/.local/bin` is on `$PATH`) |
+| Other glibc-based Linux x86_64 (Arch, openSUSE, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` (ensure `~/.local/bin` is on `$PATH`) |
 
 **Download with whatever HTTP tool is available**, probing in this priority order:
 
 1. **`gh`** (cleanest — auto-resolves latest version, no API parsing). Probe with `gh --version && gh auth status`:
    ```bash
-   gh release download --repo GitGuardian/ggshield --pattern "*arm64-apple-darwin.pkg"
+   ASSET_SUFFIX="<artifact-suffix-from-table>"
+   gh release download --repo GitGuardian/ggshield --pattern "*${ASSET_SUFFIX}"
    ```
 2. **`curl`** (universal on macOS, Linux, and Windows 10+). Discover the latest version's asset URL via the GitHub API, then download:
    ```bash
+   ASSET_SUFFIX="<artifact-suffix-from-table>"
    url=$(curl -sL https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
-         | grep -o '"browser_download_url": *"[^"]*arm64-apple-darwin.pkg"' \
+         | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_SUFFIX}\"" \
          | cut -d'"' -f4)
-   curl -L -o ggshield.pkg "$url"
+   curl -LO "$url"
    ```
 3. **`wget`** (Linux fallback when `curl` is absent — rare on modern distros):
    ```bash
+   ASSET_SUFFIX="<artifact-suffix-from-table>"
    url=$(wget -qO- https://api.github.com/repos/GitGuardian/ggshield/releases/latest \
-         | grep -o '"browser_download_url": *"[^"]*_amd64.deb"' \
+         | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_SUFFIX}\"" \
          | cut -d'"' -f4)
    wget "$url"
    ```
 4. **PowerShell `Invoke-WebRequest`** (Windows fallback when `gh` and `curl` aren't on PATH):
    ```powershell
+   $AssetSuffix = '<artifact-suffix-from-table>'
    $latest = Invoke-RestMethod https://api.github.com/repos/GitGuardian/ggshield/releases/latest
-   $asset = $latest.assets | Where-Object { $_.name -like '*x86_64-pc-windows-msvc.msi' }
+   $asset = $latest.assets | Where-Object { $_.name -like "*$AssetSuffix" }
    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile ggshield.msi
    ```
 
 If none of `gh`, `curl`, `wget`, or `Invoke-WebRequest` are available, fall through to option 3.
 
-**Not supported by this tier:** Linux ARM (no published binary), Windows ARM (no published binary). Fall through to option 3 for those.
+**Not supported by this tier:** Linux ARM (no published binary), Windows ARM (no published binary), and Alpine/musl Linux (the published Linux tarball targets GNU/glibc). Fall through to option 3 for those.
 
 **No auto-update.** This tier installs the artifact directly without registering an upstream package-manager repo (because we deliberately skipped Cloudsmith / brew / choco etc. in this tier). Future ggshield versions require re-running the download + install. If the user wants auto-updates, prefer option 1 (which does register the upstream repo).
 
