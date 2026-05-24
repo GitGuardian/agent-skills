@@ -15,10 +15,11 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 /plugin install gitguardian
 ```
 
-You then have access to 3 commands:
+You then have access to 4 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
+- `/gitguardian:scan-machine` — scan the entire developer machine for credentials, including local git repositories, dotfiles, `~/.aws`, shell history, and AI agent caches. Requires endpoint scanning to be enabled on the GitGuardian workspace
 - `/gitguardian:check-hmsl` — check whether a *known* credential has been seen leaking publicly via HasMySecretLeaked
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
@@ -90,6 +91,16 @@ Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
+**Scan the whole machine for credentials** — scans local git repositories, dotfiles, shell history, `~/.aws`, `~/.kube`, AI agent caches, browser profiles, and abandoned project trees for credentials on the laptop itself. Distinct from the targeted repo-scan use case: this scans broadly across the machine instead of one chosen repository or path. **Requires endpoint scanning to be enabled on the GitGuardian workspace; this is not available on the Free plan.**
+
+```
+Audit my whole machine for credentials before I wipe it
+Scan my home folder for AWS keys and SSH credentials
+What credentials are sitting on this machine?
+Inventory the secrets on this laptop before I hand it back
+Check ~/.aws, ~/.kube and my shell history for live tokens
+```
+
 **Install secret-scanning hooks** — wires `ggshield` into your editor and git workflow so secrets are caught before they reach a commit. The agent picks the right hook type (`claude-code`, `cursor`, `copilot`, `pre-commit`, `pre-push`) and scope (`global` for every project on this machine, `local` for the current repo) based on what you ask.
 
 ```
@@ -137,6 +148,8 @@ skills/                               # one folder per skill — shared by Claud
     SKILL.md
     references/
       planting-strategy.md
+  scan-machine/
+    SKILL.md
   check-hmsl/
     SKILL.md
 references/                           # shared cross-skill references

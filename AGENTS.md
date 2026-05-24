@@ -34,6 +34,8 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md
     references/
       planting-strategy.md
+  scan-machine/
+    SKILL.md
   check-hmsl/
     SKILL.md
 references/                           # shared cross-skill reference
@@ -49,6 +51,7 @@ LICENSE                               # MIT
 |---|---|
 | [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
+| [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials across local git repositories, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees. **Requires endpoint scanning to be enabled on the GitGuardian workspace** (gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 
 ## Slash commands
@@ -59,6 +62,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 |---|---|
 | `/gitguardian:scan-secrets` | `skills/scan-secrets/SKILL.md` |
 | `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
+| `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
@@ -100,7 +104,7 @@ When in doubt, ask: *would this name still be right if we swapped the underlying
 
 ### Skill folder naming
 
-**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, `check-hmsl`, future `scan-machine`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
+**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, `check-hmsl`, `scan-machine`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
 
 ### Long-form content goes under `references/`
 
