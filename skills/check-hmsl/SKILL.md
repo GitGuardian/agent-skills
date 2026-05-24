@@ -61,6 +61,7 @@ Prose rules can be rationalized away by the model under pressure ("the user real
 - **Surface quota before bulk runs.** HMSL has a daily credit quota — `ggshield hmsl quota` first, then proceed. Prefix mode costs more quota than full-hash mode.
 - **`ggshield hmsl` is the only sanctioned path.** If `ggshield --version` or `ggshield hmsl api-status` fails for the user, guide them through **Onboarding (first use)** below — **do not improvise an alternate check** (manual grep of leak databases, hand-rolled hashes, sending the secret to a different service).
 - **Be concise when reporting matches.** Every match is a leaked secret — the user needs the next action, not a tutorial. Lead with what to rotate, in bullets; defer details (rotation runbook, takedown, history-rewrite caveats) until asked. See the doctrine's *How the agent talks to the user* (§ 1).
+- **Use the right content source.** Pick the deliverable mode from the doctrine's post-leak / public-facing track (every match is public-by-definition). For each matched secret, if the leak source is a repo in the user's GitGuardian workspace, call `remediate_secret_incidents` on the bundled Developer MCP server for workspace-specific file/line and git remediation content. Fall to the per-type appendix and general knowledge only when MCP is silent. See *Where remediation content comes from* (§ 1).
 
 ## When to Use
 

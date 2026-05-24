@@ -21,6 +21,7 @@ description: Use when scanning code, commits, git history, Docker images, or pac
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow `/references/ggshield-cli-setup.md` before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per the cross-skill doctrine at `/references/remediation-doctrine.md` (entry points dispatched from `references/remediation.md`) — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
 - **Be concise when surfacing a finding.** Lead with the next action. Use bullets / tables / one-liners; cap default output at ~10 lines. Defer rationale, alternatives, and per-type fine print unless the user asks. See the doctrine's *How the agent talks to the user* (§ 1) for the full rule.
+- **Use the right content source.** Triage and pick a deliverable mode from the doctrine first. Then call `remediate_secret_incidents` on the bundled Developer MCP server (resolve the `source_id` via `find_current_source_id` if needed) for the workspace's concrete file/line/git/`.env` content. Only fall to general training-data knowledge when both are silent. See the doctrine's *Where remediation content comes from* (§ 1).
 
 ## When to Use
 

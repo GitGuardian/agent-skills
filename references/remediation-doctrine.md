@@ -51,6 +51,20 @@ Apply these rules to every user-facing message:
 
 The doctrine itself stays comprehensive. The agent's output stays tight.
 
+### Where remediation content comes from
+
+Three sources, consulted in this priority order. Don't skip a level.
+
+1. **The skill / doctrine itself.** This document and the per-skill `SKILL.md` files prescribe the *framework* (triage axes, deliverable modes, lifecycle tracks) and provide the *structural* remediation content (per-secret-type appendix in § 9, coordination framework in § 10, principles in § 1). Start here. Every finding goes through the triage flow first.
+
+2. **`remediate_secret_incidents`** on the GitGuardian Developer MCP server (bundled with this plugin's `.mcp.json`). Call it with the source's `source_id` — use `find_current_source_id` if not already known. Returns concrete remediation for the specific incident: exact file paths, line numbers, character offsets, git commands to fix history, `.env` / `.env.example` scaffolding, rotation guidance from GitGuardian's actual remediation knowledge. Use it to **fill in the doctrine's structure with workspace-specific details** that training data cannot reconstruct. When MCP and the doctrine agree on something (e.g., AWS access-key revoke flow), prefer the MCP-provided wording — it ages with the platform.
+
+3. **General vendor knowledge.** Last resort. Use only when both the doctrine and the MCP are silent on a specific question. Verify against current vendor docs before recommending steps — vendor consoles drift faster than training data.
+
+**The agent's default training data is the lowest-priority source.** If the agent finds itself writing rotation steps from general knowledge without first consulting the doctrine *and* attempting the MCP path, it has skipped the more reliable sources. Stop, back up, consult them in order.
+
+The priority is not always sequential — for an off-repo `scan-machine` finding there's no `source_id`, so the MCP path is inapplicable and the agent falls straight from the doctrine to general knowledge for the specific scrub commands. That's fine; the rule is *consult in order, stop when answered*, not "always call MCP."
+
 ## 2. The four triage axes
 
 The agent must know all four axes before producing a deliverable. Three of them require user input in context-poor implementations; higher-context implementations may answer some from data (see [Implementation profiles](#4-implementation-profiles)).
@@ -99,10 +113,13 @@ The doctrine is the universal contract; profiles describe how each implementatio
 | Exposure | Asked, or derived from repo URL | Source type from incident (`public_github`, `private_github`, …) | TBD |
 | Ownership | Asked | Best-guess from workspace member/team data, confirmed with the user | TBD |
 | Blast radius | Asked | Asked, or inferred from secret type + service tier | TBD |
+| Concrete content (file/line/git/.env) | **Developer MCP** `remediate_secret_incidents` when `source_id` is known; per-type appendix when not | Same MCP path, plus workspace-internal APIs for richer context | TBD |
 
 ### Open-source agent skill
 
-The implementation lives at `skills/scan-secrets/`, `skills/check-hmsl/`, future `skills/scan-machine/`, distributed via this repo's marketplace plugin. The agent's only free signal is which hook fired. Every other axis is asked of the user, in a single triage step before any deliverable is produced. The doctrine prescribes one canonical phrasing for each question, which each skill may adapt to its detection context.
+The implementation lives at `skills/scan-secrets/`, `skills/check-hmsl/`, future `skills/scan-machine/`, distributed via this repo's marketplace plugin. The agent's only free signal is which hook fired. Every other triage axis is asked of the user, in a single triage step before any deliverable is produced. The doctrine prescribes one canonical phrasing for each question, which each skill may adapt to its detection context.
+
+For concrete remediation content, the open-source agent has the **GitGuardian Developer MCP server bundled** via this plugin's `.mcp.json`. The agent should call `remediate_secret_incidents` (using `find_current_source_id` to resolve a `source_id` if not already known) to layer workspace-specific file/line/git/`.env` content on top of the doctrine's structural advice — see *Where remediation content comes from* in § 1.
 
 ### In-app agent
 
@@ -263,6 +280,8 @@ For the off-repo track, the agent also surfaces "remove the credential from the 
 ## 9. Per-secret-type appendix
 
 This appendix is the only section that's mostly invariant across implementations — rotating an AWS key is the same job whether the in-app agent or the open-source skill drives it. The doctrine ships a schema for any secret type, plus worked examples that calibrate what a good entry looks like.
+
+**Use alongside `remediate_secret_incidents`, not instead of it.** The appendix is the *structural* pattern: what to revoke, where to revoke it, what consumers to update, how to verify. When a `source_id` is available, the MCP tool fills in the *concrete* details for the workspace's specific incident — exact file paths and lines, suggested git commands, `.env` scaffolding. Use the appendix when no `source_id` is available (off-repo findings, local pre-leak files), or to interpret and extend what the MCP returns. See § 1's *Where remediation content comes from* for the full priority order.
 
 **v1 scope.** Schema + one worked example (AWS access keys). The remaining nine planned examples (GitHub personal access tokens, generic API keys, database connection URLs, private keys, Stripe API keys, Slack incoming webhooks, GCP service account JSON, Azure connection strings, OAuth refresh tokens) are deferred to a follow-up; until they land, the schema in § 9.0 is the template the implementing agent specializes from vendor documentation for those types.
 
