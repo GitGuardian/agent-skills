@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/GitGuardian/agent-skills/compare/v0.1.3...v0.1.4) (2026-05-24)
+
+
+### Features
+
+* add scan-machine skill for endpoint credential scans ([#21](https://github.com/GitGuardian/agent-skills/issues/21)) ([0d493f8](https://github.com/GitGuardian/agent-skills/commit/0d493f8151b4381946e310d87e017a64c738603b))
+
 ## [0.1.3](https://github.com/GitGuardian/agent-skills/compare/v0.1.2...v0.1.3) (2026-05-24)
 
 
