@@ -1,4 +1,4 @@
-<img src="assets/agent-skills-agents-visual.svg" alt="GitGuardian Agent Skills visual" width="100%">
+<img src="assets/agent-skills-agents-visual.svg" alt="GitGuardian Agent Skills visual" width="1200">
 
 # GitGuardian Agent Skills
 
