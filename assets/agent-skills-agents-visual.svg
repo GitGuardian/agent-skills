@@ -23,7 +23,6 @@
   </defs>
 
   <rect width="1200" height="630" fill="#ffffff"/>
-  <rect x="85" y="67" width="1030" height="514" rx="18" fill="#ffffff" stroke="#d8dee4"/>
 
   <text x="96" y="104" fill="#111827" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="40" font-weight="780">GitGuardian agent skills</text>
   <text x="96" y="139" fill="#57606a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="19">One security workflow, available from the coding agents developers already use.</text>
