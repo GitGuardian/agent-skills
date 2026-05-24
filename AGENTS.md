@@ -351,7 +351,7 @@ Distinctive fields in `.codex-plugin/plugin.json`:
 
 In `.agents/plugins/marketplace.json`, each plugin entry takes:
 
-- `source` (object) — `{"source": "local", "path": "./"}` for in-repo plugins; `git` / `git-subdir` / `url` variants for cross-repo
+- `source` (object) — we use `{"source": "url", "url": "https://github.com/GitGuardian/agent-skills.git"}` because Codex currently rejects local marketplace entries whose `source.path` resolves to the marketplace root; use `local` only for plugin subdirectories such as `./plugins/my-plugin`
 - `policy` (object) — `installation` (`AVAILABLE` | `INSTALLED_BY_DEFAULT` | `NOT_AVAILABLE`), `authentication` (`ON_INSTALL` | `ON_USE`)
 - `category` (string) — we use `"security"`
 
@@ -402,7 +402,7 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 ### Critical structural rules
 
 - **Only `plugin.json` goes inside `.claude-plugin/` / `.cursor-plugin/` / `.codex-plugin/`.** Every other directory (`skills/`, `agents/`, `hooks/`, `assets/`) must be at the plugin root, NOT nested inside the manifest folder. Cursor's `add-a-plugin.md`, Anthropic's `plugins.md`, and OpenAI's Codex docs all call this out as a common mistake.
-- **Codex marketplace path lives outside `.codex-plugin/`.** Unlike Claude/Cursor where `marketplace.json` sits next to `plugin.json`, Codex looks for `.agents/plugins/marketplace.json` at the repo root. We ship the native location; Codex will also fall back to `.claude-plugin/marketplace.json` if the native one is missing.
+- **Codex marketplace path lives outside `.codex-plugin/`.** Unlike Claude/Cursor where `marketplace.json` sits next to `plugin.json`, Codex looks for `.agents/plugins/marketplace.json` at the repo root. We ship the native location; Codex will also fall back to `.claude-plugin/marketplace.json` if the native one is missing. Because this repo is itself the plugin root, do not use a Codex local source path of `"./"` here; current Codex releases skip that entry as an empty local source path.
 - **No `commands/` directory.** Anthropic's plugin docs frame `commands/*.md` as "skills as flat Markdown files" and explicitly recommend `skills/<name>/SKILL.md` for new content. Shipping both at once creates duplicate slash-dropdown entries for the same capability (the flat command and the skill both show up). The skill primitive is strictly more capable (supports `references/`, `disable-model-invocation`, `allowed-tools`, folder structure). We migrated away from `commands/` in `refactor/remove-legacy-commands-directory` — don't re-introduce it.
 - **`disable-model-invocation: true`** in a SKILL.md's YAML frontmatter is the canonical Claude Code field for hiding a skill from the initial agent metadata. Used by the router pattern (see Future scaling below). Documented in the Claude Code Quickstart — not vendor-specific.
 - **Filename and schema matter for MCP config**: Cursor specifically looks for `mcp.json` (not `.mcp.json`), Claude Code reads `.mcp.json` with `mcpServers`, and Codex uses `.codex-mcp.json` pointed to by `.codex-plugin/plugin.json` with the `mcp_servers` wrapper accepted by Codex.

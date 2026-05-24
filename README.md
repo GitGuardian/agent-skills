@@ -174,7 +174,7 @@ codex
 /plugins
 ```
 
-The repo's `.agents/plugins/marketplace.json` is picked up directly. In the plugin browser, select the local GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. Use the same plugin browser to disable `gitguardian` when swapping back to the published version.
+The repo's `.agents/plugins/marketplace.json` is picked up directly. In the plugin browser, select the local GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. Current Codex releases reject local marketplace entries that point at the marketplace root, so the checked-in marketplace points at the public Git source for install. To test unmerged branch content end to end, temporarily change the marketplace entry's `source.url` to a local `file:///...` Git URL and add a `ref` for your branch before installing. Use the same plugin browser to disable `gitguardian` when swapping back to the published version.
 
 ### Cursor
 
