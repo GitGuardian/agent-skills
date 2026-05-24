@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+
+# Brainstorming / writing-plan process artifacts — local-only, never committed
+docs/superpowers/

@@ -19,7 +19,7 @@ description: Use when scanning code, commits, git history, Docker images, or pac
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow `/references/ggshield-cli-setup.md` before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
-- **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per `references/remediation.md` — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
+- **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per the cross-skill doctrine at `/references/remediation-doctrine.md` (entry points dispatched from `references/remediation.md`) — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
 
 ## When to Use
 
@@ -40,7 +40,7 @@ What `ggshield` covers:
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
-For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
+For interpreting scan output and false-positive workflows, see `references/remediation.md`. For rotation rules, when (and when not) to rewrite git history, the four triage axes, and per-secret-type rotation guidance, see the cross-skill doctrine at `/references/remediation-doctrine.md`.
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
 For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
 

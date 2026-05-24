@@ -160,6 +160,7 @@ skills/                               # one folder per skill — shared by Claud
 references/                           # shared cross-skill references
   ggshield-cli-setup.md               # install/auth/headless setup for ggshield
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
+  remediation-doctrine.md             # GitGuardian remediation doctrine (universal, agent-agnostic)
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
