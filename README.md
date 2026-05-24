@@ -2,7 +2,7 @@
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
 
 ## Installation
 
@@ -31,7 +31,19 @@ Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (gl
 
 **MCP server (bundled).** The plugin also ships a `.mcp.json` at the repo root that registers the [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp). Claude Code picks it up automatically on install — you get tools for incident triage, honeytoken management, and live scans against the GitGuardian API from inside the agent. Requires [`uvx`](https://docs.astral.sh/uv/) on your PATH (Claude Code will spawn the server with `uvx --from git+https://github.com/GitGuardian/ggmcp.git developer-mcp-server`). First run opens a browser for OAuth against your GitGuardian instance; subsequent runs reuse the cached token. For EU SaaS or self-hosted, set `GITGUARDIAN_URL` in the MCP server config (see the [ggmcp README](https://github.com/GitGuardian/ggmcp#configuration-for-different-gitguardian-instances)).
 
-### Cursor, Codex, Copilot, and 50+ other agents
+### Codex
+
+Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin from the plugin browser:
+
+```
+codex plugin marketplace add GitGuardian/agent-skills
+codex
+/plugins
+```
+
+Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
+
+### Cursor, Copilot, and 50+ other agents
 
 Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
 
@@ -39,7 +51,7 @@ Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agent
 npx skills add gitguardian/agent-skills
 ```
 
-Works with Cursor, Codex, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
+Works with Cursor, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
 
 ### Kiro
 
@@ -108,9 +120,14 @@ All skills share the same `ggshield` setup flow — detect the user's package ma
 .cursor-plugin/                       # Cursor plugin manifest
   marketplace.json
   plugin.json
+.codex-plugin/                        # Codex plugin manifest
+  plugin.json
+.agents/plugins/                      # Codex repo-scoped marketplace
+  marketplace.json
+.codex-mcp.json                       # GitGuardian Developer MCP server config (Codex)
 .mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
 mcp.json                              # same, for Cursor
-skills/                               # one folder per skill — shared by Claude Code & Cursor
+skills/                               # one folder per skill — shared by Claude Code, Codex & Cursor
   scan-secrets/
     SKILL.md
     references/                       # heavy reference, loaded on demand
@@ -153,10 +170,11 @@ The session loads this repo as the `gitguardian` plugin (shadowing any installed
 
 ```bash
 codex plugin marketplace add file:///path/to/agent-skills
-codex plugin install gitguardian
+codex
+/plugins
 ```
 
-The repo's `.agents/plugins/marketplace.json` is picked up directly. Use `codex plugin disable gitguardian` to swap back to the published version.
+The repo's `.agents/plugins/marketplace.json` is picked up directly. In the plugin browser, select the local GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. Current Codex releases reject local marketplace entries that point at the marketplace root, so the checked-in marketplace points at the public Git source for install. To test unmerged branch content end to end, temporarily change the marketplace entry's `source.url` to a local `file:///...` Git URL and add a `ref` for your branch before installing. Use the same plugin browser to disable `gitguardian` when swapping back to the published version.
 
 ### Cursor
 

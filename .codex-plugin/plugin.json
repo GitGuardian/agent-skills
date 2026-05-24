@@ -1,0 +1,25 @@
+{
+  "name": "gitguardian",
+  "version": "0.1.2",
+  "description": "The official GitGuardian plugin for AI coding agents. Detect hardcoded secrets, plant honeytokens, and triage incidents using ggshield, the GitGuardian Developer MCP server, and the GitGuardian API.",
+  "author": {
+    "name": "GitGuardian",
+    "email": "support@gitguardian.com",
+    "url": "https://www.gitguardian.com"
+  },
+  "homepage": "https://www.gitguardian.com",
+  "repository": "https://github.com/GitGuardian/agent-skills",
+  "license": "MIT",
+  "keywords": ["gitguardian", "ggshield", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-mcp.json",
+  "interface": {
+    "displayName": "GitGuardian",
+    "shortDescription": "Secret scanning, honeytoken creation, and incident triage for AI coding agents.",
+    "longDescription": "The official GitGuardian plugin for AI coding agents. Detects 700+ hardcoded secret types across files, git history, Docker images, and PyPI packages via the ggshield CLI; plants AWS honeytoken tripwires for the leaks scanning can't catch; and surfaces live incidents in your editor via the bundled GitGuardian Developer MCP server.",
+    "developerName": "GitGuardian",
+    "category": "security",
+    "websiteURL": "https://www.gitguardian.com",
+    "logo": "./assets/logo.png"
+  }
+}

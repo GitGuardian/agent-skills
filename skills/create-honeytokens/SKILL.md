@@ -1,6 +1,6 @@
 ---
 name: create-honeytokens
-description: Generate a GitGuardian honeytoken — a decoy AWS credential that alerts when used — and guide the user on where to plant it for highest signal (example configs, internal wikis, deploy scripts, pre-publication repos). Auto-triggers when creating `.env.example` or sample config files, when preparing to open-source a previously-private repository, when seeding internal wikis or runbooks with credentials, or when the user mentions honeytokens, canary tokens, decoys, or tripwire credentials.
+description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around `.env.example`, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
 ---
 
 # ggshield — Create Honeytokens
