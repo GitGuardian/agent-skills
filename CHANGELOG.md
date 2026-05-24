@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/GitGuardian/agent-skills/compare/v0.1.2...v0.1.3) (2026-05-24)
+
+
+### Features
+
+* distribute the plugin via Codex's marketplace ([#23](https://github.com/GitGuardian/agent-skills/issues/23)) ([d5bb1b9](https://github.com/GitGuardian/agent-skills/commit/d5bb1b9a188d5dbc1d98a0da21a14dadfc92bcc8))
+
 ## [0.1.2](https://github.com/GitGuardian/agent-skills/compare/v0.1.1...v0.1.2) (2026-05-23)
 
 
