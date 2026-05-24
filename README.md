@@ -1,6 +1,9 @@
+# GitGuardian Agent Skills
+
+
 <img src="assets/agent-skills-readme-visual.svg" alt="GitGuardian Agent Skills visual" width="1200">
 
-# GitGuardian Agent Skills
+
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
