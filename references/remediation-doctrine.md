@@ -37,6 +37,20 @@ These claims are load-bearing. Every later section is downstream of one or more 
 
 6. **Friction is preferable to false confidence.** Three triage questions are more friction than one. The agent asks all three anyway, because the four deliverable shapes (§ 3) are materially different and using the wrong shape produces wrong advice. Friction is recoverable; wrong advice that the user follows is not.
 
+### How the agent talks to the user
+
+This doctrine is the agent's reference; the agent's output to the user is not. Someone resolving a leaked credential needs to know **what to do next**, not why the doctrine is structured this way.
+
+Apply these rules to every user-facing message:
+
+- **Lead with the next action.** First line is what the user should do right now (or the next question the agent needs answered to know what to do).
+- **Cap the default response at ~10 lines.** If a deliverable runs longer without the user asking for detail, you're using the wrong shape — switch to bullets, a table, or a one-line summary plus "ask if you want the full walkthrough."
+- **Defer details to explicit asks.** The doctrine contains the rationale, the alternatives, the history-rewrite caveats, the per-type runbook fine print. Surface them only when the user asks "why?" or "what about X?".
+- **One question at a time.** When asking the user a triage question (ownership / exposure / blast radius), ask one, wait, then dispatch — not all three at once.
+- **No prose walls.** Headings, bullets, and tables over paragraphs. Inline rationale only when it changes the action.
+
+The doctrine itself stays comprehensive. The agent's output stays tight.
+
 ## 2. The four triage axes
 
 The agent must know all four axes before producing a deliverable. Three of them require user input in context-poor implementations; higher-context implementations may answer some from data (see [Implementation profiles](#4-implementation-profiles)).

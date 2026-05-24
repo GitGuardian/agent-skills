@@ -32,6 +32,7 @@ Confirm both prerequisites *before* walking the user through a scan. If they're 
 - **`--include-protected` requires macOS permission grants.** On macOS, `Desktop`, `Documents`, `Pictures`, and other TCC-protected directories are excluded by default. Passing `--include-protected` triggers a Full Disk Access prompt the first time — only suggest it after explaining the prompt.
 - **Treat findings with the same care as production secrets.** Live credentials surfaced by a machine scan must be rotated immediately; dead credentials should still be removed. Never log raw secret values; report by file, line, type, and validity.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, complete the **Onboarding (first use)** section in the `scan-secrets` skill before attempting a machine scan.
+- **Be concise when reporting findings.** Lead with the next action per finding — rotate vs. delete-in-place vs. file-a-ticket. Use a table when there are multiple findings; cap default output at ~10 lines. Defer details until asked. See the doctrine's *How the agent talks to the user* (§ 1).
 
 ## When to Use
 

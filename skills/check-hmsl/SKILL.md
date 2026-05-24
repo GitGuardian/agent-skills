@@ -60,6 +60,7 @@ Prose rules can be rationalized away by the model under pressure ("the user real
 - **Do not use `--insecure`, `--allow-self-signed`, `--debug`, `--verbose`, or `--log-file` by default.** TLS verification and quiet structured output are the safe defaults for secret-handling workflows.
 - **Surface quota before bulk runs.** HMSL has a daily credit quota — `ggshield hmsl quota` first, then proceed. Prefix mode costs more quota than full-hash mode.
 - **`ggshield hmsl` is the only sanctioned path.** If `ggshield --version` or `ggshield hmsl api-status` fails for the user, guide them through **Onboarding (first use)** below — **do not improvise an alternate check** (manual grep of leak databases, hand-rolled hashes, sending the secret to a different service).
+- **Be concise when reporting matches.** Every match is a leaked secret — the user needs the next action, not a tutorial. Lead with what to rotate, in bullets; defer details (rotation runbook, takedown, history-rewrite caveats) until asked. See the doctrine's *How the agent talks to the user* (§ 1).
 
 ## When to Use
 
