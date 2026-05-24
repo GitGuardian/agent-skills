@@ -35,8 +35,6 @@ ggshield install -t claude-code -m global
 
 Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (global) or `.claude/settings.json` (local) — uninstall by removing the `ggshield` entries from that file.
 
-**MCP server (bundled).** The plugin also ships a `.mcp.json` at the repo root that registers the [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp). Claude Code picks it up automatically on install — you get tools for incident triage, honeytoken management, and live scans against the GitGuardian API from inside the agent. Requires [`uvx`](https://docs.astral.sh/uv/) on your PATH (Claude Code will spawn the server with `uvx --from git+https://github.com/GitGuardian/ggmcp.git developer-mcp-server`). First run opens a browser for OAuth against your GitGuardian instance; subsequent runs reuse the cached token. For EU SaaS or self-hosted, set `GITGUARDIAN_URL` in the MCP server config (see the [ggmcp README](https://github.com/GitGuardian/ggmcp#configuration-for-different-gitguardian-instances)).
-
 ### Codex
 
 Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin from the plugin browser:
@@ -47,7 +45,7 @@ codex
 /plugins
 ```
 
-Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
+Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code.
 
 ### Cursor, Copilot, and 50+ other agents
 
@@ -140,9 +138,6 @@ All skills share the same `ggshield` setup flow — detect the user's package ma
   plugin.json
 .agents/plugins/                      # Codex repo-scoped marketplace
   marketplace.json
-.codex-mcp.json                       # GitGuardian Developer MCP server config (Codex)
-.mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
-mcp.json                              # same, for Cursor
 skills/                               # one folder per skill — shared by Claude Code, Codex & Cursor
   scan-secrets/
     SKILL.md
