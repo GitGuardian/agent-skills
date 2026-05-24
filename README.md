@@ -19,7 +19,7 @@ You then have access to 4 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
-- `/gitguardian:scan-machine` — scan the entire developer machine for credentials, including local git repositories, dotfiles, `~/.aws`, shell history, and AI agent caches. Requires GitGuardian Growth tier or higher
+- `/gitguardian:scan-machine` — scan the entire developer machine for credentials, including local git repositories, dotfiles, `~/.aws`, shell history, and AI agent caches. Requires endpoint scanning to be enabled on the GitGuardian workspace
 - `/gitguardian:check-hmsl` — check whether a *known* credential has been seen leaking publicly via HasMySecretLeaked
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
@@ -91,7 +91,7 @@ Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
-**Scan the whole machine for credentials** — scans local git repositories, dotfiles, shell history, `~/.aws`, `~/.kube`, AI agent caches, browser profiles, and abandoned project trees for credentials on the laptop itself. Distinct from the targeted repo-scan use case: this scans broadly across the machine instead of one chosen repository or path. **Requires a paid GitGuardian plan (Growth tier or higher) — endpoint scanning is not on the Free tier.**
+**Scan the whole machine for credentials** — scans local git repositories, dotfiles, shell history, `~/.aws`, `~/.kube`, AI agent caches, browser profiles, and abandoned project trees for credentials on the laptop itself. Distinct from the targeted repo-scan use case: this scans broadly across the machine instead of one chosen repository or path. **Requires endpoint scanning to be enabled on the GitGuardian workspace; this is not available on the Free plan.**
 
 ```
 Audit my whole machine for credentials before I wipe it

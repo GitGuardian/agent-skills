@@ -1,6 +1,6 @@
 ---
 name: scan-machine
-description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, and abandoned project trees via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. **Requires a paid GitGuardian plan (Growth tier or higher) — not available on Free.**
+description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, and abandoned project trees via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. **Requires endpoint scanning to be enabled on the GitGuardian workspace; not available on Free.**
 ---
 
 # ggshield — Scan Machine
@@ -13,10 +13,10 @@ This is distinct from `secret scan` (which targets a specific path, repo, image,
 
 **Two things have to be set up before `ggshield machine scan` runs at all:**
 
-1. **A paid GitGuardian plan** (Growth tier or higher). Endpoint scanning is gated server-side; on Free, the plugin install will fail.
+1. **Endpoint scanning enabled on the GitGuardian workspace.** Endpoint scanning is gated server-side; on Free, the plugin install will fail.
 2. **The `machine_scan` plugin**, installed and enabled. Machine scan is not built into the base `ggshield` binary — it ships as a separate plugin that has to be installed via `ggshield plugin install` and enabled via `ggshield plugin enable machine_scan`. A fresh `ggshield` install does **not** include it. Until the plugin is enabled, `ggshield machine scan` will exit with "command not found" or a similar error.
 
-Confirm both prerequisites *before* walking the user through a scan. If they're on Free, redirect them to `scan-secrets` (which works on Free for individual repos) and mention that machine scan is a paid endpoint-protection feature.
+Confirm both prerequisites *before* walking the user through a scan. If they're on Free, redirect them to `scan-secrets` (which works on Free for individual repos) and mention that machine scan requires endpoint scanning to be enabled on the workspace.
 
 **Core rule:** confirm with the user *before* running. Machine scans inspect every file in `$HOME` including shell history and AI agent caches; that's invasive even when legitimate. State what will happen, ask once, then proceed.
 
@@ -24,7 +24,7 @@ Confirm both prerequisites *before* walking the user through a scan. If they're 
 
 **Do not skip this section.**
 
-- **Confirm the user is on a paid GitGuardian plan first.** Machine scan is gated to **Growth tier or higher** — it will not work on Free. If the user can't confirm they're on a paid plan, do not run the scan; redirect to `scan-secrets` (which covers individual repos on Free) and explain that endpoint scanning is a paid GitGuardian capability.
+- **Confirm endpoint scanning is enabled first.** Machine scan is gated server-side and will not work on Free. If the user can't confirm endpoint scanning is enabled on their workspace, do not run the scan; redirect to `scan-secrets` (which covers individual repos on Free) and explain that machine scan requires the endpoint scanning capability.
 - **Confirm the `machine_scan` plugin is installed and enabled.** Run `ggshield plugin list` *before* the first `ggshield machine scan` and look for `machine_scan` marked as enabled. If it isn't present or isn't enabled, run the **Setup → Step 3** flow below (install the plugin, then `ggshield plugin enable machine_scan`). Skipping this is the most common cause of `ggshield machine: command not found`.
 - **Confirm the scope with the user before launching.** Tell them which `--mode` you're about to use and why. `quick` (credentials-only) is the safe default; `standard` and `full` walk the entire home directory and may take many minutes.
 - **Do not run machine scans silently in the background.** They are long-running, produce large output, and may surface very personal credentials (browser saves, SSH keys). The user should be in front of the keyboard when this runs.
@@ -72,9 +72,9 @@ If `ggshield plugin list` doesn't show `machine_scan`, or `ggshield --version` f
 
 ### Prerequisites
 
-- **GitGuardian plan: Growth tier or higher.** Endpoint scanning is gated server-side. On the Free tier the plugin install (and the scan command) will fail. Confirm before proceeding.
+- **GitGuardian workspace with endpoint scanning enabled.** Endpoint scanning is gated server-side. On the Free plan the plugin install (and the scan command) will fail. Confirm before proceeding.
 - **`ggshield` 1.45.0 or later** — minimum version that supports the plugin system. (For agent hooks via `ggshield install -t claude-code`, the floor is 1.49.0, but that's a separate skill — `scan-secrets`.)
-- For fleet rollouts (security teams managing endpoints across an org), deployment is typically handled via **MDM** (Intune, Jamf) — `ggshield` and the plugin rolled out to managed endpoints with the auth config baked in. The skill below covers ad-hoc invocations by a developer with a paid workspace; fleet deployment is out of scope.
+- For fleet rollouts (security teams managing endpoints across an org), deployment is typically handled via **MDM** (Intune, Jamf) — `ggshield` and the plugin rolled out to managed endpoints with the auth config baked in. The skill below covers ad-hoc invocations by a developer whose workspace has endpoint scanning enabled; fleet deployment is out of scope.
 
 ### Setup
 
@@ -100,7 +100,7 @@ ggshield plugin install machine_scan    # follow the command surfaced by `plugin
 ggshield plugin enable machine_scan
 ```
 
-`ggshield plugin status` is the single source of truth — it queries the GitGuardian platform for the plugins available to the user's account and prints the exact `ggshield plugin install` command to run. Use whatever it says. If `plugin status` returns a 404, the user's workspace does not have the plugin system enabled — that's a workspace-level configuration issue, not a CLI fix. Have them contact their GitGuardian admin (or check `dashboard.gitguardian.com` Settings → Billing for the plan tier).
+`ggshield plugin status` is the single source of truth — it queries the GitGuardian platform for the plugins available to the user's account and prints the exact `ggshield plugin install` command to run. Use whatever it says. If `plugin status` returns a 404, the user's workspace does not have the plugin system enabled — that's a workspace-level configuration issue, not a CLI fix. Have them contact their GitGuardian admin or check whether endpoint scanning is enabled for the workspace.
 
 #### Step 4 — Verify
 
@@ -179,11 +179,11 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 
 **`ggshield machine: command not found` or `Error: No such command 'machine'`** — the `machine_scan` plugin isn't installed or isn't enabled. Run `ggshield plugin list` to confirm. If it's missing, return to **Onboarding → Step 3**. If it's listed as disabled, run `ggshield plugin enable machine_scan`.
 
-**`Failed to fetch plugins: 404` on `ggshield plugin status`** — the user's GitGuardian workspace does not have the plugin system enabled. This is a workspace-level configuration, not a CLI fix. Have them contact their GitGuardian admin or check the workspace's plan tier — endpoint scanning typically requires Growth tier or higher.
+**`Failed to fetch plugins: 404` on `ggshield plugin status`** — the user's GitGuardian workspace does not have the plugin system enabled. This is a workspace-level configuration, not a CLI fix. Have them contact their GitGuardian admin or check whether endpoint scanning is enabled for the workspace.
 
 **`401 Unauthorized`** — token missing or invalid. Run `ggshield api-status`. For scope recovery, see `/references/gitguardian-platform.md`.
 
-**`403 Forbidden` / "Endpoint scanning not available on your plan"** — the user's GitGuardian workspace is on Free tier (or another plan without endpoint scanning enabled). The fix is a workspace upgrade, not a CLI change. Direct the user to https://dashboard.gitguardian.com (Settings → Billing) or to contact their workspace administrator. There is no CLI workaround.
+**`403 Forbidden` / "Endpoint scanning not available on your plan"** — the user's GitGuardian workspace is on Free or otherwise does not have endpoint scanning enabled. The fix is a workspace entitlement change, not a CLI change. Direct the user to https://dashboard.gitguardian.com (Settings → Billing) or to contact their workspace administrator. There is no CLI workaround.
 
 **`Permission denied` on macOS protected dirs** — `--include-protected` was passed but the terminal app has not been granted Full Disk Access. Open *System Settings → Privacy & Security → Full Disk Access* and add the terminal binary, then re-run.
 
