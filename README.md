@@ -1,4 +1,4 @@
-![GitGuardian Agent Skills visual](assets/agent-skills-agents-visual.svg)
+<img src="assets/agent-skills-agents-visual.svg" alt="GitGuardian Agent Skills visual" width="100%">
 
 # GitGuardian Agent Skills
 
