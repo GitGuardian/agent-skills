@@ -170,10 +170,11 @@ The session loads this repo as the `gitguardian` plugin (shadowing any installed
 
 ```bash
 codex plugin marketplace add file:///path/to/agent-skills
-codex plugin install gitguardian
+codex
+/plugins
 ```
 
-The repo's `.agents/plugins/marketplace.json` is picked up directly. Use `codex plugin disable gitguardian` to swap back to the published version.
+The repo's `.agents/plugins/marketplace.json` is picked up directly. In the plugin browser, select the local GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. Use the same plugin browser to disable `gitguardian` when swapping back to the published version.
 
 ### Cursor
 
