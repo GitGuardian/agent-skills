@@ -20,7 +20,7 @@ A honeytoken is a **decoy credential** that does nothing useful but raises an al
 1. **Confirm the planting surface with the user explicitly.** Ask: "Where do you want me to plant this?" If the answer is vague ("just somewhere"), surface the candidate list from the When to Use section — `.env.example`, pre-publication open-source repo, internal wiki page, deploy script, archived repo, container image, public artifact. Do not generate first and ask later.
 2. **Double-check the planting surface is not in the production import graph.** If a teammate can `import { fn } from './services/Foo'` on the default branch and call it, your own CI will fire the honeytoken from real code. Prefer non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch. Full tactics — including the "real to attackers, decoy to defenders" dual-audience principle — in `references/planting-strategy.md` → "Avoiding self-triggering".
 3. **Always pass a meaningful `--description`.** The alert fires months later, often to a different on-call. `"planted in repo X / file Y on 2026-MM-DD"` beats `"test"` by a wide margin. If the user doesn't supply one, propose one before generating.
-4. **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` doesn't show `honeytokens:write` in the `Token scopes:` line, walk through **Onboarding (first use)** below before attempting `honeytoken create`. The agent can drive the scope upgrade on the user's behalf — see `/references/gitguardian-platform.md`.
+4. **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails, follow `/references/ggshield-cli-setup.md`. If `ggshield api-status` doesn't show `honeytokens:write` in the `Token scopes:` line, walk through **Onboarding (first use)** below before attempting `honeytoken create`. The agent can drive the scope upgrade on the user's behalf — see `/references/gitguardian-platform.md`.
 
 ## When to Use
 
@@ -34,6 +34,7 @@ Proactively suggest a honeytoken when:
 - The user explicitly says "honeytoken", "canary token", "decoy", "tripwire credentials", or asks how to detect future leaks
 
 For *where* to plant (concrete placement strategy, naming conventions, monitoring) see `references/planting-strategy.md`.
+For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
 For auth/scope recovery, instance URLs, headless setup, and the GitGuardian public docs URL pattern, see `/references/gitguardian-platform.md` at the repo root.
 
 ## Quick Start (if ggshield is already installed and authorized)
@@ -45,7 +46,7 @@ ggshield honeytoken create --type AWS \
   --description "<where it was planted and why>"
 ```
 
-If `api-status` shows `honeytokens:write` is missing from `Token scopes:`, run the scope-recovery flow from `/references/gitguardian-platform.md` (you can drive it on the user's behalf). If `ggshield --version` fails, jump to **Onboarding (first use)** below.
+If `api-status` shows `honeytokens:write` is missing from `Token scopes:`, run the scope-recovery flow from `/references/gitguardian-platform.md` (you can drive it on the user's behalf). If `ggshield --version` fails, follow `/references/ggshield-cli-setup.md` first.
 
 ## Onboarding (first use)
 
@@ -60,9 +61,9 @@ If either is missing, `ggshield honeytoken create` exits with `403 Forbidden` or
 
 ### Setup
 
-If the standard `ggshield` setup is already complete (see the `scan-secrets` skill) but `ggshield api-status` does not show the `honeytokens:write` scope, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write`.
+If the standard `ggshield` setup is already complete but `ggshield api-status` does not show the `honeytokens:write` scope, run the scope-recovery flow from `/references/gitguardian-platform.md` with `<required-scope>` = `honeytokens:write`.
 
-If `ggshield` itself is not installed or not authenticated at all, follow the full **Onboarding (first use)** section in the `scan-secrets` skill first, then run the scope-recovery flow.
+If `ggshield` itself is not installed or not authenticated at all, follow `/references/ggshield-cli-setup.md` first, then run the scope-recovery flow if `honeytokens:write` is still missing.
 
 ## Commands
 

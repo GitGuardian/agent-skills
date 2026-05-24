@@ -57,6 +57,28 @@ jobs:
             grep -q '^description:' "$f" || { echo "missing 'description:' in $f"; exit 1; }
           done
 
+      # Canonical cross-vendor validator for the agent-skills spec
+      # (https://agentskills.io/specification). Catches strict-YAML
+      # frontmatter errors and naming-rule violations that the shell
+      # checks above miss — e.g., unquoted colons in description fields,
+      # uppercase letters in the name, consecutive hyphens, etc.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install agent-skills spec validator
+        run: |
+          pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+
+      - name: Validate every skill against the agent-skills spec
+        run: |
+          set -e
+          for d in skills/*/; do
+            echo "Validating $d"
+            skills-ref validate "$d"
+          done
+
       - name: Check Kiro POWER.md has frontmatter
         run: |
           set -e

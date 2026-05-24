@@ -1,0 +1,24 @@
+name: sanity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  install-flow:
+    name: Install-flow sanity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: "npm"
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Run install-flow sanity tests
+        run: npm run test:sanity

@@ -15,7 +15,12 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 ```
 .claude-plugin/                       # Claude Code plugin metadata (marketplace.json, plugin.json)
 .cursor-plugin/                       # Cursor plugin metadata (same two files)
-.github/workflows/                    # CI: JSON validation, frontmatter checks
+.github/workflows/                    # CI: JSON validation, frontmatter checks, install-flow sanity, release automation
+package.json                          # tooling-only — vitest for the sanity test (no runtime deps)
+test/                                 # install-flow sanity tests (vitest)
+  sanity.test.ts
+release-please-config.json            # Release Please config (which files to bump on release)
+.release-please-manifest.json         # current released version (single source of truth)
 skills/                               # one folder per skill — discovered by Claude/Cursor and skills.sh
   scan-secrets/                       #   skill folder name = SKILL.md frontmatter `name:`
     SKILL.md                          #   what the agent reads first
@@ -28,7 +33,10 @@ skills/                               # one folder per skill — discovered by C
       planting-strategy.md
   scan-machine/
     SKILL.md
+  check-hmsl/
+    SKILL.md
 references/                           # shared cross-skill reference
+  ggshield-cli-setup.md               # install/auth/headless setup for ggshield
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
 README.md                             # user-facing: what / install / what-you-can-do
 LICENSE                               # MIT
@@ -41,6 +49,7 @@ LICENSE                               # MIT
 | [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
 | [`scan-machine`](skills/scan-machine/SKILL.md) | Sweep the entire developer machine for credentials lying outside version control — dotfiles, cloud CLI configs, shell history, AI agent caches, abandoned project trees. **Requires GitGuardian Growth tier or higher** (endpoint scanning is gated server-side; not available on Free). |
+| [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 
 ## Slash commands
 
@@ -51,6 +60,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:scan-secrets` | `skills/scan-secrets/SKILL.md` |
 | `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
 | `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
+| `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
@@ -91,7 +101,7 @@ When in doubt, ask: *would this name still be right if we swapped the underlying
 
 ### Skill folder naming
 
-**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, `scan-machine`, future `check-hmsl`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
+**Verb-noun, no product prefix.** `scan-secrets`, `create-honeytokens`, `check-hmsl`, `scan-machine`. The plugin name is already `gitguardian` — prefixing every skill with `gitguardian-` or `ggshield-` is redundant. Matches the convention used across mature multi-skill plugin repos.
 
 ### Long-form content goes under `references/`
 
@@ -99,7 +109,7 @@ Anything past ~150 lines, anything heavily detailed (alert response, planting st
 
 ### Cross-skill content goes in repo-root `references/`
 
-Topics that apply to multiple skills — public docs URL pattern, auth/scope recovery, instance URLs, headless setup — live in `references/gitguardian-platform.md` at the repo root, not duplicated per skill. Each SKILL.md points at it with one line.
+Topics that apply to multiple skills live in repo-root `references/`, not duplicated per skill. Use `references/ggshield-cli-setup.md` for shared CLI install/auth/headless setup, and `references/gitguardian-platform.md` for public docs URL pattern, auth/scope recovery, instance URLs, and platform concepts. Each SKILL.md points at the relevant shared reference with one line.
 
 ### SKILL.md section order
 
@@ -173,9 +183,77 @@ To add a new slash invocation:
 2. Phrase the skill's frontmatter `description:` so it reads cleanly as a slash-dropdown label — lead with the action verb, then list the auto-trigger conditions. The same string serves both audiences: humans browsing the dropdown and the model deciding when to auto-invoke.
 3. Update the [Slash commands table](#slash-commands) above and the README's slash-command bullets to reference the new invocation.
 
-## Adding to the shared `references/gitguardian-platform.md`
+## Adding to shared root references
 
-Add a top-level section if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`.
+Add or update a repo-root reference if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`. Use `references/ggshield-cli-setup.md` for shared CLI setup and `references/gitguardian-platform.md` for GitGuardian platform concepts.
+
+## Versioning
+
+We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** and stays pre-1.0 until the public surface is stable enough that a breaking change truly warrants a major bump.
+
+### Source of truth
+
+The plugin version lives in **four files** that must move together:
+
+- `.claude-plugin/plugin.json` → `version`
+- `.claude-plugin/marketplace.json` → `metadata.version`
+- `.cursor-plugin/plugin.json` → `version`
+- `.cursor-plugin/marketplace.json` → `metadata.version`
+
+Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+
+### When to bump
+
+| Bump | Trigger |
+|---|---|
+| **patch** (`0.1.0 → 0.1.1`) | Doc fixes, typo corrections, internal cleanup, dependency bumps, README rewrites, CI tweaks — anything with no user-visible behavior change. |
+| **minor** (`0.1.0 → 0.2.0`) | A new skill, a new slash command, a new MCP tool surfaced, a new manifest field that adds a capability. **While pre-1.0, also covers breaking changes** — renames, restructures, removed surfaces. Example: the `ggshield`-plugin → `gitguardian`-plugin rename was minor-bump material, not a major. |
+| **major** (`0.x → 1.0.0`, then `1.x → 2.0.0`, …) | Reserved. The first `1.0.0` lands once: Cursor marketplace listing is approved and live, the GitGuardian public API integration ships, and we have enough usage data to be confident the public surface is stable. After 1.0, every breaking change becomes a major bump. |
+
+The "while pre-1.0, breaking changes are minor" rule is explicit because SemVer leaves it ambiguous and reviewers will otherwise argue about it on each rename PR.
+
+### Release flow (automated via Release Please)
+
+Releases are driven by [Release Please](https://github.com/googleapis/release-please). The flow is two-step: a release PR appears automatically; merging it cuts the release.
+
+**1. A release PR opens automatically.** Every push to `main` triggers `.github/workflows/release.yml`. The action scans Conventional Commits since the last release tag, infers the next semver bump, and opens (or updates) a single PR titled `chore: release vX.Y.Z` containing:
+
+- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`). Bump every manifest in lockstep so the four sides of the plugin can never drift.
+- A `CHANGELOG.md` update with sections grouped by commit type (`Features` ← `feat:`, `Bug Fixes` ← `fix:`, etc.), each entry linked back to its commit.
+
+The semver bump is driven by Conventional Commit prefixes. Pre-1.0 the config is conservative:
+
+| Commit type | Pre-1.0 bump | Post-1.0 bump |
+|---|---|---|
+| `feat:` | patch (0.1.0 → 0.1.1) | minor (1.0.0 → 1.1.0) |
+| `fix:` | patch | patch |
+| `feat!:` or `BREAKING CHANGE:` | minor (0.1.0 → 0.2.0) | major (1.0.0 → 2.0.0) |
+| `chore:` / `docs:` / `ci:` / `refactor:` / `test:` | none (still appears in changelog) | none |
+
+(Toggles: `bump-patch-for-minor-pre-major` and `bump-minor-pre-major`, both `true` in our config. Flip to `false` once we cross 1.0.)
+
+**2. Review the release PR, then merge.**
+
+- Re-validate locally if you want: `claude plugin validate .` and `npm run test:sanity` against the release PR branch.
+- Edit `CHANGELOG.md` in the release PR if the auto-generated wording needs polishing.
+- Merging the release PR triggers the workflow again; this run sees the merged version bump, creates the `vX.Y.Z` git tag, and publishes the GitHub Release with the changelog as release notes.
+
+**Auth caveat.** The default `GITHUB_TOKEN` is used. GitHub does not run workflows on PRs created by `github-actions[bot]` (safety against workflow loops), so CI does not auto-run on the release PR. To trigger CI on a release PR, either push an empty commit:
+
+```bash
+git commit --allow-empty -m "chore: trigger CI" && git push
+```
+
+…or run the relevant workflow manually from the Actions tab. If release cadence grows, swap the workflow to use a GitHub App or PAT (replace `${{ secrets.GITHUB_TOKEN }}` with the app/PAT token).
+
+### What does NOT need a version bump
+
+- New PR description rewrites
+- AGENTS.md additions that don't change the user-facing plugin surface
+- Comments, internal renames within a SKILL.md body
+- Anything that wouldn't show up as a behavior change for someone running the installed plugin
+
+If unsure, the test: *would a user who already installed the plugin notice this change after running `/plugin marketplace update`?* If no, it's a patch (or doesn't need its own release).
 
 ## Plugin distribution & validation
 
@@ -199,6 +277,28 @@ node scripts/validate-template.mjs
 ```
 
 We don't currently run Cursor's validator in CI; the manual jq checks in `validate.yml` cover most of the same shape, and Cursor's submission review will catch the rest.
+
+The canonical **cross-vendor** validator for the agent-skills spec is `skills-ref` from [agentskills/agentskills](https://github.com/agentskills/agentskills/tree/main/skills-ref). It is the spec author's reference implementation — it validates every constraint defined at https://agentskills.io/specification (strict YAML, name = parent dir, name format rules, description length, etc.). Install once, then run against any skill:
+
+```bash
+pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+for d in skills/*/; do skills-ref validate "$d"; done
+```
+
+Our CI runs this on every PR (see the `Validate every skill against the agent-skills spec` step in `validate.yml`). The strict-YAML check there catches things the shell-level `grep ^name:` checks miss — e.g., an unquoted colon in a description field, uppercase letters in `name:`, consecutive hyphens, or a name that doesn't match the parent directory.
+
+### Install-flow sanity tests
+
+`test/sanity.test.ts` runs `npx skills add` against this repo into a temp directory and asserts every skill installs, has a `SKILL.md`, and the `--skill <name>` filter works. This is the behavioral half of validation — it catches manifest-vs-disk drift (a skill folder renamed without updating something, a `SKILL.md` deleted, a malformed frontmatter that schema checks let through). Schema checks alone don't catch these.
+
+```bash
+npm install                # one-time
+npm run test:sanity        # ~2 seconds — runs vitest against test/sanity.test.ts
+```
+
+CI runs the same suite on every PR (`.github/workflows/sanity.yml`). It needs no GitGuardian account, no network beyond the npm registry, and no auth — just `npx --yes skills add` against a local path.
+
+The test auto-discovers skills (no hard-coded skill list), so it stays correct as we add new skills without per-skill maintenance.
 
 ### Local development without installing
 
