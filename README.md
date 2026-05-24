@@ -1,4 +1,4 @@
-![GitGuardian Agent Skills terminal visual](assets/agent-skills-visual.svg)
+![GitGuardian Agent Skills visual](assets/agent-skills-agents-visual.svg)
 
 # GitGuardian Agent Skills
 
