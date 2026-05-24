@@ -60,6 +60,8 @@ Prose rules can be rationalized away by the model under pressure ("the user real
 - **Do not use `--insecure`, `--allow-self-signed`, `--debug`, `--verbose`, or `--log-file` by default.** TLS verification and quiet structured output are the safe defaults for secret-handling workflows.
 - **Surface quota before bulk runs.** HMSL has a daily credit quota — `ggshield hmsl quota` first, then proceed. Prefix mode costs more quota than full-hash mode.
 - **`ggshield hmsl` is the only sanctioned path.** If `ggshield --version` or `ggshield hmsl api-status` fails for the user, guide them through **Onboarding (first use)** below — **do not improvise an alternate check** (manual grep of leak databases, hand-rolled hashes, sending the secret to a different service).
+- **Be concise when reporting matches.** Every match is a leaked secret — the user needs the next action, not a tutorial. Lead with what to rotate, in bullets; defer details (rotation runbook, takedown, history-rewrite caveats) until asked. See the doctrine's *How the agent talks to the user* (§ 1).
+- **Use the right content source.** Pick the deliverable mode from the doctrine's post-leak / public-facing track (every match is public-by-definition). For each matched secret, if the leak source is a repo in the user's GitGuardian workspace, call `remediate_secret_incidents` on the bundled Developer MCP server for workspace-specific file/line and git remediation content. Fall to the per-type appendix and general knowledge only when MCP is silent. See *Where remediation content comes from* (§ 1).
 
 ## When to Use
 
@@ -196,8 +198,8 @@ Exit codes: `0` = no matches found, `1` = at least one secret matched (leaked pu
 - **Default to `-n none` for output pasted back to the agent.** Do not ask the user to paste output generated with `-n key`, `-n censored`, or `-n cleartext`.
 - **Ask the user to check quota before bulk runs.** Prefix mode currently consumes multiple credits per checked secret, so `ggshield hmsl quota` first.
 - **For a small handful of secrets, use `check`. For sensitive bulk audits, use the `fingerprint` / `query` / `decrypt` split.** The split lets the user inspect what's being sent and decouples the local hashing step from the network call.
-- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. Walk the user through rotation (`scan-secrets/references/remediation.md`) for every match.
-- **HMSL is read-only.** A check does not "report" or "remove" the secret from anywhere — it only tells the user it's already public. Removal requires takedown action on the underlying source (e.g., a public GitHub repo).
+- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. Every match is a finding for the doctrine's [post-leak / public-facing track](../../references/remediation-doctrine.md#6-post-leak--public-facing-track) — triage and dispatch from there.
+- **HMSL is read-only.** A check does not "report" or "remove" the secret from anywhere — it only tells the user it's already public. Removal goes through the host's takedown process; see the doctrine's [public-leak takedown section](../../references/remediation-doctrine.md#11-public-leak-takedown--reporting).
 - **The `hash` field in HMSL output is a one-way SHA-256** — safe to report back to the user, but don't publish it in issues, PR comments, or logs unless the user asks. The `url` field points to a public source (e.g., a leaked GitHub commit) — safe and useful; this is the actionable information.
 
 ## Troubleshooting

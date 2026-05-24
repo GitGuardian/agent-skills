@@ -32,6 +32,7 @@ Confirm both prerequisites *before* walking the user through a scan. If they're 
 - **`--include-protected` requires macOS permission grants.** On macOS, `Desktop`, `Documents`, `Pictures`, and other TCC-protected directories are excluded by default. Passing `--include-protected` triggers a Full Disk Access prompt the first time — only suggest it after explaining the prompt.
 - **Treat findings with the same care as production secrets.** Live credentials surfaced by a machine scan must be rotated immediately; dead credentials should still be removed. Never log raw secret values; report by file, line, type, and validity.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, complete the **Onboarding (first use)** section in the `scan-secrets` skill before attempting a machine scan.
+- **Be concise when reporting findings.** Lead with the next action per finding — rotate vs. delete-in-place vs. file-a-ticket. Use a table when there are multiple findings; cap default output at ~10 lines. Defer details until asked. See the doctrine's *How the agent talks to the user* (§ 1).
 
 ## When to Use
 
@@ -56,7 +57,7 @@ What `ggshield machine` covers:
 - Generate a JSON inventory and upload to GitGuardian for governance (`ggshield machine inventory`)
 
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
-For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation.md` applies — a found credential is a found credential regardless of which scanner found it.
+For remediation guidance once findings are surfaced, dispatch into the cross-skill doctrine at `/references/remediation-doctrine.md`. Findings from `scan-machine` land in the [off-repo exposure track](../../references/remediation-doctrine.md#8-off-repo-exposure-track) by default, since the credential lives outside git; the doctrine handles the rest.
 
 ## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
 
@@ -169,7 +170,7 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 - **Default to `--mode quick` for the first run.** It targets known credential files specifically — fast, low surprise. Escalate to `standard` or `full` only after the user has seen the quick-mode output and wants broader coverage.
 - **Always pair `-f json` with `--show-findings`** in agent contexts. Without `--show-findings`, you only get counts.
 - **Suggest `ggshield machine dashboard` for triage when the scan finds more than ~10 results.** The local web UI groups findings by detector, file, and validity — much easier than scrolling through JSON output.
-- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding — the same remediation flow as `scan-secrets/references/remediation.md` applies.
+- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding via the doctrine's [off-repo exposure track](../../references/remediation-doctrine.md#8-off-repo-exposure-track).
 - **Do not paste raw secret values into the response.** Report file, line, secret type, and validity only. The user can read the value from the file themselves if they need it.
 - **`ggshield machine inventory` uploads findings to GitGuardian.** Only run it when the user wants the machine's credentials inventoried in their workspace (governance / compliance use case). For a plain audit, stick with `ggshield machine scan`.
 

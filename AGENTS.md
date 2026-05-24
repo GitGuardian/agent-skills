@@ -41,6 +41,9 @@ skills/                               # one folder per skill — discovered by C
 references/                           # shared cross-skill reference
   ggshield-cli-setup.md               # install/auth/headless setup for ggshield
   gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
+  remediation-doctrine.md             # GitGuardian remediation doctrine (universal, agent-agnostic)
+docs/                                 # process artifacts
+  superpowers/                        # brainstorm specs + writing plans
 README.md                             # user-facing: what / install / what-you-can-do
 LICENSE                               # MIT
 ```
@@ -113,6 +116,12 @@ Anything past ~150 lines, anything heavily detailed (alert response, planting st
 ### Cross-skill content goes in repo-root `references/`
 
 Topics that apply to multiple skills live in repo-root `references/`, not duplicated per skill. Use `references/ggshield-cli-setup.md` for shared CLI install/auth/headless setup, and `references/gitguardian-platform.md` for public docs URL pattern, auth/scope recovery, instance URLs, and platform concepts. Each SKILL.md points at the relevant shared reference with one line.
+
+### The remediation doctrine
+
+`references/remediation-doctrine.md` is the cross-skill / cross-agent doctrine for what to do when a leaked credential is found. It is read by every GitGuardian agent that reaches a remediation step — open-source skills shipped here, the in-app agent, future profiles (SecOps integrations, autonomous remediation). The doctrine defines the four triage axes, the four deliverable modes, the four lifecycle tracks, and the per-secret-type appendix.
+
+Per-skill remediation references are thin pointers into the doctrine — see `skills/scan-secrets/references/remediation.md` for the pattern. When updating remediation guidance, update the doctrine. Per-skill references should not duplicate it.
 
 ### SKILL.md section order
 
