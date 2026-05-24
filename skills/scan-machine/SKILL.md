@@ -1,13 +1,13 @@
 ---
 name: scan-machine
-description: Sweep a developer's entire machine for credentials lying around outside version control — dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, abandoned project trees — via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live outside git, or when the user explicitly asks to inventory secrets on the system itself. **Requires a paid GitGuardian plan (Growth tier or higher) — not available on Free.**
+description: Scan a developer's entire machine for credentials lying around outside version control — dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, abandoned project trees — via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live outside git, or when the user explicitly asks to inventory secrets on the system itself. **Requires a paid GitGuardian plan (Growth tier or higher) — not available on Free.**
 ---
 
 # ggshield — Scan Machine
 
 ## Overview
 
-`ggshield machine scan` sweeps the entire home directory for secrets that live outside version control — dotfiles (`~/.bashrc`, `~/.zshrc`, `~/.netrc`), shell history (`.zsh_history`, `.bash_history`), cloud CLI configs (`~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`), AI agent caches (Cursor, Claude Code, Copilot), browser profile databases, archives, and abandoned project trees. Findings are stored in a local SQLite database (`~/.ggshield/ggshield_machine_scan.db`) and viewable in a local web dashboard.
+`ggshield machine scan` scans the entire home directory for secrets that live outside version control — dotfiles (`~/.bashrc`, `~/.zshrc`, `~/.netrc`), shell history (`.zsh_history`, `.bash_history`), cloud CLI configs (`~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`), AI agent caches (Cursor, Claude Code, Copilot), browser profile databases, archives, and abandoned project trees. Findings are stored in a local SQLite database (`~/.ggshield/ggshield_machine_scan.db`) and viewable in a local web dashboard.
 
 This is distinct from `secret scan` (which targets a specific path, repo, image, or package). Machine scan is for *the machine itself*: "what credentials am I sitting on that aren't tracked in git anywhere?" GitGuardian positions it as **endpoint protection** — typically rolled out across a fleet via MDM (Intune, Jamf), but also runnable ad-hoc by an individual developer whose workspace has it enabled.
 
@@ -47,7 +47,7 @@ Trigger a machine scan when:
 
 What `ggshield machine` covers:
 
-- Sweep the home directory for 700+ secret types — same Rust detection engine `secret scan` uses
+- Scan the home directory for 700+ secret types — same Rust detection engine `secret scan` uses
 - Three scan depths: `quick` (credentials-only files), `standard` (entire home with sensible exclusions — the default), `full` (entire home with minimal exclusions)
 - Validate secrets (`--analyze`, on by default) — distinguishes live from dead credentials
 - Cross-check findings against HasMySecretLeaked (`--hmsl-check`, on by default) — flags credentials already leaking in public sources

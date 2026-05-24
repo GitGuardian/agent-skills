@@ -51,7 +51,7 @@ LICENSE                               # MIT
 |---|---|
 | [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
-| [`scan-machine`](skills/scan-machine/SKILL.md) | Sweep the entire developer machine for credentials lying outside version control — dotfiles, cloud CLI configs, shell history, AI agent caches, abandoned project trees. **Requires GitGuardian Growth tier or higher** (endpoint scanning is gated server-side; not available on Free). |
+| [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials lying outside version control — dotfiles, cloud CLI configs, shell history, AI agent caches, abandoned project trees. **Requires GitGuardian Growth tier or higher** (endpoint scanning is gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 
 ## Slash commands
