@@ -192,12 +192,13 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ### Source of truth
 
-The plugin version lives in **four files** that must move together:
+The plugin version lives in **five files** that must move together:
 
 - `.claude-plugin/plugin.json` → `version`
 - `.claude-plugin/marketplace.json` → `metadata.version`
 - `.cursor-plugin/plugin.json` → `version`
 - `.cursor-plugin/marketplace.json` → `metadata.version`
+- `.codex-plugin/plugin.json` → `version`
 
 Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
@@ -217,7 +218,7 @@ Releases are driven by [Release Please](https://github.com/googleapis/release-pl
 
 **1. A release PR opens automatically.** Every push to `main` triggers `.github/workflows/release.yml`. The action scans Conventional Commits since the last release tag, infers the next semver bump, and opens (or updates) a single PR titled `chore: release vX.Y.Z` containing:
 
-- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`). Bump every manifest in lockstep so the four sides of the plugin can never drift.
+- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`, `.codex-plugin/plugin.json`). Bump every manifest in lockstep so the plugin surfaces can never drift.
 - A `CHANGELOG.md` update with sections grouped by commit type (`Features` ← `feat:`, `Bug Fixes` ← `fix:`, etc.), each entry linked back to its commit.
 
 The semver bump is driven by Conventional Commit prefixes. Pre-1.0 the config is conservative:

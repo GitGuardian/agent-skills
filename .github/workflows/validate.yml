@@ -83,6 +83,16 @@ jobs:
           set -e
           ! grep -R "codex plugin install" README.md AGENTS.md
 
+      - name: Check plugin versions stay in sync
+        run: |
+          set -e
+          VERSION="$(jq -r '.version' package.json)"
+          test "$(jq -r '.version' .claude-plugin/plugin.json)" = "$VERSION"
+          test "$(jq -r '.metadata.version' .claude-plugin/marketplace.json)" = "$VERSION"
+          test "$(jq -r '.version' .cursor-plugin/plugin.json)" = "$VERSION"
+          test "$(jq -r '.metadata.version' .cursor-plugin/marketplace.json)" = "$VERSION"
+          test "$(jq -r '.version' .codex-plugin/plugin.json)" = "$VERSION"
+
       - name: Check each skill has SKILL.md with frontmatter
         run: |
           set -e
