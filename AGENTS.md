@@ -8,13 +8,16 @@ Read at the repo root as `AGENTS.md` (cross-vendor [agents.md](https://agents.md
 
 This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI. The agent invokes `ggshield` directly; the skill files supply the missing instructions on when, how, and what to do with the output.
 
-Target agents: Claude Code directly via the plugin marketplace, Cursor via the `.cursor-plugin/` manifest, and ~50 other agents (Kiro CLI, Codex, Copilot, OpenCode, Cline, Windsurf, Gemini CLI, …) via the [skills.sh](https://skills.sh) CLI.
+Target agents: Claude Code directly via the plugin marketplace, Cursor via the `.cursor-plugin/` manifest, Codex via the `.codex-plugin/` manifest (and the repo-scoped `.agents/plugins/marketplace.json`), and ~50 other agents (Kiro CLI, Copilot, OpenCode, Cline, Windsurf, Gemini CLI, …) via the [skills.sh](https://skills.sh) CLI.
 
 ## Repository Structure
 
 ```
 .claude-plugin/                       # Claude Code plugin metadata (marketplace.json, plugin.json)
 .cursor-plugin/                       # Cursor plugin metadata (same two files)
+.codex-plugin/                        # Codex plugin metadata (plugin.json only)
+.agents/plugins/                      # Codex repo-scoped marketplace (marketplace.json)
+.codex-mcp.json                       # Codex MCP server config
 .github/workflows/                    # CI: JSON validation, frontmatter checks, install-flow sanity, release automation
 package.json                          # tooling-only — vitest for the sanity test (no runtime deps)
 test/                                 # install-flow sanity tests (vitest)
@@ -193,12 +196,13 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ### Source of truth
 
-The plugin version lives in **four files** that must move together:
+The plugin version lives in **five files** that must move together:
 
 - `.claude-plugin/plugin.json` → `version`
 - `.claude-plugin/marketplace.json` → `metadata.version`
 - `.cursor-plugin/plugin.json` → `version`
 - `.cursor-plugin/marketplace.json` → `metadata.version`
+- `.codex-plugin/plugin.json` → `version`
 
 Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
@@ -218,7 +222,7 @@ Releases are driven by [Release Please](https://github.com/googleapis/release-pl
 
 **1. A release PR opens automatically.** Every push to `main` triggers `.github/workflows/release.yml`. The action scans Conventional Commits since the last release tag, infers the next semver bump, and opens (or updates) a single PR titled `chore: release vX.Y.Z` containing:
 
-- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`). Bump every manifest in lockstep so the four sides of the plugin can never drift.
+- Version bumps in every file listed in `release-please-config.json` (currently: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`, `.codex-plugin/plugin.json`). Bump every manifest in lockstep so the plugin surfaces can never drift.
 - A `CHANGELOG.md` update with sections grouped by commit type (`Features` ← `feat:`, `Bug Fixes` ← `fix:`, etc.), each entry linked back to its commit.
 
 The semver bump is driven by Conventional Commit prefixes. Pre-1.0 the config is conservative:
@@ -328,9 +332,39 @@ Single centralized marketplace at https://cursor.com/marketplace. Submission via
 
 The Cursor template defaults to a multi-plugin layout (`plugins/<name>/...`) and tells single-plugin authors to drop `marketplace.json` and put `plugin.json` at the repo root. **We can't follow that advice** — Claude Code's distribution model requires `marketplace.json` even for single-plugin repos. So we land in a documented hybrid: single-plugin shape with `marketplace.json` on both sides, plugin `source` pointing at `"./"`. Cursor reviewers will see a marketplace.json containing one plugin entry pointing at the repo root — not forbidden, just off the template default.
 
+### Codex marketplace
+
+Codex (OpenAI's CLI) introduced a first-class plugin marketplace in CLI v0.117.0 (March 2026). Plugin manifest lives in `.codex-plugin/plugin.json`; the marketplace pointer lives separately at `.agents/plugins/marketplace.json` (repo-scoped) — note the marketplace location is **outside** the manifest folder, different from Claude/Cursor where they sit side by side.
+
+Users install with the same shorthand pattern as Claude Code:
+
+```
+codex plugin marketplace add GitGuardian/agent-skills
+codex
+/plugins
+```
+
+In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**.
+
+Codex also supports a legacy fallback path: if `.agents/plugins/marketplace.json` is missing, the CLI reads `.claude-plugin/marketplace.json` instead. We ship the native location anyway for cleaner Codex semantics.
+
+Distinctive fields in `.codex-plugin/plugin.json`:
+
+- `skills` (string) — path to skills dir, we use `"./skills/"`
+- `mcpServers` (string) — path to the Codex MCP config, we use `"./.codex-mcp.json"`
+- `interface` (object) — install-surface metadata: `displayName`, `shortDescription`, `longDescription`, `developerName`, `category`, `websiteURL`, `logo`, etc. Codex's marketplace UI consumes these.
+
+In `.agents/plugins/marketplace.json`, each plugin entry takes:
+
+- `source` (object) — we use `{"source": "url", "url": "https://github.com/GitGuardian/agent-skills.git"}` because Codex currently rejects local marketplace entries whose `source.path` resolves to the marketplace root; use `local` only for plugin subdirectories such as `./plugins/my-plugin`
+- `policy` (object) — `installation` (`AVAILABLE` | `INSTALLED_BY_DEFAULT` | `NOT_AVAILABLE`), `authentication` (`ON_INSTALL` | `ON_USE`)
+- `category` (string) — we use `"security"`
+
+Reference docs: https://developers.openai.com/codex/plugins, https://developers.openai.com/codex/plugins/build, https://developers.openai.com/codex/skills.
+
 ### Manifest field reference
 
-Both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` carry the same field set (we keep them symmetric so they can't drift):
+`.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` carry the same field set (we keep them symmetric so they can't drift). `.codex-plugin/plugin.json` adds Codex-specific fields (`skills`, `mcpServers`, `interface`) on top of the shared base.
 
 | Field | Required by | Notes |
 |---|---|---|
@@ -348,13 +382,19 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 - Required: `name`, `owner.{name, email}`, `plugins[]` with `name + source + description`
 - Cursor-specific: `metadata.{description, version}` — Cursor template puts these under a metadata key (we keep top-level `description` too so Claude's schema still parses)
 
+`.agents/plugins/marketplace.json` (Codex) has its own shape:
+
+- Required at top level: `name`, `plugins[]`
+- Optional: `interface.{displayName}`
+- Each plugin entry requires: `name`, `source` (object — see Codex marketplace section above), `policy.installation`, `policy.authentication`, `category`
+
 ### Plugin surfaces we ship + ones we deliberately don't
 
 | Surface | Where it lives | We ship? | What it does |
 |---|---|---|---|
 | `skills/<name>/SKILL.md` | plugin root | ✅ | Model-invoked skills (Claude auto-triggers on description match). Each skill is also manually invokable as `/gitguardian:<skill-name>`. |
 | `commands/*.md` | plugin root | ❌ | Anthropic's legacy "skills as flat Markdown files" pattern. We deliberately don't ship a `commands/` directory — see [Critical structural rules](#critical-structural-rules). |
-| `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ | Auto-configure the GitGuardian Developer MCP server on install |
+| `.codex-mcp.json` (Codex) + `.mcp.json` (Claude) + `mcp.json` (Cursor) | plugin root | ✅ | Auto-configure the GitGuardian Developer MCP server on install |
 | `assets/logo.png` | plugin root | ✅ (PR #12) | Marketplace card icon |
 | `rules/*.mdc` | plugin root | ❌ | Cursor's always-on coding rules (different concept from skills — rules apply even when no skill triggers). Worth adding if we want a Cursor-side always-on "never commit a detected secret" rule beyond what's already in each SKILL.md's Core rule. |
 | `agents/*.md` | plugin root | ❌ | Specialized subagents. No strong use case yet. |
@@ -366,10 +406,11 @@ Both `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` nee
 
 ### Critical structural rules
 
-- **Only `plugin.json` goes inside `.claude-plugin/` / `.cursor-plugin/`.** Every other directory (`skills/`, `agents/`, `hooks/`, `assets/`) must be at the plugin root, NOT nested inside the manifest folder. Cursor's `add-a-plugin.md` and Anthropic's `plugins.md` both call this out as a common mistake.
+- **Only `plugin.json` goes inside `.claude-plugin/` / `.cursor-plugin/` / `.codex-plugin/`.** Every other directory (`skills/`, `agents/`, `hooks/`, `assets/`) must be at the plugin root, NOT nested inside the manifest folder. Cursor's `add-a-plugin.md`, Anthropic's `plugins.md`, and OpenAI's Codex docs all call this out as a common mistake.
+- **Codex marketplace path lives outside `.codex-plugin/`.** Unlike Claude/Cursor where `marketplace.json` sits next to `plugin.json`, Codex looks for `.agents/plugins/marketplace.json` at the repo root. We ship the native location; Codex will also fall back to `.claude-plugin/marketplace.json` if the native one is missing. Because this repo is itself the plugin root, do not use a Codex local source path of `"./"` here; current Codex releases skip that entry as an empty local source path.
 - **No `commands/` directory.** Anthropic's plugin docs frame `commands/*.md` as "skills as flat Markdown files" and explicitly recommend `skills/<name>/SKILL.md` for new content. Shipping both at once creates duplicate slash-dropdown entries for the same capability (the flat command and the skill both show up). The skill primitive is strictly more capable (supports `references/`, `disable-model-invocation`, `allowed-tools`, folder structure). We migrated away from `commands/` in `refactor/remove-legacy-commands-directory` — don't re-introduce it.
 - **`disable-model-invocation: true`** in a SKILL.md's YAML frontmatter is the canonical Claude Code field for hiding a skill from the initial agent metadata. Used by the router pattern (see Future scaling below). Documented in the Claude Code Quickstart — not vendor-specific.
-- **Filename matters for MCP config**: Cursor specifically looks for `mcp.json` (not `.mcp.json`). Both files contain the same content; we ship both so each agent finds its expected filename.
+- **Filename and schema matter for MCP config**: Cursor specifically looks for `mcp.json` (not `.mcp.json`), Claude Code reads `.mcp.json` with `mcpServers`, and Codex uses `.codex-mcp.json` pointed to by `.codex-plugin/plugin.json` with the `mcp_servers` wrapper accepted by Codex.
 - **Symlink `CLAUDE.md` → `AGENTS.md`** at the repo root. AGENTS.md is the cross-vendor name (agents.md spec); CLAUDE.md is what Claude Code reads for project instructions. One file, two entry points — recent Claude Code versions also fall back to AGENTS.md natively but the symlink makes the intent explicit and supports older versions.
 
 ### CLI hints (future-only — official marketplace required)
@@ -384,7 +425,9 @@ Claude Code scans output, strips the hint line before passing to the model, vali
 
 Reference: https://code.claude.com/docs/en/plugin-hints
 
-### Anthropic docs index (the ones we actually use)
+### Vendor docs index (the ones we actually use)
+
+**Anthropic (Claude Code):**
 
 - https://code.claude.com/docs/en/plugins — primary authoring guide (Quickstart, directory layout, migration from `.claude/`, submission process)
 - https://code.claude.com/docs/en/plugins-reference — full technical schema for `plugin.json`, version management, debugging tools
@@ -393,9 +436,28 @@ Reference: https://code.claude.com/docs/en/plugin-hints
 - https://code.claude.com/docs/en/plugin-hints — CLI-emitted install prompts (above)
 - https://code.claude.com/docs/en/plugin-dependencies — declaring version constraints between plugins
 - https://code.claude.com/docs/en/agent-sdk/plugins — loading plugins via the Agent SDK
-- https://docs.gitguardian.com/llms.txt — GitGuardian's AI-agent docs index (append `.md` to any HTML page on docs.gitguardian.com to get Markdown)
-- https://agentskills.io — the cross-vendor Agent Skills standard (also lives at `anthropics/skills/spec/agent-skills-spec.md`)
+
+**OpenAI (Codex):**
+
+- https://developers.openai.com/codex/plugins — plugin system overview, install flows, marketplace sources
+- https://developers.openai.com/codex/plugins/build — `plugin.json` schema (required + optional fields, `interface` block), `marketplace.json` schema (sources, policy, category), repo / personal / git / git-subdir sources, directory layout
+- https://developers.openai.com/codex/skills — Agent Skills format, SKILL.md frontmatter, discovery semantics
+- https://developers.openai.com/codex/guides/agents-md — AGENTS.md custom-instructions guide (the cross-vendor file we use here)
+- https://developers.openai.com/codex/changelog — versioned changelog; plugin system landed in CLI v0.117.0
+
+**Cursor:**
+
 - https://github.com/cursor/plugin-template — Cursor's reference plugin layout + submission checklist
+- https://cursor.com/marketplace/publish — Cursor marketplace submission
+
+**Cross-vendor:**
+
+- https://agentskills.io — the cross-vendor Agent Skills standard (also lives at `anthropics/skills/spec/agent-skills-spec.md`)
+- https://agents.md — the cross-vendor AGENTS.md convention
+
+**GitGuardian:**
+
+- https://docs.gitguardian.com/llms.txt — GitGuardian's AI-agent docs index (append `.md` to any HTML page on docs.gitguardian.com to get Markdown)
 
 ## Future scaling
 
@@ -409,7 +471,8 @@ When the skill library crosses ~5 skills:
 - ggshield CLI: https://github.com/GitGuardian/ggshield
 - GitGuardian Developer MCP server: https://github.com/GitGuardian/ggmcp
 - GitGuardian public docs: https://docs.gitguardian.com (append `.md` to any HTML page to get the Markdown version; AI-agent index at https://docs.gitguardian.com/llms.txt)
-- Claude Code plugin docs: https://code.claude.com/docs/en/plugins (see "Anthropic docs index" above for the full set)
+- Claude Code plugin docs: https://code.claude.com/docs/en/plugins (see "Vendor docs index" above for the full set)
+- Codex plugin docs: https://developers.openai.com/codex/plugins
 - Cursor plugin template: https://github.com/cursor/plugin-template
 - Cursor plugin submission: https://cursor.com/marketplace/publish
 - skills.sh CLI (cross-agent installer): https://skills.sh

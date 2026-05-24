@@ -42,14 +42,21 @@ If it fails, detect what already exists on the user's machine. Prefer install pa
 
 ### 3. Install uv if no existing manager works
 
-Use this before direct download when no existing package manager can install `ggshield`. `uv` is lightweight, cross-platform, and keeps future upgrades simple:
+Use this before direct download when no existing package manager can install `ggshield`. `uv` is lightweight, cross-platform, and keeps future upgrades simple. Unlike package-manager installs, this fetches a shell script at runtime, so do not pipe it directly to `sh`. Download it first, let the user inspect it or verify it against the checksum published in the uv install docs, then execute only after they confirm:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh && source ~/.bashrc
+# Step 1: download the installer without executing it
+curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
+
+# Step 2: ask the user to inspect /tmp/uv-install.sh or verify its checksum
+# against https://docs.astral.sh/uv/getting-started/installation/
+
+# Step 3: once the user confirms, execute and load uv onto PATH
+sh /tmp/uv-install.sh && . ~/.bashrc
 uv tool install ggshield
 ```
 
-Replace `~/.bashrc` with the user's shell file, such as `~/.zshrc`.
+Replace `~/.bashrc` with the user's shell file, such as `~/.zshrc`. If the user prefers not to run an unverified remote installer, skip to direct download only after explaining its manual-upgrade tradeoff.
 
 ### 4. Direct download from GitHub releases
 
