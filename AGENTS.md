@@ -47,6 +47,12 @@ skills/                               # one folder per skill — discovered by C
     references/
       ggshield-cli-setup.md
       gitguardian-platform.md
+  triage-incidents/
+    SKILL.md
+    references/
+      lifecycle.md
+      api-reference.md
+      gitguardian-platform.md
 README.md                             # user-facing: what / install / what-you-can-do
 LICENSE                               # MIT
 ```
@@ -59,6 +65,7 @@ LICENSE                               # MIT
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
 | [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials across local git repositories, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees. **Requires endpoint scanning to be enabled on the GitGuardian workspace** (gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
+| [`triage-incidents`](skills/triage-incidents/SKILL.md) | Drive the secret-incident lifecycle from the agent via the GitGuardian public REST API: assign, ignore (with structured reason), resolve, reopen, add notes. First skill that targets the API directly — `ggshield` has no incident subcommand and the Developer MCP server is read-only on incidents. Interactive by design: every write is previewed and gated on user confirmation. |
 
 ## Slash commands
 
@@ -70,6 +77,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
 | `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
+| `/gitguardian:triage-incidents` | `skills/triage-incidents/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 

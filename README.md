@@ -20,12 +20,13 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 /plugin install gitguardian
 ```
 
-You then have access to 4 commands:
+You then have access to 5 commands:
 
 - `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
 - `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
 - `/gitguardian:scan-machine` — scan the entire developer machine for credentials, including local git repositories, dotfiles, `~/.aws`, shell history, and AI agent caches. Requires endpoint scanning to be enabled on the GitGuardian workspace
 - `/gitguardian:check-hmsl` — check whether a *known* credential has been seen leaking publicly via HasMySecretLeaked
+- `/gitguardian:triage-incidents` — drive the incident lifecycle from the agent: assign, ignore (with reason), resolve, reopen, or post a note. Uses the GitGuardian public API directly; complements the read-only Developer MCP server
 
 **Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
 
@@ -125,6 +126,16 @@ Run an HMSL check on this list of API keys
 Show me which of these credentials have appeared in public leaks
 ```
 
+**Triage incidents in your GitGuardian workspace** — drive incident state transitions from the agent: assign to a teammate, ignore with a structured reason (`test_credential`, `false_positive`, `low_risk`), resolve after rotation, reopen a previously-closed one, or post a note. Uses the GitGuardian public REST API directly — the only path for write actions today; `ggshield` has no incident subcommand and the Developer MCP server is read-only on incidents. The skill is interactive by design: every write is previewed and gated on user confirmation.
+
+```
+Assign incident #12345 to alice@example.com
+Ignore this incident as a test credential
+Resolve incident #67890 — I rotated the AWS key
+Reopen incident #54321 and add a note about why
+Triage all open AWS incidents older than 90 days
+```
+
 All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented inside each skill at `references/ggshield-cli-setup.md`. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see `references/gitguardian-platform.md`.
 
 ## Repository layout
@@ -165,6 +176,12 @@ skills/                               # one folder per skill — each fully self
     SKILL.md
     references/
       ggshield-cli-setup.md
+      gitguardian-platform.md
+  triage-incidents/
+    SKILL.md
+    references/
+      lifecycle.md
+      api-reference.md
       gitguardian-platform.md
 kiro/                                 # Kiro power (separate format)
   POWER.md
