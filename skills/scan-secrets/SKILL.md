@@ -18,7 +18,7 @@ description: Use when scanning code, commits, git history, Docker images, or pac
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
-- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow `/references/ggshield-cli-setup.md` before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow `../../references/ggshield-cli-setup.md` before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per `references/remediation.md` — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
 
 ## When to Use
@@ -41,8 +41,8 @@ What `ggshield` covers:
 
 For detailed command variants, expected JSON output shapes, and CI integration, see `references/workflows.md`.
 For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see `references/remediation.md`.
-For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
-For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
+For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `../../references/ggshield-cli-setup.md`.
+For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see `../../references/gitguardian-platform.md`.
 
 ## Onboarding (first use)
 
@@ -53,7 +53,7 @@ For platform-wide topics that span every GitGuardian skill (public docs URL patt
 
 ### Setup
 
-If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip shared setup. Otherwise follow `/references/ggshield-cli-setup.md` and return here once both checks pass.
+If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip shared setup. Otherwise follow `../../references/ggshield-cli-setup.md` and return here once both checks pass.
 
 Before installing anything, briefly tell the user what this skill enables:
 
@@ -105,7 +105,7 @@ Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected e
 
 **`401 Unauthorized`** — the API key or stored OAuth token is missing or invalid. Verify with `ggshield api-status`. If using `GITGUARDIAN_API_KEY`, confirm the value with `echo $GITGUARDIAN_API_KEY` and that the token has the `scan` scope.
 
-**`403 Forbidden` / "Insufficient permissions"** — the token is valid but is missing a scope this action requires. See `/references/gitguardian-platform.md` (at the repo root) for the recovery flow — `ggshield auth logout` + `ggshield auth login --scopes <scope>`, runnable on the user's behalf, no manual PAT creation needed.
+**`403 Forbidden` / "Insufficient permissions"** — the token is valid but is missing a scope this action requires. See `../../references/gitguardian-platform.md` for the recovery flow — `ggshield auth logout` + `ggshield auth login --scopes <scope>`, runnable on the user's behalf, no manual PAT creation needed.
 
 **`Not a git repository`** — `ggshield secret scan repo` requires a git context. Use `ggshield secret scan path -r -y .` instead.
 

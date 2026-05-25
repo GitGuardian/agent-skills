@@ -79,8 +79,8 @@ What `ggshield hmsl` covers:
 - Quota check (`hmsl quota`)
 - HMSL service status (`hmsl api-status`)
 
-For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
-For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
+For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `../../references/ggshield-cli-setup.md`.
+For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `../../references/gitguardian-platform.md`.
 
 ## Onboarding (first use)
 
@@ -98,7 +98,7 @@ ggshield --version
 ggshield hmsl api-status
 ```
 
-If `ggshield --version` fails, point them to `/references/ggshield-cli-setup.md`. If `ggshield hmsl api-status` reports an auth issue, ask the user to run `ggshield auth login` locally.
+If `ggshield --version` fails, point them to `../../references/ggshield-cli-setup.md`. If `ggshield hmsl api-status` reports an auth issue, ask the user to run `ggshield auth login` locally.
 
 HMSL works in two auth modes:
 
@@ -196,7 +196,7 @@ Exit codes: `0` = no matches found, `1` = at least one secret matched (leaked pu
 - **Default to `-n none` for output pasted back to the agent.** Do not ask the user to paste output generated with `-n key`, `-n censored`, or `-n cleartext`.
 - **Ask the user to check quota before bulk runs.** Prefix mode currently consumes multiple credits per checked secret, so `ggshield hmsl quota` first.
 - **For a small handful of secrets, use `check`. For sensitive bulk audits, use the `fingerprint` / `query` / `decrypt` split.** The split lets the user inspect what's being sent and decouples the local hashing step from the network call.
-- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. Walk the user through rotation (`scan-secrets/references/remediation.md`) for every match.
+- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. Walk the user through rotation (`../scan-secrets/references/remediation.md`) for every match.
 - **HMSL is read-only.** A check does not "report" or "remove" the secret from anywhere — it only tells the user it's already public. Removal requires takedown action on the underlying source (e.g., a public GitHub repo).
 - **The `hash` field in HMSL output is a one-way SHA-256** — safe to report back to the user, but don't publish it in issues, PR comments, or logs unless the user asks. The `url` field points to a public source (e.g., a leaked GitHub commit) — safe and useful; this is the actionable information.
 
