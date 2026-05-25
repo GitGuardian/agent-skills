@@ -79,8 +79,8 @@ What `ggshield hmsl` covers:
 - Quota check (`hmsl quota`)
 - HMSL service status (`hmsl api-status`)
 
-For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see `/references/ggshield-cli-setup.md` at the repo root.
-For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `/references/gitguardian-platform.md` at the repo root.
+For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
+For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## Onboarding (first use)
 
@@ -98,7 +98,7 @@ ggshield --version
 ggshield hmsl api-status
 ```
 
-If `ggshield --version` fails, point them to `/references/ggshield-cli-setup.md`. If `ggshield hmsl api-status` reports an auth issue, ask the user to run `ggshield auth login` locally.
+If `ggshield --version` fails, point them to [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md). If `ggshield hmsl api-status` reports an auth issue, ask the user to run `ggshield auth login` locally.
 
 HMSL works in two auth modes:
 
