@@ -55,7 +55,7 @@ What `ggshield machine` covers:
 - Browse findings in a local web dashboard (`ggshield machine dashboard`)
 - Generate a JSON inventory and upload to GitGuardian for governance (`ggshield machine inventory`)
 
-For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see `references/gitguardian-platform.md`.
+For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation.md` applies — a found credential is a found credential regardless of which scanner found it.
 
 ## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
@@ -181,7 +181,7 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 
 **`Failed to fetch plugins: 404` on `ggshield plugin status`** — the user's GitGuardian workspace does not have the plugin system enabled. This is a workspace-level configuration, not a CLI fix. Have them contact their GitGuardian admin or check whether endpoint scanning is enabled for the workspace.
 
-**`401 Unauthorized`** — token missing or invalid. Run `ggshield api-status`. For scope recovery, see `references/gitguardian-platform.md`.
+**`401 Unauthorized`** — token missing or invalid. Run `ggshield api-status`. For scope recovery, see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 **`403 Forbidden` / "Endpoint scanning not available on your plan"** — the user's GitGuardian workspace is on Free or otherwise does not have endpoint scanning enabled. The fix is a workspace entitlement change, not a CLI change. Direct the user to https://dashboard.gitguardian.com (Settings → Billing) or to contact their workspace administrator. There is no CLI workaround.
 
@@ -195,7 +195,7 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 
 **Dashboard won't open** — port 7890 is in use. Override with `ggshield machine dashboard --port <other>`.
 
-**Inventory upload fails with `403 Forbidden`** — the Personal Access Token lacks the `nhi:send-inventory` scope (or `nhi:write-vault`, which includes it). Generate a PAT with the right scope at `dashboard.gitguardian.com` → API → Personal Access Tokens, or run the scope-recovery flow in `references/gitguardian-platform.md`.
+**Inventory upload fails with `403 Forbidden`** — the Personal Access Token lacks the `nhi:send-inventory` scope (or `nhi:write-vault`, which includes it). Generate a PAT with the right scope at `dashboard.gitguardian.com` → API → Personal Access Tokens, or run the scope-recovery flow in [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 **Inventory hangs forever in a headless environment (CI, SSH, no browser)** — when the API key isn't on the command line, `ggshield machine inventory` spins up a localhost OAuth callback server and waits for a browser. Always pass `--api-key "$GITGUARDIAN_API_KEY"` explicitly in headless contexts; do not rely on the env var alone.
 
