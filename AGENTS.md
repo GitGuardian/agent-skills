@@ -30,17 +30,23 @@ skills/                               # one folder per skill — discovered by C
     references/                       #   long-form reference, loaded on demand
       workflows.md
       remediation.md
+      ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
+      gitguardian-platform.md
   create-honeytokens/
     SKILL.md
     references/
       planting-strategy.md
+      ggshield-cli-setup.md
+      gitguardian-platform.md
   scan-machine/
     SKILL.md
+    references/
+      gitguardian-platform.md
   check-hmsl/
     SKILL.md
-references/                           # shared cross-skill reference
-  ggshield-cli-setup.md               # install/auth/headless setup for ggshield
-  gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
+    references/
+      ggshield-cli-setup.md
+      gitguardian-platform.md
 README.md                             # user-facing: what / install / what-you-can-do
 LICENSE                               # MIT
 ```
@@ -110,9 +116,18 @@ When in doubt, ask: *would this name still be right if we swapped the underlying
 
 Anything past ~150 lines, anything heavily detailed (alert response, planting strategy, full command variants with examples) lives in `skills/<name>/references/<topic>.md`. The SKILL.md stays terse and points at the reference. Lets the agent decide on demand what to load.
 
-### Cross-skill content goes in repo-root `references/`
+### Skills are self-contained — references live inside each skill
 
-Topics that apply to multiple skills live in repo-root `references/`, not duplicated per skill. Use `references/ggshield-cli-setup.md` for shared CLI install/auth/headless setup, and `references/gitguardian-platform.md` for public docs URL pattern, auth/scope recovery, instance URLs, and platform concepts. Each SKILL.md points at the relevant shared reference with one line.
+Every reference file lives inside its owning skill at `skills/<name>/references/<file>.md`. There is no bundle-root `references/` directory. SKILL.md files link to references as bare relative paths (`references/<file>.md`), which is the canonical pattern documented at https://code.claude.com/docs/en/skills#add-supporting-files and used by `supabase/agent-skills` and `getsentry/sentry-for-ai` — the two largest precedents.
+
+This means truly-shared content (e.g., `ggshield-cli-setup.md` and `gitguardian-platform.md`) is **duplicated into every skill that links to it**. Yes, that means 4 copies. The DRY cost is real, and it's the price for two properties we need:
+
+- **Every skill works in isolation.** A user who installs only `check-hmsl` via `npx skills add --skill check-hmsl` gets a complete skill folder with all its references resolved. Bundle-root references break this case.
+- **Path resolution is platform-independent.** Codex, Claude Code, Cursor, and skills.sh all interpret `references/<file>.md` as relative to the SKILL.md location. Bundle-root `../../references/<file>.md` is non-standard and surfaced agent-side resolution bugs in practice (see commit history for the Codex-on-`/references/` failure).
+
+**Edit discipline.** When you change a duplicated reference file in one skill, propagate the same change to every other skill that has a copy. A CI check that diffs the duplicated files would catch drift if/when this becomes a recurring problem.
+
+Skill-specific references (no duplication) — `scan-secrets/references/workflows.md`, `create-honeytokens/references/planting-strategy.md` — live alongside the shared ones in the same `references/` folder; only the *content* differs in whether it has copies elsewhere.
 
 ### SKILL.md section order
 
@@ -186,9 +201,16 @@ To add a new slash invocation:
 2. Phrase the skill's frontmatter `description:` so it reads cleanly as a slash-dropdown label — lead with the action verb, then list the auto-trigger conditions. The same string serves both audiences: humans browsing the dropdown and the model deciding when to auto-invoke.
 3. Update the [Slash commands table](#slash-commands) above and the README's slash-command bullets to reference the new invocation.
 
-## Adding to shared root references
+## Adding or editing a duplicated reference
 
-Add or update a repo-root reference if the content applies to **two or more** skills. Skill-specific content stays in `skills/<name>/references/`. Use `references/ggshield-cli-setup.md` for shared CLI setup and `references/gitguardian-platform.md` for GitGuardian platform concepts.
+`ggshield-cli-setup.md` and `gitguardian-platform.md` are intentionally duplicated into every skill that links to them (see *Skills are self-contained* above). When you edit one of these files, propagate the same edit to every other copy. Quick check:
+
+```bash
+for f in skills/*/references/ggshield-cli-setup.md; do shasum "$f"; done
+for f in skills/*/references/gitguardian-platform.md; do shasum "$f"; done
+```
+
+All copies of a given file should share the same checksum after your edit. If you need a *new* duplicated reference (some content that genuinely applies to two or more skills), copy it into each consuming skill the same way.
 
 ## Versioning
 

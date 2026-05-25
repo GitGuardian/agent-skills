@@ -125,7 +125,7 @@ Run an HMSL check on this list of API keys
 Show me which of these credentials have appeared in public leaks
 ```
 
-All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented once in [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md). Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented inside each skill at `references/ggshield-cli-setup.md`. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see `references/gitguardian-platform.md`.
 
 ## Repository layout
 
@@ -143,23 +143,29 @@ All skills share the same `ggshield` setup flow — detect the user's package ma
 .codex-mcp.json                       # GitGuardian Developer MCP server config (Codex)
 .mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
 mcp.json                              # same, for Cursor
-skills/                               # one folder per skill — shared by Claude Code, Codex & Cursor
+skills/                               # one folder per skill — each fully self-contained
   scan-secrets/
     SKILL.md
     references/                       # heavy reference, loaded on demand
       workflows.md
       remediation.md
+      ggshield-cli-setup.md
+      gitguardian-platform.md
   create-honeytokens/
     SKILL.md
     references/
       planting-strategy.md
+      ggshield-cli-setup.md
+      gitguardian-platform.md
   scan-machine/
     SKILL.md
+    references/
+      gitguardian-platform.md
   check-hmsl/
     SKILL.md
-references/                           # shared cross-skill references
-  ggshield-cli-setup.md               # install/auth/headless setup for ggshield
-  gitguardian-platform.md             # public docs URL pattern, auth/scope recovery, instance URLs
+    references/
+      ggshield-cli-setup.md
+      gitguardian-platform.md
 kiro/                                 # Kiro power (separate format)
   POWER.md
   steering/                           # contextually-loaded guidance
