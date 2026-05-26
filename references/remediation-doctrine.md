@@ -259,3 +259,35 @@ Dispatch:
 Containment mode is reserved for the public + corp + production worst case, where the credential is provably out and the developer is provably not the right responder. In the internal-private track, the credential is on a finite, auditable surface — Escalation is the right mode even for production-critical corp-owned secrets, because there's a path to actually fix the underlying exposure (rotation + history rewrite + clone audit) that doesn't exist publicly. The owning team can drive the full remediation; containment-style triage is over-escalation.
 
 If the read-path checklist above flips this finding into the public-facing track, the worst case re-becomes Containment there.
+
+---
+
+## 8. Off-repo exposure track
+
+The credential sits on a developer machine outside git: dotfiles, shell history (`.bash_history`, `.zsh_history`), cloud CLI configs (`~/.aws/credentials`, `~/.kube/config`, `gcloud` defaults), agent caches, abandoned project trees in `~/Downloads` or `~/tmp`. This is `scan-machine` territory. **Not a "leak" in the git sense** — the secret has not propagated through commit / push / repo-clone — but it remains exfiltrable through other paths.
+
+### Exfiltration model
+
+The exposure surface is different from a repo leak. Risk paths include:
+
+- **Local disk access by an attacker** with workstation-level compromise (malware, lost laptop, insider).
+- **Backup vendors** that snapshot the developer's home directory to a third party (corporate iCloud / OneDrive / Dropbox, automatic backup tools).
+- **Shared dev environments** where "the machine" isn't a single workstation — Codespaces, dev containers, cloud IDEs, jump hosts. The credential may already be visible to whoever administers the shared infrastructure.
+- **Future scanning** by automation that traverses the file system, including future invocations of the agent itself.
+
+### Triage flow
+
+Detection context is `scan-machine` and is free. The other axes are reframed for the off-repo context: ownership splits into *two* questions, because "who owns the credential" and "who owns the machine" can be different people, and both matter.
+
+1. **Exposure — different read-path here.** *"Is this machine personally owned, corp-issued, or a shared environment (Codespaces, dev container, jump host)? Is anything in your home directory backed up to an external service?"* Answers map to the same public-facing / internal-private split, with shared environments and external backup tipping toward the public-facing playbook because the read-path widens past the developer.
+2. **Machine / profile ownership.** *"Whose machine or shell profile is this finding on? You? A teammate? A shared dev environment whose admin is someone else?"* This determines who can clean up the off-repo location (delete the file, edit the dotfile, scrub the shell history). A finding on a teammate's profile or a shared jump host is not the developer's to scrub directly; the agent's deliverable for cleanup becomes a handoff to the owner of the profile.
+3. **Credential ownership.** Same axis as the post-leak tracks: does the developer have authority to revoke and reissue this credential? Determines who can drive the rotation half.
+4. **Blast radius.** Same axis: sandbox / shared dev / production-critical.
+
+The two ownership questions can have different answers (e.g., the developer owns the credential but the machine is shared, or the machine is theirs but the credential belongs to another team). The agent treats them as independent and selects the deliverable per the *more restrictive* of the two.
+
+Dispatch follows the same mode-selection table as the post-leak tracks based on the combined ownership + blast-radius answers. Public-leak takedown does not apply (no public artifact to take down), but the *behavioral* containment-mode checklist (treat credential as burned, hunt for anomalous usage, document the exposure timeline) is appropriate when the answers land there.
+
+### Remediation in addition to rotation
+
+For the off-repo track, the agent also surfaces "remove the credential from the off-repo location it was found" — delete the file, edit the dotfile, scrub the shell history entry. This is independent of rotation and applies regardless of mode. When the machine-ownership answer is "not me" (teammate, shared infrastructure), the scrub becomes a handoff with explicit location coordinates rather than a self-driven action. The doctrine does *not* specify the per-location scrub commands here (they vary by shell, OS, and backup vendor); the `scan-machine` skill carries the dispatch.
