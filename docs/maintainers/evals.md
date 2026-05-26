@@ -23,6 +23,26 @@ claude --dangerously-skip-permissions --plugin-dir . --model claude-sonnet-4-6 \
 
 The loop produces `iteration-N/` directories under `<skill>-workspace/` with `outputs/`, `timing.json`, `grading.json`, and a per-iteration `benchmark.json`.
 
+### Codex driver
+
+`skill-creator`'s scripts only drive the Claude runtime. To exercise the same `evals.json` against Codex (OpenAI), use `skills/scan-secrets/evals/run-codex.sh`. It builds each fixture via its `setup.sh`, runs `codex exec --json` inside the fixture, and captures `events.jsonl`, the final message, and a `timing.json` (`turn.completed.usage` + wall-clock duration).
+
+```bash
+# with skill (your current CODEX_HOME, plugin installed)
+skills/scan-secrets/evals/run-codex.sh
+
+# without skill — requires a second codex home with the plugin uninstalled
+CODEX_HOME=~/.codex-skill-off codex plugin marketplace add GitGuardian/agent-skills
+# (do NOT `codex plugin add` in that home — leaves the plugin available but uninstalled)
+export CODEX_HOME_NO_SKILL=~/.codex-skill-off
+skills/scan-secrets/evals/run-codex.sh --no-skill
+
+# one specific eval, alternate model
+skills/scan-secrets/evals/run-codex.sh --eval 2 --model gpt-5-mini
+```
+
+The script captures only — grading and aggregation are not wired in yet. Outputs land under `scan-secrets-workspace/codex/iteration-N/`, which is gitignored. Plugin-state sanity check runs before any model call, so a forgotten `CODEX_HOME=` won't burn tokens.
+
 ### Fixtures that need to ship detectable secrets
 
 `scan-secrets` evals need fixtures that ggshield will actually flag — otherwise the assertions can't grade real behavior. But committing real-shape secret values straight into the repo lights up CI on every PR. The pattern we settled on for that skill: a single committed `evals/files/_shared/secrets.env` holds the synthetic values *with `# ggignore` comments* (so repo-wide ggshield scans stay clean), and each per-eval `setup.sh` sources that file and writes the values into a `_built/` target dir *without* the ggignore comments (so the runtime fixture triggers detections as intended). See `skills/scan-secrets/evals/files/README.md`.
