@@ -170,3 +170,41 @@ The credential is in one or more local commits about to leave the machine. This 
 ### Why no triage axes here
 
 The credential has not been exposed. Ownership and blast radius are moot — rotation is not on the table. Detection context alone determines the deliverable. If the agent or the user is *unsure whether the secret has already been pushed* (e.g., the user can't remember, or this finding came from a routine repo scan rather than a hook), dispatch to the post-leak track instead. When in doubt, assume the secret has propagated.
+
+---
+
+## 6. Post-leak / public-facing track
+
+The credential has been observed on a public artifact — public GitHub repository, public commit, public gist, HMSL match against the public-leak corpus, or any other source accessible to anyone with internet access. **The credential is burned.** Treat as compromised from the moment of first public exposure.
+
+### The scrape window
+
+Public GitHub is scraped continuously by bots looking for credentials. The window between commit and scrape is typically minutes, not hours. By the time the agent surfaces the finding, the credential should be assumed to have been collected by at least one party with no relationship to the developer or the owning organization. Rotation prevents further damage, but does not undo the exposure.
+
+### History rewrite: don't bother
+
+Force-pushing a history rewrite (BFG, `git filter-repo`) on a public repo:
+
+- Does not retrieve the credential from mirrors, forks, archive sites, search indexes, or CI artifacts — all of which keep their own copies.
+- Breaks every fork, clone, and open pull request, forcing coordinated re-clones for everyone with access.
+- Buys nothing the rotation hasn't already bought.
+
+The rotated credential is dead — that is what stops the attack. Scrubbing history on top is cosmetic and high-coordination. *Exception:* regulatory or contractual data-deletion obligations may force the rewrite anyway; do it *after* rotation, with explicit buy-in from collaborators, and with full acknowledgment that mirrors / forks / caches remain out of reach.
+
+### Triage flow
+
+Run the three axes (exposure is already answered: public-facing):
+
+1. **Ownership** — does the developer have authority to revoke this credential right now?
+2. **Blast radius** — sandbox / shared dev / production-critical?
+
+Dispatch to the deliverable mode:
+
+| Ownership | Blast | Mode |
+|---|---|---|
+| Own | Sandbox or shared dev | Driver |
+| Own | Production-critical | Coordination |
+| Corp-owned | Sandbox or shared dev | Escalation |
+| Corp-owned | Production-critical | **Containment** |
+
+In every cell, surface the public-leak takedown action (see [§ 11](#11-public-leak-takedown--reporting)) as parallel — it does not replace rotation, but it slows secondary scrapes and creates an audit trail.
