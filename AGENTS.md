@@ -304,54 +304,105 @@ Each runtime's driver reads its own key and runs the eval set once per model. Th
 
 Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten its schema later, so adding our own top-level key is fragile; (2) "which models to test" is a deployment concern, not a test-case concern — separating them keeps each file's job clear.
 
-### Running an eval manually
+### Running evals manually
 
-We do not ship a driver script — stderr, exit codes, and the raw event stream stay visible when each command is invoked by hand. The flow is two steps: build the fixture, then invoke `claude -p` inside it.
-
-From the repo root:
+We don't ship a driver. Each cell of the (eval × model) matrix is one documented command, with stderr, exit codes, and event stream visible by default. Set `REPO` once for the session, then paste the cell you want:
 
 ```bash
-REPO=$(pwd)
-EVAL_ID=1
-MODEL=claude-sonnet-4-6
-
-# 1. Resolve the test case and fixture
-FIXTURE=$(jq -r ".evals[] | select(.id==$EVAL_ID) | .files[0]" \
-  "$REPO/skills/scan-secrets/evals/evals.json")
-PROMPT=$(jq -r ".evals[] | select(.id==$EVAL_ID) | .prompt" \
-  "$REPO/skills/scan-secrets/evals/evals.json")
-
-# 2. Build the fixture (idempotent — wipes and rebuilds _built/)
-bash "$REPO/skills/scan-secrets/$FIXTURE/setup.sh"
-
-# 3. Run the eval inside the built tree, against the in-tree skill
-cd "$REPO/skills/scan-secrets/$FIXTURE/_built"
-claude -p \
-  --plugin-dir "$REPO" \
-  --model "$MODEL" \
-  --permission-mode bypassPermissions \
-  --no-session-persistence \
-  "$PROMPT"
+REPO=$(git rev-parse --show-toplevel)
 ```
 
-Add `--output-format stream-json --verbose` if you want the raw event stream (tokens, tool calls, durations). The default `text` output is the final reply, easier to read.
+The `--plugin-dir "$REPO"` flag ensures every run exercises the in-tree skill on this branch, not whichever version is globally installed. **Keep this section in sync with `targets.json`** — if you add a model to `.claude` or a test case to `evals.json`, append the corresponding command pair below.
 
-The `--plugin-dir "$REPO"` flag is the key bit: the eval exercises the in-tree skill on this branch, not whichever version is globally installed.
+#### Eval 1 — `precommit-env-file`
 
-To sweep multiple models, wrap step 3 in a shell loop:
+> *"hey before I commit, can you check if this .env file I'm about to add has any secrets in it?"*
+
+Build the fixture (idempotent, wipes and rebuilds `_built/`):
 
 ```bash
-for MODEL in $(jq -r '.claude[]' "$REPO/skills/scan-secrets/evals/targets.json"); do
-  echo "--- $MODEL ---"
-  claude -p --plugin-dir "$REPO" --model "$MODEL" \
+bash "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/setup.sh"
+```
+
+Run on `claude-sonnet-4-6`:
+
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$PROMPT"
-done
+    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
 ```
 
-We deliberately don't capture outputs into `<skill>-workspace/<model>/...` from a script. Save what you want to keep by hand (`> file.txt`) and copy it into your local notes — what's worth preserving from each iteration is a judgment call, not something a runner should automate.
+Run on `claude-haiku-4-5-20251001`:
 
-A clean `without_skill` baseline is hard to produce from one invocation: global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable via a single flag. When you need the baseline, use skill-creator's harness, which has techniques for that.
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+```
+
+#### Eval 2 — `aws-key-history-hunt`
+
+> *"I think someone committed an AWS key in this repo last sprint. Scan the full git history and tell me which commit and which file."*
+
+Build the fixture:
+
+```bash
+bash "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/setup.sh"
+```
+
+Run on `claude-sonnet-4-6`:
+
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+```
+
+Run on `claude-haiku-4-5-20251001`:
+
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+```
+
+#### Eval 3 — `ambiguous-project-scan`
+
+> *"can you scan my project for secrets"*
+
+Build the fixture:
+
+```bash
+bash "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/setup.sh"
+```
+
+Run on `claude-sonnet-4-6`:
+
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+```
+
+Run on `claude-haiku-4-5-20251001`:
+
+```bash
+( cd "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built" && \
+  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+```
+
+#### Tips
+
+- Add `--output-format stream-json --verbose` to any cell above to see tokens, tool calls, and durations. The default `text` output is the final reply, easier to skim.
+- Capture for later inspection by redirecting: `... > with_skill.txt 2> stderr.log`. We deliberately don't automate this — what's worth keeping from each iteration is a judgment call.
+- A clean `without_skill` baseline is hard to produce from one invocation: global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable via a single flag. Use skill-creator's harness for that comparison.
 
 ## Versioning
 
