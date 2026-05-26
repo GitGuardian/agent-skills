@@ -81,8 +81,13 @@ fi
 
 # Sanity-check plugin state matches the toggle. Catches the "forgot to
 # CODEX_HOME=" footgun before burning tokens.
-if codex plugin list 2>/dev/null \
-   | grep -q "gitguardian@gitguardian-agent-skills.*installed, enabled"; then
+#
+# Capture into a variable before grep — piping `codex plugin list | grep -q`
+# is a SIGPIPE trap under `set -o pipefail`: grep -q exits early on match,
+# codex sees a broken pipe, the pipeline returns non-zero, and the check
+# misreads the present-and-enabled plugin as absent.
+plugin_list=$(codex plugin list 2>/dev/null || true)
+if grep -q "gitguardian@gitguardian-agent-skills.*installed, enabled" <<<"$plugin_list"; then
   PLUGIN_PRESENT=1
 else
   PLUGIN_PRESENT=0
