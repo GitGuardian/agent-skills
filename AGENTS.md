@@ -243,7 +243,7 @@ The loop produces `iteration-N/` directories under `<skill>-workspace/` with `ou
 | Test-case fixture files under `evals/files/` (when needed) | The `analyzer`, `grader`, `comparator` subagents |
 | `.gitignore` entry for `*-workspace/` | Workspace layout convention |
 
-Iteration cadence, raw outputs, and what we keep from each round live in personal notes (`.personal/`), not in the repo.
+Iteration cadence, raw outputs, and what we keep from each round are local-only and do not ship in this repo.
 
 ### Authoring conventions for `evals.json`
 
