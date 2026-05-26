@@ -685,6 +685,193 @@ The dependency map for keys is usually *wider* than for passwords because the pu
 - Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
 - For SSH keys, watch the `auth.log` (Linux) / `secure` (RHEL) / SSH audit logs on the previously-trusting servers for failed authentication attempts with the old key — surfaces consumers that were missed.
 
+### 9.6 Stripe API keys
+
+**What it is.** A key issued by Stripe for programmatic access to a Stripe account's API. Two key axes matter:
+
+- **Live vs test** — `sk_live_...` vs `sk_test_...`. A leaked test key in a public repo is a finding but not a security incident; a leaked live key is.
+- **Unrestricted vs restricted** — unrestricted secret keys grant full account access; restricted keys (created via Dashboard) scope permissions per resource. Treat unrestricted-secret-key leaks as worst-case Stripe.
+
+Publishable keys (`pk_live_...`, `pk_test_...`) are *meant* to be exposed in client-side bundles; finding one in a public repo is not a leak. Verify the prefix before treating as an incident.
+
+**Revoke location.** Stripe Dashboard → Developers → API keys → click the leaked key → *Roll key…* (rolls + sets an expiration window on the old key, supporting graceful overlap) or *Delete*. Restricted keys appear in the same list and roll the same way. There is no public CLI for revoking secret keys — Dashboard is the supported path.
+
+**Regenerate location.** Same page. *Roll* creates a new key value with the same scopes and triggers an expiry on the old one; the default rollover window is 12 hours, configurable up to 7 days. *Create restricted key* makes a new scoped key.
+
+**Common consumers.**
+
+- Backend services that call Stripe's API — env var `STRIPE_SECRET_KEY` or `STRIPE_API_KEY` on payment-handling services
+- Webhook signature verification — a separate `whsec_…` value lives in webhook endpoint configs and rotates independently (don't conflate; if a `whsec_` value leaked, that's a different rotation)
+- CI configurations that exercise Stripe in integration tests (should be test keys, but worth verifying)
+- BI / data pipelines pulling Stripe event data via their API
+- Third-party platforms that aggregate Stripe accounts (BillForward, Recurly migrations, accounting integrations) — these often hold restricted keys
+
+**Dependency mapping for this type.**
+
+1. Stripe Dashboard → Developers → Logs filters by API key. Filter to the leaked key for the exposure window; the log shows endpoint, IP, and Stripe-version per request. This is the cleanest first signal.
+2. Grep the org's repos for the canonical env-var names and the leaked key prefix:
+
+   ```bash
+   git grep -nE 'STRIPE_(SECRET|API)_KEY|sk_live_|sk_test_'
+   ```
+
+3. List services that depend on Stripe — your CMDB / service catalog should have this; otherwise search deploy configs.
+4. Check CI secret stores (GitHub Actions, GitLab CI, etc.) for `STRIPE_*` entries.
+5. Inventory third-party integrations from the Stripe Dashboard's *Connected apps* / *Apps* section.
+
+Stripe's *Roll key* with an expiry window is the canonical overlap mechanism. Roll → distribute new value to consumers within the window → confirm logs show the new key in use → let the old key expire automatically.
+
+**Post-rotation verification.**
+
+- Once the rollover window passes, confirm the old key returns `401`:
+
+  ```bash
+  curl -i -u <old-sk_live_key>: https://api.stripe.com/v1/charges?limit=1
+  # expect: HTTP/2 401 ... "error": { "type": "invalid_request_error", "code": "api_key_expired" }
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch Stripe Dashboard's API request logs for failures attributed to the old key; surfaces consumers that didn't pick up the new value before the rollover expired.
+
+Canonical Stripe reference: <https://docs.stripe.com/keys>.
+
+### 9.7 Slack incoming webhooks
+
+**What it is.** A URL of the form `https://hooks.slack.com/services/T<team>/B<channel-binding>/<secret>` that lets anyone with the URL post messages into a specific Slack channel as a specific app integration. The URL *is* the credential — there is no separate username / token.
+
+**Revoke location.** Two paths depending on how the webhook was created:
+
+- **Created from a Slack app's Incoming Webhooks feature** — Slack app config → Features → Incoming Webhooks → find the webhook in the list → *Delete*. The owning user is whoever installed the app to the channel; they're the only one who can delete it.
+- **Created from the legacy "Incoming Webhooks" custom integration** — Workspace admin → *Manage* → *Custom Integrations* → Incoming Webhooks → click → *Disable* / *Remove*. Most orgs have migrated off these, but some remain.
+
+There is no API to revoke an individual webhook URL programmatically — UI only.
+
+**Regenerate location.** Same UI path → *Add New Webhook* (Slack app) or *Add Incoming Webhooks Integration* (legacy). The new URL is generated immediately; cannot be retrieved later (Slack shows it once on the integration page, but copy-paste is the only path).
+
+**Common consumers.**
+
+- Monitoring and alerting (Prometheus Alertmanager `slack_configs`, Datadog Slack integration, PagerDuty → Slack, custom alerting scripts)
+- CI failure notifications (GitHub Actions `slackapi/slack-github-action`, Jenkins Slack plugin, GitLab CI custom scripts)
+- Deployment hooks (post-deploy success / failure messages from CD pipelines)
+- Personal automation scripts that the developer wrote against the channel they own
+- Status pages and uptime monitors (StatusCake, BetterUptime, Uptime Robot)
+
+**Dependency mapping for this type.**
+
+1. Grep the org's repos for the Slack webhook URL format and the leaked URL fragment:
+
+   ```bash
+   git grep -nE 'hooks\.slack\.com/services/T[A-Z0-9]+/B[A-Z0-9]+/[a-zA-Z0-9]+'
+   ```
+
+2. Check Alertmanager / monitoring configs for Slack receivers.
+3. Slack workspace owner → Manage apps → click the app that owns the webhook → see channel posts in recent activity (no per-URL request log, unfortunately, so this is coarse).
+4. Check CI secret stores for `SLACK_WEBHOOK_URL` / `SLACK_WEBHOOK` entries.
+5. Ask the team that owns the destination channel — they likely know what posts there.
+
+No overlap mechanism. Both URLs work until you delete the old; coordinate consumers to switch, then delete.
+
+**Post-rotation verification.**
+
+- Send a deliberate POST to the old URL and expect a non-200 response:
+
+  ```bash
+  curl -i -X POST -H 'Content-Type: application/json' \
+    -d '{"text":"verification probe"}' \
+    https://hooks.slack.com/services/T.../B.../<old-secret>
+  # expect: 404 invalid_token, or similar non-200
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch the destination Slack channel for missing messages (alert silence is a *symptom*, not a great verification — pair with the explicit probe above).
+
+Canonical Slack reference: <https://api.slack.com/messaging/webhooks>.
+
+### 9.8 GCP service account JSON
+
+**What it is.** A JSON key file containing a service account's private key, downloaded once from the GCP console at creation time. Authenticates against GCP APIs as the service account; carries whatever IAM bindings that account has been granted. Format: a JSON object with `type: "service_account"`, `project_id`, `private_key_id`, `private_key`, `client_email`, and friends.
+
+> **Strong recommendation.** Prefer **Workload Identity Federation** (for GKE, GitHub Actions, GitLab, etc.) or short-lived OAuth tokens over downloaded JSON keys for new workloads. If this finding is the first time the JSON-key pattern is being scrutinized, surface the alternative as part of the remediation — the rotation is the right moment to migrate.
+
+**Revoke location.** GCP Console → IAM & Admin → Service Accounts → click the service account → Keys tab → find the key by `key_id` (matches `private_key_id` in the JSON) → *Delete*. CLI equivalent:
+
+```bash
+# List keys for the service account
+gcloud iam service-accounts keys list \
+  --iam-account=<sa-email> \
+  --project=<project-id>
+
+# Delete the leaked key
+gcloud iam service-accounts keys delete <key-id> \
+  --iam-account=<sa-email> \
+  --project=<project-id>
+```
+
+Deletion is immediate and irreversible. There is no "disable" intermediate state — deletion is the only revocation path.
+
+**Regenerate location.** Same Keys tab → *Add Key* → *Create new key* → JSON. The new file downloads immediately. A service account can hold multiple active keys (up to 10), supporting overlap rollouts.
+
+**Common consumers.**
+
+- Environment variable `GOOGLE_APPLICATION_CREDENTIALS` set to a file path on the consuming machine / pod
+- Mounted file paths in Kubernetes pods, Cloud Run services, App Engine deploys, CI runners
+- Kubernetes secrets (the JSON pasted as a `Secret` and mounted into pods) — the leak vector is often the secret manifest checked into git
+- CI provider secrets (GitHub Actions, GitLab CI) — base64-encoded JSON pasted into a secret variable
+- Terraform / Pulumi state files when the GCP provider was configured with credentials inline
+- Local developer machines authenticating gcloud-aware tools without `gcloud auth application-default login`
+
+**Dependency mapping for this type.**
+
+1. GCP audit logs filtered by the service account principal email surface caller identities and source IPs:
+
+   ```bash
+   gcloud logging read \
+     "protoPayload.authenticationInfo.principalEmail=\"<sa-email>\"" \
+     --project=<project-id> \
+     --freshness=30d \
+     --format=json \
+     --limit=1000
+   ```
+
+   The `protoPayload.requestMetadata.callerIp` field gives the source IP per call.
+
+2. Grep the org's repos for the service account email and the `private_key_id`:
+
+   ```bash
+   git grep -nE '<sa-email>|"private_key_id"|GOOGLE_APPLICATION_CREDENTIALS'
+   ```
+
+3. List Kubernetes secrets that may hold service account JSON:
+
+   ```bash
+   # Across all namespaces in a cluster
+   kubectl get secrets --all-namespaces -o json \
+     | jq -r '.items[] | select(.type == "Opaque") | .metadata.namespace + "/" + .metadata.name'
+   ```
+
+   Then `kubectl get secret <name> -o jsonpath='{.data}' | base64 -d` (cautiously) to verify which hold the leaked key.
+
+4. Check CI secret stores for `GCP_SA_KEY` / `GOOGLE_CREDENTIALS` entries.
+5. Inventory Cloud Run / App Engine / GKE workloads that may have been configured with the SA.
+
+The 10-keys-per-SA limit supports overlap: create new key → distribute → confirm new key in audit logs → delete old.
+
+**Post-rotation verification.**
+
+- Authenticate deliberately with the old JSON and expect `401 invalid_grant`:
+
+  ```bash
+  GOOGLE_APPLICATION_CREDENTIALS=/path/to/old-key.json \
+    gcloud auth application-default print-access-token
+  # expect: ERROR: ... invalid_grant ... Account has been disabled / Key has been deleted
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch GCP audit logs for `permission_denied` events from the SA over the next 24–72h; surfaces consumers that were missed.
+- Spot-check Kubernetes pods for `Failed to authenticate` errors in their stdout / stderr if the SA was used for pod-level auth.
+
+Canonical GCP reference: <https://cloud.google.com/iam/docs/keys-create-delete>.
+
 ---
 
 ## 10. Generic coordination framework
