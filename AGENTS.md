@@ -32,6 +32,14 @@ skills/                               # one folder per skill — discovered by C
       remediation.md
       ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
       gitguardian-platform.md
+    evals/
+      evals.json                      #   prompts + assertions per test case
+      files/                          #   test fixtures (committed; built at runtime by setup.sh)
+        README.md
+        _shared/secrets.env           #   synthetic secret values (ggignore-suppressed)
+        eval-1-precommit-env-file/setup.sh
+        eval-2-aws-key-history-hunt/setup.sh
+        eval-3-ambiguous-project-scan/setup.sh
   create-honeytokens/
     SKILL.md
     references/
@@ -224,7 +232,7 @@ npx --yes skills add anthropics/skills --skill skill-creator
 
 ### Per-skill workflow
 
-Test cases live in `skills/<skill>/evals/evals.json`. Workspace results (per-iteration outputs, timing, grading, benchmarks) go to a sibling directory `<skill>-workspace/` that is gitignored — never commit it.
+Test cases live in `skills/<skill>/evals/evals.json`. Test fixtures (small projects the agent operates on during a run) live under `skills/<skill>/evals/files/<eval-name>/`. Workspace results (per-iteration outputs, timing, grading, benchmarks) go to a sibling directory `<skill>-workspace/` that is gitignored — never commit it.
 
 Run the loop against a skill:
 
@@ -234,6 +242,27 @@ claude --plugin-dir . "Run skill-creator's eval loop against skills/scan-secrets
 ```
 
 The loop produces `iteration-N/` directories under `<skill>-workspace/` with `outputs/`, `timing.json`, `grading.json`, and a per-iteration `benchmark.json`.
+
+#### Fixtures that need to ship detectable secrets
+
+`scan-secrets` evals need fixtures that ggshield will actually flag — otherwise the assertions can't grade real behavior. But committing real-shape secret values straight into the repo lights up CI on every PR. The pattern we settled on for that skill: a single committed `evals/files/_shared/secrets.env` holds the synthetic values *with `# ggignore` comments* (so repo-wide ggshield scans stay clean), and each per-eval `setup.sh` sources that file and writes the values into a `_built/` target dir *without* the ggignore comments (so the runtime fixture triggers detections as intended). See `skills/scan-secrets/evals/files/README.md`.
+
+CI sanity check that the committed fixtures don't accidentally ship a live secret:
+
+```bash
+ggshield secret scan path -r -y skills/scan-secrets/evals/files
+```
+
+Expected: `No secrets have been found`.
+
+#### Subagent harness quirk: `git` is denied, `ggshield` isn't
+
+Eval-loop subagents (the `Agent` tool, even with `mode: bypassPermissions`) cannot invoke `git` directly from Bash — `git --version`, `git status`, `git log`, `git init` all return *"Permission to use Bash has been denied."* The denial is at the **harness permission layer**, not macOS `sandbox-exec`. Two consequences:
+
+- **`dangerouslyDisableSandbox: true` does not help.** Wrong knob — that flag controls the downstream `sandbox-exec` wrapper, not the upstream harness allowlist.
+- **`ggshield secret scan pre-commit` / `secret scan repo` still work.** The harness allowlists `ggshield` at the top-level argv and does not introspect what `ggshield` spawns internally — so any `git` plumbing ggshield does for you is fine. This is why eval-2 (`aws-key-history-hunt`) scans correctly: the subagent runs `ggshield secret scan repo .`, ggshield walks history internally.
+
+**Practical rule:** subagents cannot bootstrap a git-repo fixture themselves. Build fixtures in the **parent session** (or via a one-shot shell setup script that ran before the agent spawned), then point the subagent at the pre-built dir. The `evals/files/<eval-name>/setup.sh` pattern documented above is designed around this constraint — the setup runs once, the subagent only ever reads or hands the fixture to `ggshield`.
 
 ### What ships in this repo vs lives upstream
 
