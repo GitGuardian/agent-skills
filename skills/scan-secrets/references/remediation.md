@@ -38,7 +38,7 @@ Heavy reference loaded on demand from `SKILL.md`. Covers scan output structure, 
 | `filename` | File containing the secret |
 | `policy_break_count` | Number of secrets found in this file |
 | `break_type` | Type of secret (e.g., `"AWS Keys"`, `"GitHub Token"`, `"Generic High Entropy Secret"`) |
-| `validity` | Whether the secret is still active: `"valid"`, `"invalid"`, `"unknown"`, `"cannot_check"` (also surfaces as `"no_checker"` for detectors without a validity checker). For `unknown` / `cannot_check` / `no_checker` findings, the natural follow-up is HMSL — but **do not run it yourself**: HMSL is user-run only ([`check-hmsl/SKILL.md`](../../check-hmsl/SKILL.md)). Reading the credential file or running `ggshield hmsl *` from the agent pulls plaintext into the transcript. |
+| `validity` | Whether the secret is still active: `"valid"`, `"invalid"`, `"unknown"`, `"cannot_check"` (also surfaces as `"no_checker"` for detectors without a validity checker). For `unknown` / `cannot_check` / `no_checker` findings, the natural follow-up is HMSL — see "HMSL follow-up for unverifiable findings" below before suggesting it. |
 | `severity` | Risk level: `critical`, `high`, `medium`, `low`, `info` |
 | `line_start` / `line_end` | Line numbers in the file |
 
@@ -53,6 +53,33 @@ Use `--minimum-severity` to filter noise in large repos:
 # -y is required alongside -r to skip the "Confirm recursive scan." prompt
 ggshield secret scan path -r -y . --minimum-severity high --json
 ```
+
+### HMSL follow-up for unverifiable findings
+
+When `validity` is `unknown`, `cannot_check`, or `no_checker`, the live/dead validity check failed (no checker for that detector, network error, or the detector is structural-only). The natural next question is: "is this credential already public?" — answerable with **HasMySecretLeaked (HMSL)**, GitGuardian's privacy-preserving hash-lookup service.
+
+The contract below is self-contained — it holds whether or not the user has the dedicated `check-hmsl` skill installed:
+
+- **HMSL is user-run only.** The agent does **not** invoke `ggshield hmsl check`, `ggshield hmsl fingerprint`, `ggshield hmsl query`, `ggshield hmsl decrypt`, or `ggshield hmsl check-secret-manager`. It prepares the command and explains the trade-offs; the user runs it in their own terminal.
+- **The agent does not read the credential file.** No `Read` / `Grep` / `cat` / `head` / `tail` / `sed` / `awk` / `less` / `xxd` / `wc` / `file` / `ls` / LSP-backed tool against the credential file or any HMSL intermediate file (`*-payload.txt`, `*-mapping.txt`, `*.dump`). Any such call pulls plaintext into the agent context before HMSL's local-hashing protocol can protect it.
+- **Always `-n none --json`.** The naming strategy `none` strips identifying hints from the output the user pastes back. Never `-n key`, never `-n censored`, never `-n cleartext`.
+- **Surface quota before bulk runs.** Have the user run `ggshield hmsl quota` first; prefix mode (the default) consumes multiple credits per checked secret.
+- **Never paste a raw secret into the conversation** to set up an HMSL check. If the user offers one inline, redirect: *"Put it in a file outside the repo, give me the path, run the command yourself."*
+
+Commands to hand to the user (the agent prints these; the user runs them):
+
+```bash
+# Quick start
+ggshield hmsl quota                                          # check daily credit budget first
+ggshield hmsl check /path/to/secrets.txt --json -n none      # one-shot check, no hint in output
+ggshield hmsl check -t env /path/to/.env --json -n none      # .env-formatted input
+```
+
+Exit codes: `0` = no matches found (not known to be leaked publicly); `1` = at least one secret matched (leaked); non-zero = error.
+
+A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — proceed straight to rotation per Step 2 below.
+
+If the user has the `check-hmsl` skill installed locally, it covers additional flows (multi-stage `fingerprint`/`query`/`decrypt` for sensitive bulk audits, `check-secret-manager hashicorp-vault` for vault inventories, troubleshooting). The agent should load that skill for those flows. The rules above remain in force regardless.
 
 ---
 

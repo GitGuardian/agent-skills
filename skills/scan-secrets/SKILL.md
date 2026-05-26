@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing. Authorization to run `ggshield secret scan` does NOT extend to `ggshield hmsl *` — those checks have a different execution model; load `check-hmsl/SKILL.md` before suggesting an HMSL follow-up."
+description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing. Authorization to run `ggshield secret scan` does NOT extend to `ggshield hmsl *` — HMSL is user-run only (agent prepares the command, the user executes it)."
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -20,7 +20,11 @@ description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, D
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per [references/remediation.md](references/remediation.md) — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
-- **Do not extend this skill's agent-executable contract to HMSL.** When a finding's `validity` is `unknown`, `cannot_check`, `no_checker`, or you otherwise want to verify whether a credential is *already public*, the relevant follow-up is HasMySecretLeaked (HMSL). HMSL is a **separate skill with a separate execution model** — user-run only. Do **not** run `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager` yourself, and do **not** read the credential file with `Read`/`Grep`/`cat`/etc. to "prepare an input" — that pulls plaintext into the agent context. Load [`check-hmsl/SKILL.md`](../check-hmsl/SKILL.md) first and follow the user-run protocol there. The cleartext must never enter your transcript.
+- **Do not extend this skill's agent-executable contract to HMSL.** When a finding's `validity` is `unknown`, `cannot_check`, or `no_checker`, the natural follow-up is HasMySecretLeaked (HMSL) — GitGuardian's privacy-preserving hash-lookup service for *known* credentials against the public-leak corpus. HMSL has a **different execution model — user-run only** — and the contract holds whether or not the user has the dedicated `check-hmsl` skill installed:
+  - Do **not** invoke `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager` yourself.
+  - Do **not** read the credential file with `Read` / `Grep` / `cat` / `head` / `tail` / `sed` / `awk` / `less` / `xxd` / `wc` / `file` / `ls` or any other tool — that pulls plaintext into the agent context before HMSL's local-hashing protocol can protect it.
+  - Print the exact command for the user to run in their own terminal. Use `-n none --json` so the output the user pastes back contains no identifying hints. Suggest `ggshield hmsl quota` before any bulk check. Refuse `--naming-strategy cleartext` outright.
+  - If the user has the `check-hmsl` skill installed, the agent should load it for the full protocol and command set; if not, the rules above are sufficient on their own — do not gate the follow-up on having the other skill.
 
 ## When to Use
 
@@ -66,7 +70,7 @@ ggshield install -t cursor -m global          # Cursor
 ggshield install -t copilot -m global         # Copilot
 ```
 
-Propose this on first use with a one-liner: *"For defense in depth — so credentials in files I read never reach my transcript — install the agent hook now? (`ggshield install -t claude-code -m global`)"* Wait for the user's yes/no. This is **not** a substitute for the user-run-only contract in [`check-hmsl/SKILL.md`](../check-hmsl/SKILL.md); the hook is one layer, the execution-model boundary is the other.
+Propose this on first use with a one-liner: *"For defense in depth — so credentials in files I read never reach my transcript — install the agent hook now? (`ggshield install -t claude-code -m global`)"* Wait for the user's yes/no. The hook is one layer of defense; the user-run-only rule for `ggshield hmsl *` documented in **Start Here** is the other. The two are complementary, not substitutes.
 
 #### Step 2 — Brief the user on what this skill enables
 
