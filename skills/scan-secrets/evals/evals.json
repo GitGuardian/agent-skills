@@ -1,0 +1,20 @@
+{
+  "skill_name": "scan-secrets",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "hey before I commit, can you check if this .env file I'm about to add has any secrets in it?",
+      "expected_output": "Agent runs `ggshield secret scan path` on the file, reports detections inline with file/line context, and suggests next steps if any secret is found."
+    },
+    {
+      "id": 2,
+      "prompt": "I think someone committed an AWS key in this repo last sprint. Scan the full git history and tell me which commit and which file.",
+      "expected_output": "Agent runs `ggshield secret scan repo` (or an equivalent commit-range scan), surfaces the offending commit SHA and file path, and recommends history-rewrite + key-rotation remediation."
+    },
+    {
+      "id": 3,
+      "prompt": "can you scan my project for secrets",
+      "expected_output": "Either behavior counts as success: (a) agent picks `ggshield secret scan path` against the working tree as the cheap, common default, or (b) agent briefly asks which surface the user means before scanning. Failure is silently defaulting to a full history scan that could take minutes without confirming."
+    }
+  ]
+}

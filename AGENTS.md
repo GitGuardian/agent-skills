@@ -212,6 +212,46 @@ for f in skills/*/references/gitguardian-platform.md; do shasum "$f"; done
 
 All copies of a given file should share the same checksum after your edit. If you need a *new* duplicated reference (some content that genuinely applies to two or more skills), copy it into each consuming skill the same way.
 
+## Running evals
+
+We evaluate skills using Anthropic's [`skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator), the reference implementation of the [agent-skills eval loop](https://agentskills.io/skill-creation/evaluating-skills). We do not vendor its code — we install it on demand and author only the test content.
+
+### One-time setup
+
+```bash
+npx --yes skills add anthropics/skills --skill skill-creator
+```
+
+### Per-skill workflow
+
+Test cases live in `skills/<skill>/evals/evals.json`. Workspace results (per-iteration outputs, timing, grading, benchmarks) go to a sibling directory `<skill>-workspace/` that is gitignored — never commit it.
+
+Run the loop against a skill:
+
+```bash
+# from repo root
+claude --plugin-dir . "Run skill-creator's eval loop against skills/scan-secrets"
+```
+
+The loop produces `iteration-N/` directories under `<skill>-workspace/` with `outputs/`, `timing.json`, `grading.json`, and a per-iteration `benchmark.json`.
+
+### What ships in this repo vs lives upstream
+
+| In this repo | In `skill-creator` (external) |
+|---|---|
+| `evals/evals.json` per skill (prompts, expected outputs, assertions) | `run_loop.py`, `run_eval.py`, `aggregate_benchmark.py`, `generate_report.py` |
+| Test-case fixture files under `evals/files/` (when needed) | The `analyzer`, `grader`, `comparator` subagents |
+| `.gitignore` entry for `*-workspace/` | Workspace layout convention |
+
+Iteration cadence, raw outputs, and what we keep from each round live in personal notes (`.personal/`), not in the repo.
+
+### Authoring conventions for `evals.json`
+
+- **Start with 2–3 test cases per skill.** The spec is explicit: don't over-invest before the first round of results.
+- **Prompts + expected outputs first; assertions later.** Add assertions after the first iteration reveals what "good" looks like in practice.
+- **Vary phrasing and formality.** Mix casual ("hey can you check…") and precise ("Run `ggshield secret scan path` on…").
+- **Include at least one edge case** — a malformed input, an ambiguous request, or a boundary the skill's instructions might not cover.
+
 ## Versioning
 
 We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** and stays pre-1.0 until the public surface is stable enough that a breaking change truly warrants a major bump.
