@@ -38,3 +38,49 @@ These claims are load-bearing. Every later section is downstream of one or more 
 5. **History rewrite rarely earns its complexity publicly; sometimes it does privately with audited clones.** In public repos, mirrors / archives / caches / search indexes already hold the credential. Rewriting history forces a break across every consumer with no recovery benefit. In private repos with a finite known set of cloners, force-pushing + coordinated re-clone is viable when policy demands it.
 
 6. **Friction is preferable to false confidence.** Three triage questions are more friction than one. The agent asks all three anyway, because the four deliverable shapes (§ 3) are materially different and using the wrong shape produces wrong advice. Friction is recoverable; wrong advice that the user follows is not.
+
+---
+
+## 2. The four triage axes
+
+The agent must know all four axes before producing a deliverable. Three of them require user input in context-poor implementations; higher-context implementations may answer some from data (see [Implementation profiles](#4-implementation-profiles)).
+
+| Axis | Range | Default acquisition |
+|---|---|---|
+| Detection context | pre-leak (file-edit / pre-commit / pre-push) · post-leak · off-repo | Free — the agent knows which hook fired or which command produced the finding |
+| Exposure | public-facing · internal-private | Asked, or derived from repo URL when reliable |
+| Ownership | the developer has rotation authority · another team owns it | Asked |
+| Blast radius | sandbox · shared dev · production-critical | Asked |
+
+### Why three questions, not one
+
+Collapsing exposure / ownership / blast radius into a single "can you just do this?" question loses information needed to produce the right escalation artifact. "You don't own this" produces a *ticket template addressed to the owning team*. "You own it but it's coupled to production" produces a *rotation runbook with dependency-mapping and a change-ticket draft*. Same answer to "can you just do this?" (no), entirely different deliverables. The agent asks all three, once per finding, before dispatching.
+
+### Detection context is free
+
+The agent always knows which hook fired or which command produced the finding. It never needs to ask the user to classify the lifecycle stage. Pre-leak / post-leak / off-repo dispatch is mechanical (see [Tracks](#5-pre-leak-track) onward).
+
+### Canonical phrasings
+
+Each implementation picks its own copy and tone; the doctrine ships one canonical phrasing per axis so that the *information being asked for* is the same across every GitGuardian agent. An implementation that wants softer wording is free to rephrase, but the answer space must remain the same.
+
+**Exposure**
+
+> Where has this credential landed? Pick one:
+> - **Public** — anything on the open internet (public GitHub repo, public gist, paste site, public Docker image, public package).
+> - **Internal-private** — your org's private GitHub / GitLab / Bitbucket, or another system only org members can read.
+>
+> If you're not sure who can read it, treat it as public.
+
+**Ownership**
+
+> Can you revoke and reissue this credential right now, on your own? Or does it belong to another team (platform / SRE / security / a vendor admin) that you'd need to file a ticket with? "I have the console access but I'd need approval to actually rotate" counts as not-yours for this question.
+
+**Blast radius**
+
+> What does this credential unlock? Pick the highest-impact match:
+> - **Sandbox / personal** — your own test account, throwaway.
+> - **Shared dev** — a dev or staging environment used by your team but not customers.
+> - **Production-critical** — anything customers touch, anything that holds revenue / customer data / billing.
+
+The phrasings above are the reference. They lead with the question, then enumerate answers, then resolve ambiguity ("if you're not sure…"). Implementations may compress (e.g., the in-app agent may pre-fill the exposure answer from incident metadata) but the answer space is fixed.
