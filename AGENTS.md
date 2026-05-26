@@ -235,12 +235,14 @@ npx --yes skills add anthropics/skills --skill skill-creator
 
 Test cases live in `skills/<skill>/evals/evals.json`. Test fixtures (small projects the agent operates on during a run) live under `skills/<skill>/evals/files/<eval-name>/`. Workspace results (per-iteration outputs, timing, grading, benchmarks) go to a sibling directory `<skill>-workspace/` that is gitignored — never commit it.
 
-Run the loop against a skill:
+Run the loop against a skill (from the repo root):
 
 ```bash
-# from repo root
-claude --plugin-dir . "Run skill-creator's eval loop against skills/scan-secrets"
+claude --dangerously-skip-permissions --plugin-dir . --model claude-sonnet-4-6 \
+  "Run the skill-creator eval loop against skills/scan-secrets"
 ```
+
+`--plugin-dir .` makes Claude evaluate the in-tree skill on this branch, not whichever version is globally installed. `--dangerously-skip-permissions` lets skill-creator's subagents run `ggshield` and the fixture builds without prompting. `--model` picks the model that drives skill-creator; to evaluate against a different model, swap the flag value (the models we promise to test against are listed in `evals/targets.json`).
 
 The loop produces `iteration-N/` directories under `<skill>-workspace/` with `outputs/`, `timing.json`, `grading.json`, and a per-iteration `benchmark.json`.
 
@@ -303,102 +305,6 @@ skills/<skill>/evals/
 Each runtime's driver reads its own key and runs the eval set once per model. The file is purely declarative — drivers are free to ignore it and accept an explicit `--model` flag for one-off runs. The keys are runtime names (`claude`, `codex`, future `gemini`/`cursor`/…); the values are lists of model IDs valid in that runtime.
 
 Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten its schema later, so adding our own top-level key is fragile; (2) "which models to test" is a deployment concern, not a test-case concern — separating them keeps each file's job clear.
-
-### Running evals manually
-
-We don't ship a driver. Each cell of the (eval × model) matrix is one documented command, with stderr, exit codes, and event stream visible by default. **Run all commands from the repo root.** The `cd` inside each run command happens in a subshell, so `$OLDPWD` resolves to the repo root and your interactive shell stays put. `--plugin-dir "$OLDPWD"` ensures every run exercises the in-tree skill on this branch, not whichever version is globally installed.
-
-**Keep this section in sync with `targets.json`** — if you add a model to `.claude` or a test case to `evals.json`, append the corresponding command pair below.
-
-#### Eval 1 — `precommit-env-file`
-
-> *"hey before I commit, can you check if this .env file I'm about to add has any secrets in it?"*
-
-Build the fixture (idempotent, wipes and rebuilds `_built/`):
-
-```bash
-bash skills/scan-secrets/evals/files/eval-1-precommit-env-file/setup.sh
-```
-
-Run on `claude-sonnet-4-6`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-Run on `claude-haiku-4-5-20251001`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-#### Eval 2 — `aws-key-history-hunt`
-
-> *"I think someone committed an AWS key in this repo last sprint. Scan the full git history and tell me which commit and which file."*
-
-Build the fixture:
-
-```bash
-bash skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/setup.sh
-```
-
-Run on `claude-sonnet-4-6`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-Run on `claude-haiku-4-5-20251001`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-#### Eval 3 — `ambiguous-project-scan`
-
-> *"can you scan my project for secrets"*
-
-Build the fixture:
-
-```bash
-bash skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/setup.sh
-```
-
-Run on `claude-sonnet-4-6`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-Run on `claude-haiku-4-5-20251001`:
-
-```bash
-( cd skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built && \
-  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
-    --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
-```
-
-#### Tips
-
-- Add `--output-format stream-json --verbose` to any cell above to see tokens, tool calls, and durations. The default `text` output is the final reply, easier to skim.
-- Capture for later inspection by redirecting: `... > with_skill.txt 2> stderr.log`. We deliberately don't automate this — what's worth keeping from each iteration is a judgment call.
-- A clean `without_skill` baseline is hard to produce from one invocation: global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable via a single flag. Use skill-creator's harness for that comparison.
 
 ## Versioning
 
