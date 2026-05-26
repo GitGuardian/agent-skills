@@ -1,9 +1,11 @@
 ---
 name: check-hmsl
-description: Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service for public GitHub leaks. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks "has this secret leaked / is this compromised / check against HMSL". Distinct from `scan-secrets` — that finds *unknown* secrets in code; this checks *known* secrets against the HMSL corpus.
+description: "[USER-RUN ONLY — agent prepares commands, the user executes them in their own terminal] Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service for public GitHub leaks. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks \"has this secret leaked / is this compromised / check against HMSL\". Distinct from `scan-secrets` — that finds *unknown* secrets in code; this checks *known* secrets against the HMSL corpus."
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)
+
+> **STOP — read before proceeding.** This skill is user-run only. The agent must not invoke `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager`. The agent must not call `Read`, `Grep`, `cat`, `head`, `tail`, `sed`, `awk`, or any other tool against credential files, `.env`-style files, vault dumps, or HMSL intermediate files (`*-payload.txt`, `*-mapping.txt`, `*.dump`). The single agent job is to prepare commands for the user to execute in their own terminal, then interpret sanitized output the user pastes back (`-n none --json` only). Continuing past this block constitutes acknowledgement of the user-run model. If you arrived here as a follow-up from `scan-secrets` (e.g., to resolve `validity: no_checker` findings), do not extend the agent-executable contract of that skill into this one — they have different execution models.
 
 ## Overview
 

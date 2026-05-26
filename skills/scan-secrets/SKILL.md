@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing.
+description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing. Authorization to run `ggshield secret scan` does NOT extend to `ggshield hmsl *` — HMSL is user-run only (agent prepares the command, the user executes it)."
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -20,6 +20,11 @@ description: Use when scanning code, commits, git history, Docker images, or pac
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per [references/remediation.md](references/remediation.md) — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
+- **Do not extend this skill's agent-executable contract to HMSL.** When a finding's `validity` is `unknown`, `cannot_check`, or `no_checker`, the natural follow-up is HasMySecretLeaked (HMSL) — GitGuardian's privacy-preserving hash-lookup service for *known* credentials against the public-leak corpus. HMSL has a **different execution model — user-run only** — and the contract holds whether or not the user has the dedicated `check-hmsl` skill installed:
+  - Do **not** invoke `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager` yourself.
+  - Do **not** read the credential file with `Read` / `Grep` / `cat` / `head` / `tail` / `sed` / `awk` / `less` / `xxd` / `wc` / `file` / `ls` or any other tool — that pulls plaintext into the agent context before HMSL's local-hashing protocol can protect it.
+  - Print the exact command for the user to run in their own terminal. Use `-n none --json` so the output the user pastes back contains no identifying hints. Suggest `ggshield hmsl quota` before any bulk check. Refuse `--naming-strategy cleartext` outright.
+  - If the user has the `check-hmsl` skill installed, the agent should load it for the full protocol and command set; if not, the rules above are sufficient on their own — do not gate the follow-up on having the other skill.
 
 ## When to Use
 
@@ -55,11 +60,23 @@ For platform-wide topics that span every GitGuardian skill (public docs URL patt
 
 If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip shared setup. Otherwise follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) and return here once both checks pass.
 
-Before installing anything, briefly tell the user what this skill enables:
+#### Step 1 (recommended) — Install the agent hook for defense in depth
+
+Once `ggshield` is installed and authenticated, the recommended first action on a new machine is installing the agent hook. The hook scans prompts, tool inputs, and tool outputs from inside the agent for detected secrets and blocks them before they reach the model context — defense in depth against the agent inadvertently reading or echoing a credential. Match the user's agent:
+
+```bash
+ggshield install -t claude-code -m global     # Claude Code
+ggshield install -t cursor -m global          # Cursor
+ggshield install -t copilot -m global         # Copilot
+```
+
+Propose this on first use with a one-liner: *"For defense in depth — so credentials in files I read never reach my transcript — install the agent hook now? (`ggshield install -t claude-code -m global`)"* Wait for the user's yes/no. The hook is one layer of defense; the user-run-only rule for `ggshield hmsl *` documented in **Start Here** is the other. The two are complementary, not substitutes.
+
+#### Step 2 — Brief the user on what this skill enables
 
 - Scan code for hardcoded secrets — automatically when handling credentials, or on request for a specific file or directory.
 - Audit a repository's git history, a commit range, a single commit, a Docker image, or a PyPI package for leaked secrets.
-- Block secrets *before they are written* by installing the Claude Code agent hook (`ggshield install -t claude-code -m global`), which scans prompts, tool calls, and tool outputs from inside Claude Code. Also supports git hooks (`ggshield install --mode local`) and ad-hoc scans of staged changes (`scan pre-commit`).
+- Block secrets *before they are written* via the agent hook installed in Step 1; or via git hooks (`ggshield install --mode local`) and ad-hoc scans of staged changes (`scan pre-commit`).
 - Manage false positives via inline `# ggignore` comments or `.gitguardian.yaml` rules.
 
 Keep the brief tight; the detailed setup reference is for the agent to consult, not for the user to read.
