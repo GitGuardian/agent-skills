@@ -35,6 +35,7 @@ skills/                               # one folder per skill — discovered by C
     evals/
       evals.json                      #   prompts + assertions per test case (spec-compliant)
       targets.json                    #   models each runtime's driver should sweep (local convention)
+      run-claude.sh                   #   Claude-side driver — reads targets.json, sweeps models
       files/                          #   test fixtures (committed; built at runtime by setup.sh)
         README.md
         _shared/secrets.env           #   synthetic secret values (ggignore-suppressed)
@@ -303,6 +304,27 @@ skills/<skill>/evals/
 Each runtime's driver reads its own key and runs the eval set once per model. The file is purely declarative — drivers are free to ignore it and accept an explicit `--model` flag for one-off runs. The keys are runtime names (`claude`, `codex`, future `gemini`/`cursor`/…); the values are lists of model IDs valid in that runtime.
 
 Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten its schema later, so adding our own top-level key is fragile; (2) "which models to test" is a deployment concern, not a test-case concern — separating them keeps each file's job clear.
+
+### Claude driver
+
+`skills/scan-secrets/evals/run-claude.sh` is the Claude-side counterpart to skill-creator's `run_eval.py`, scoped to one skill's tests with the multi-model sweep and `--plugin-dir` flow we want. For each model listed in `targets.json`'s `.claude` array, it builds each fixture via its `setup.sh`, runs `claude -p` inside the fixture, and captures `events.jsonl`, `last_message.txt`, and `timing.json`.
+
+```bash
+# sweep all models declared in targets.json's .claude key
+skills/scan-secrets/evals/run-claude.sh
+
+# one specific model, override the declared list
+skills/scan-secrets/evals/run-claude.sh --models claude-sonnet-4-6
+
+# one eval, two models
+skills/scan-secrets/evals/run-claude.sh --eval 2 --models claude-sonnet-4-6,claude-haiku-4-5-20251001
+```
+
+Outputs land under `scan-secrets-workspace/claude/iteration-N/<model>/eval-<id>-<name>/with_skill/`, gitignored.
+
+Scope is intentionally narrow: **this driver captures only the `with_skill` configuration.** A clean `without_skill` baseline is hard to produce from a script — global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable by one flag. When you need the baseline, run it manually via skill-creator's harness, which has its own techniques for that.
+
+The script always passes `--plugin-dir <repo>` so the eval exercises the in-tree skill (this branch's code), not whichever version is globally installed.
 
 ## Versioning
 
