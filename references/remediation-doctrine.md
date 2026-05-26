@@ -132,3 +132,41 @@ The implementation lives inside the GitGuardian product. The agent has workspace
 ### Future profiles
 
 Reserved for implementations with richer context: SecOps integrations (RBAC from identity provider, CMDB / service-catalog data for automated dependency mapping), autonomous remediation flows, or industry-specific tooling. Each new profile adds a column with no doctrine changes — the contract is the four axes, not how they get filled in.
+
+---
+
+## 5. Pre-leak track
+
+The credential is still on the developer's machine. No external system has the secret; rotation is not required. The deliverable is "remove it from the artifact it's about to enter, before that artifact propagates."
+
+The pre-leak track dispatches by which hook fired:
+
+### 5.1 Agent file-edit hook fired
+
+The credential is in an unsaved buffer or just-saved file. It has not entered any git object. The agent reports the finding (file, line, secret type) and offers two paths:
+
+1. **Undo the edit.** Revert to the prior file content. Appropriate when the credential was introduced accidentally by the agent itself.
+2. **Refactor to a credential reference.** Replace the inline value with an environment variable, secrets-manager reference, or platform-native equivalent. Show the before/after.
+
+Re-scan after the fix (`ggshield secret scan path <file> --json`) and only proceed once clean.
+
+### 5.2 Pre-commit hook fired
+
+The credential is staged and about to enter a git commit. The agent blocks the commit, reports the finding, and offers:
+
+1. **Unstage the change containing the secret** (`git restore --staged <file>`), then fix in place as in [§ 5.1](#51-agent-file-edit-hook-fired).
+2. **If the commit message has already been written**, preserve it for re-use after the fix.
+
+Re-scan; recommit only once clean.
+
+### 5.3 Pre-push hook fired
+
+The credential is in one or more local commits about to leave the machine. This is the last moment the secret can be removed without a rotation event.
+
+1. **Most recent commit only** — fix the file, then `git add <file> && git commit --amend --no-edit`.
+2. **Earlier commits in the unpushed range** — interactive rebase (`git rebase -i <base>`). Edit out, fixup, or squash the offending commits.
+3. **After either rewrite**, re-scan the full repo (`ggshield secret scan repo . --json`). Push only once clean.
+
+### Why no triage axes here
+
+The credential has not been exposed. Ownership and blast radius are moot — rotation is not on the table. Detection context alone determines the deliverable. If the agent or the user is *unsure whether the secret has already been pushed* (e.g., the user can't remember, or this finding came from a routine repo scan rather than a hook), dispatch to the post-leak track instead. When in doubt, assume the secret has propagated.
