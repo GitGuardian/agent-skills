@@ -38,7 +38,7 @@ Heavy reference loaded on demand from `SKILL.md`. Covers scan output structure, 
 | `filename` | File containing the secret |
 | `policy_break_count` | Number of secrets found in this file |
 | `break_type` | Type of secret (e.g., `"AWS Keys"`, `"GitHub Token"`, `"Generic High Entropy Secret"`) |
-| `validity` | Whether the secret is still active: `"valid"`, `"invalid"`, `"unknown"`, `"cannot_check"` |
+| `validity` | Whether the secret is still active: `"valid"`, `"invalid"`, `"unknown"`, `"cannot_check"` (also surfaces as `"no_checker"` for detectors without a validity checker). For `unknown` / `cannot_check` / `no_checker` findings, the natural follow-up is HMSL — but **do not run it yourself**: HMSL is user-run only ([`check-hmsl/SKILL.md`](../../check-hmsl/SKILL.md)). Reading the credential file or running `ggshield hmsl *` from the agent pulls plaintext into the transcript. |
 | `severity` | Risk level: `critical`, `high`, `medium`, `low`, `info` |
 | `line_start` / `line_end` | Line numbers in the file |
 

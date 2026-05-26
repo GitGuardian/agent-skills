@@ -1,6 +1,6 @@
 ---
 name: create-honeytokens
-description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around `.env.example`, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
+description: "[AGENT-EXECUTABLE — the agent generates the decoy and proposes a planting location; outputs are GitGuardian-issued tripwires, not user secrets] Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around `.env.example`, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces."
 ---
 
 # ggshield — Create Honeytokens
