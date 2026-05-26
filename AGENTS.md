@@ -34,8 +34,7 @@ skills/                               # one folder per skill — discovered by C
       gitguardian-platform.md
     evals/
       evals.json                      #   prompts + assertions per test case (spec-compliant)
-      targets.json                    #   models each runtime's driver should sweep (local convention)
-      run-claude.sh                   #   Claude-side driver — reads targets.json, sweeps models
+      targets.json                    #   models we promise to evaluate against (local convention)
       files/                          #   test fixtures (committed; built at runtime by setup.sh)
         README.md
         _shared/secrets.env           #   synthetic secret values (ggignore-suppressed)
@@ -305,26 +304,54 @@ Each runtime's driver reads its own key and runs the eval set once per model. Th
 
 Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten its schema later, so adding our own top-level key is fragile; (2) "which models to test" is a deployment concern, not a test-case concern — separating them keeps each file's job clear.
 
-### Claude driver
+### Running an eval manually
 
-`skills/scan-secrets/evals/run-claude.sh` is the Claude-side counterpart to skill-creator's `run_eval.py`, scoped to one skill's tests with the multi-model sweep and `--plugin-dir` flow we want. For each model listed in `targets.json`'s `.claude` array, it builds each fixture via its `setup.sh`, runs `claude -p` inside the fixture, and captures `events.jsonl`, `last_message.txt`, and `timing.json`.
+We do not ship a driver script — stderr, exit codes, and the raw event stream stay visible when each command is invoked by hand. The flow is two steps: build the fixture, then invoke `claude -p` inside it.
+
+From the repo root:
 
 ```bash
-# sweep all models declared in targets.json's .claude key
-skills/scan-secrets/evals/run-claude.sh
+REPO=$(pwd)
+EVAL_ID=1
+MODEL=claude-sonnet-4-6
 
-# one specific model, override the declared list
-skills/scan-secrets/evals/run-claude.sh --models claude-sonnet-4-6
+# 1. Resolve the test case and fixture
+FIXTURE=$(jq -r ".evals[] | select(.id==$EVAL_ID) | .files[0]" \
+  "$REPO/skills/scan-secrets/evals/evals.json")
+PROMPT=$(jq -r ".evals[] | select(.id==$EVAL_ID) | .prompt" \
+  "$REPO/skills/scan-secrets/evals/evals.json")
 
-# one eval, two models
-skills/scan-secrets/evals/run-claude.sh --eval 2 --models claude-sonnet-4-6,claude-haiku-4-5-20251001
+# 2. Build the fixture (idempotent — wipes and rebuilds _built/)
+bash "$REPO/skills/scan-secrets/$FIXTURE/setup.sh"
+
+# 3. Run the eval inside the built tree, against the in-tree skill
+cd "$REPO/skills/scan-secrets/$FIXTURE/_built"
+claude -p \
+  --plugin-dir "$REPO" \
+  --model "$MODEL" \
+  --permission-mode bypassPermissions \
+  --no-session-persistence \
+  "$PROMPT"
 ```
 
-Outputs land under `scan-secrets-workspace/claude/iteration-N/<model>/eval-<id>-<name>/with_skill/`, gitignored.
+Add `--output-format stream-json --verbose` if you want the raw event stream (tokens, tool calls, durations). The default `text` output is the final reply, easier to read.
 
-Scope is intentionally narrow: **this driver captures only the `with_skill` configuration.** A clean `without_skill` baseline is hard to produce from a script — global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable by one flag. When you need the baseline, run it manually via skill-creator's harness, which has its own techniques for that.
+The `--plugin-dir "$REPO"` flag is the key bit: the eval exercises the in-tree skill on this branch, not whichever version is globally installed.
 
-The script always passes `--plugin-dir <repo>` so the eval exercises the in-tree skill (this branch's code), not whichever version is globally installed.
+To sweep multiple models, wrap step 3 in a shell loop:
+
+```bash
+for MODEL in $(jq -r '.claude[]' "$REPO/skills/scan-secrets/evals/targets.json"); do
+  echo "--- $MODEL ---"
+  claude -p --plugin-dir "$REPO" --model "$MODEL" \
+    --permission-mode bypassPermissions --no-session-persistence \
+    "$PROMPT"
+done
+```
+
+We deliberately don't capture outputs into `<skill>-workspace/<model>/...` from a script. Save what you want to keep by hand (`> file.txt`) and copy it into your local notes — what's worth preserving from each iteration is a judgment call, not something a runner should automate.
+
+A clean `without_skill` baseline is hard to produce from one invocation: global plugins, `~/.claude/CLAUDE.md`, user agents, and auto-memory all influence the agent and aren't toggleable via a single flag. When you need the baseline, use skill-creator's harness, which has techniques for that.
 
 ## Versioning
 
