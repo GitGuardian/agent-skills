@@ -1,0 +1,47 @@
+{
+  "skill_name": "scan-secrets",
+  "evals": [
+    {
+      "id": 1,
+      "name": "precommit-env-file",
+      "prompt": "hey before I commit, can you check if this .env file I'm about to add has any secrets in it?",
+      "expected_output": "Agent runs `ggshield secret scan path` on the file, reports detections inline with file/line context, and suggests next steps if any secret is found.",
+      "files": ["evals/files/eval-1-precommit-env-file/"],
+      "assertions": [
+        {"id": "uses-ggshield-scan-path", "text": "Runs `ggshield secret scan path` (or `secret scan pre-commit`) — uses the documented CLI, not an improvised grep/regex scanner"},
+        {"id": "detects-multiple-secrets", "text": "Reports at least 2 distinct detected secrets (AWS key + GitHub PAT)"},
+        {"id": "masks-secret-values", "text": "Does NOT echo full plaintext secret values back to the user"},
+        {"id": "advises-do-not-commit", "text": "Tells the user not to commit, and recommends rotating + unstaging the .env file"},
+        {"id": "no-improvised-scanner", "text": "Does not improvise its own regex/grep-based scanner as the primary detection mechanism"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "aws-key-history-hunt",
+      "prompt": "I think someone committed an AWS key in this repo last sprint. Scan the full git history and tell me which commit and which file.",
+      "expected_output": "Agent runs `ggshield secret scan repo` (or an equivalent commit-range scan), surfaces the offending commit SHA and file path, and recommends history-rewrite + key-rotation remediation.",
+      "files": ["evals/files/eval-2-aws-key-history-hunt/"],
+      "assertions": [
+        {"id": "uses-ggshield-scan-repo", "text": "Runs `ggshield secret scan repo` (or commit-range scan), NOT just `secret scan path` against the working tree"},
+        {"id": "surfaces-offending-commit", "text": "Reports the offending commit (SHA or unambiguous subject)"},
+        {"id": "surfaces-offending-file", "text": "Reports `config.py` as the file containing the leaked AWS key"},
+        {"id": "notes-still-in-history", "text": "Notes that the key was later removed from HEAD but still exists in history"},
+        {"id": "recommends-rotation-and-rewrite", "text": "Recommends BOTH key rotation AND git-history rewrite (BFG / git-filter-repo)"},
+        {"id": "no-improvised-scanner", "text": "Does not improvise its own regex/grep-based scanner as the primary detection mechanism"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ambiguous-project-scan",
+      "prompt": "can you scan my project for secrets",
+      "expected_output": "Either behavior counts as success: (a) agent picks `ggshield secret scan path` against the working tree as the cheap, common default, or (b) agent briefly asks which surface the user means before scanning. Failure is silently defaulting to a full history scan that could take minutes without confirming.",
+      "files": ["evals/files/eval-3-ambiguous-project-scan/"],
+      "assertions": [
+        {"id": "uses-ggshield-not-grep", "text": "Uses `ggshield secret scan` (any subcommand variant), not an improvised grep/regex script"},
+        {"id": "scope-handled-explicitly", "text": "Either asks the user which scope, OR defaults to `ggshield secret scan path` against the working tree as the cheap option — does NOT silently kick off a multi-minute `secret scan repo` without confirming"},
+        {"id": "reports-findings-with-file-context", "text": "If any scan was run, surfaces detections with file path and secret type for at least one of: src/db.py, src/api.py, or .env"},
+        {"id": "no-improvised-scanner", "text": "Does not improvise its own regex/grep-based scanner as the primary detection mechanism"}
+      ]
+    }
+  ]
+}
