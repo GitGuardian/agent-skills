@@ -33,7 +33,8 @@ skills/                               # one folder per skill — discovered by C
       ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
       gitguardian-platform.md
     evals/
-      evals.json                      #   prompts + assertions per test case
+      evals.json                      #   prompts + assertions per test case (spec-compliant)
+      targets.json                    #   models each runtime's driver should sweep (local convention)
       files/                          #   test fixtures (committed; built at runtime by setup.sh)
         README.md
         _shared/secrets.env           #   synthetic secret values (ggignore-suppressed)
@@ -280,6 +281,28 @@ Iteration cadence, raw outputs, and what we keep from each round are local-only 
 - **Prompts + expected outputs first; assertions later.** Add assertions after the first iteration reveals what "good" looks like in practice.
 - **Vary phrasing and formality.** Mix casual ("hey can you check…") and precise ("Run `ggshield secret scan path` on…").
 - **Include at least one edge case** — a malformed input, an ambiguous request, or a boundary the skill's instructions might not cover.
+
+### Declaring which models the harness sweeps
+
+The agent-skills spec defines `evals.json` (prompts, expected outputs, assertions) but does not define how to declare a target-model matrix — model selection is treated as a runtime flag. We keep `evals.json` spec-compliant and declare the matrix in a sibling file:
+
+```
+skills/<skill>/evals/
+  evals.json     # spec-compliant test cases
+  targets.json   # local convention: which models each runtime's driver should sweep
+```
+
+```json
+// targets.json
+{
+  "claude": ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
+  "codex":  ["gpt-5"]
+}
+```
+
+Each runtime's driver reads its own key and runs the eval set once per model. The file is purely declarative — drivers are free to ignore it and accept an explicit `--model` flag for one-off runs. The keys are runtime names (`claude`, `codex`, future `gemini`/`cursor`/…); the values are lists of model IDs valid in that runtime.
+
+Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten its schema later, so adding our own top-level key is fragile; (2) "which models to test" is a deployment concern, not a test-case concern — separating them keeps each file's job clear.
 
 ## Versioning
 
