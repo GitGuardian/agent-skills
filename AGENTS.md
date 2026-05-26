@@ -281,6 +281,26 @@ Iteration cadence, raw outputs, and what we keep from each round are local-only 
 - **Vary phrasing and formality.** Mix casual ("hey can you check…") and precise ("Run `ggshield secret scan path` on…").
 - **Include at least one edge case** — a malformed input, an ambiguous request, or a boundary the skill's instructions might not cover.
 
+### Codex driver
+
+`skill-creator`'s scripts only drive the Claude runtime. To exercise the same `evals.json` against Codex (OpenAI), use `skills/scan-secrets/evals/run-codex.sh`. It builds each fixture via its `setup.sh`, runs `codex exec --json` inside the fixture, and captures `events.jsonl`, the final message, and a `timing.json` (`turn.completed.usage` + wall-clock duration).
+
+```bash
+# with skill (your current CODEX_HOME, plugin installed)
+skills/scan-secrets/evals/run-codex.sh
+
+# without skill — requires a second codex home with the plugin uninstalled
+CODEX_HOME=~/.codex-skill-off codex plugin marketplace add GitGuardian/agent-skills
+# (do NOT `codex plugin add` in that home — leaves the plugin available but uninstalled)
+export CODEX_HOME_NO_SKILL=~/.codex-skill-off
+skills/scan-secrets/evals/run-codex.sh --no-skill
+
+# one specific eval, alternate model
+skills/scan-secrets/evals/run-codex.sh --eval 2 --model gpt-5-mini
+```
+
+The script captures only — grading and aggregation are not wired in yet. Outputs land under `scan-secrets-workspace/codex/iteration-N/`, which is gitignored. Plugin-state sanity check runs before any model call, so a forgotten `CODEX_HOME=` won't burn tokens.
+
 ## Versioning
 
 We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** and stays pre-1.0 until the public surface is stable enough that a breaking change truly warrants a major bump.
