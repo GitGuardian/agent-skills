@@ -105,3 +105,30 @@ Whenever exposure is public-facing, the agent surfaces GitGuardian's takedown / 
 ### One finding → one mode
 
 The four modes do not stack. Every finding produces exactly one main deliverable (driver, coordination, escalation, or containment) plus, when public, the parallel takedown surfacing. The triage answers in § 2 select the mode; they do not combine into a richer hybrid.
+
+---
+
+## 4. Implementation profiles
+
+The doctrine is the universal contract; profiles describe how each implementation honors it. A new implementation adds a column.
+
+| Axis | Open-source agent skill (this repo) | In-app agent (GitGuardian product) | Future profile |
+|---|---|---|---|
+| Detection context | Hook that fired (free) | Incident metadata (free) | TBD |
+| Exposure | Asked, or derived from repo URL | Source type from incident (`public_github`, `private_github`, …) | TBD |
+| Ownership | Asked | Best-guess from workspace member/team data, confirmed with the user | TBD |
+| Blast radius | Asked | Asked, or inferred from secret type + service tier | TBD |
+
+### Open-source agent skill
+
+The implementation lives at `skills/scan-secrets/`, `skills/check-hmsl/`, future `skills/scan-machine/`, distributed via this repo's marketplace plugin. The agent's only free signal is which hook fired. Every other axis is asked of the user, in a single triage step before any deliverable is produced. The canonical phrasings in [§ 2](#2-the-four-triage-axes) are the reference; each skill adapts them to its detection context.
+
+### In-app agent
+
+> **Status:** working draft. The in-app column has not yet been confirmed with the in-app team; the rows below describe what the doctrine *expects* a context-rich profile to support, not what the product agent ships today. Treat this as the contract the in-app implementation should converge toward; revise the column once the in-app team has reviewed.
+
+The implementation lives inside the GitGuardian product. The agent has workspace context: incident metadata (source type, validity, first-seen / last-seen timestamps), member and team data, past remediation patterns in the same workspace, and links to the underlying git host. The detection context and exposure axes are answered from incident metadata. Ownership is best-guessed from workspace data and confirmed with the user (the agent always offers the user an out, never assumes). Blast radius remains asked, since neither incident metadata nor workspace membership reliably encodes "this credential opens production-critical systems."
+
+### Future profiles
+
+Reserved for implementations with richer context: SecOps integrations (RBAC from identity provider, CMDB / service-catalog data for automated dependency mapping), autonomous remediation flows, or industry-specific tooling. Each new profile adds a column with no doctrine changes — the contract is the four axes, not how they get filled in.
