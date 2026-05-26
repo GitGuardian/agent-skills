@@ -872,6 +872,154 @@ The 10-keys-per-SA limit supports overlap: create new key → distribute → con
 
 Canonical GCP reference: <https://cloud.google.com/iam/docs/keys-create-delete>.
 
+### 9.9 Azure connection strings
+
+**What it is.** A connection string for an Azure resource with credentials embedded. Most common: a Storage account connection string of the form `DefaultEndpointsProtocol=https;AccountName=<acct>;AccountKey=<key>;EndpointSuffix=core.windows.net`. The same pattern recurs with variations for Service Bus, Event Hubs, Cosmos DB, Cache for Redis, and App Configuration — each uses its own resource-specific connection string format but shares the "two named keys for overlap" pattern that makes rotation tractable.
+
+This worked example focuses on Storage; the variations are noted at the bottom.
+
+**Revoke location.** Azure Portal → Storage account → Security + networking → Access keys → click *Rotate key1* (or *Rotate key2*) depending on which key was in the leaked connection string. CLI equivalent:
+
+```bash
+az storage account keys renew \
+  --account-name <acct> \
+  --resource-group <rg> \
+  --key key1   # or key2
+```
+
+Azure provides exactly two named keys (`key1` and `key2`); rotating one immediately invalidates that key and replaces it with a new value. The other key keeps working — this is the overlap mechanism.
+
+**Regenerate location.** Same Access keys page. Rotation and regeneration are the same action in Azure's model.
+
+**Common consumers.**
+
+- App Service configuration / Function App application settings (env vars like `AzureWebJobsStorage`, `WEBSITE_CONTENTAZUREFILECONNECTIONSTRING`)
+- AKS pods reading connection strings from Kubernetes secrets or Azure Key Vault
+- .NET app config files (`appsettings.json`, `web.config` with `<connectionStrings>` sections) — these are a classic leak vector when checked into git
+- Azure Functions bindings that reference connection strings by name
+- Azure Data Factory / Synapse pipelines using the storage account as source or sink
+- CI variables in Azure Pipelines, GitHub Actions, GitLab CI that hold the connection string for build artifacts
+- Backup and DR tools (Azure Backup, third-party backup vendors) configured against the storage account
+- BI / analytics tools (Power BI, Synapse) connected to storage data
+
+**Dependency mapping for this type.**
+
+1. Storage account → Insights → Failed requests / Errors and Metrics → break down by *Authentication mechanism* / API operation. The portal also exposes diagnostic logs that include the access-key identifier per request when storage logging is enabled:
+
+   ```bash
+   # Enable diagnostic settings beforehand; once enabled, query via Kusto in Log Analytics
+   az monitor log-analytics query \
+     --workspace <workspace-id> \
+     --analytics-query "StorageBlobLogs | where AuthenticationType == 'AccountKey' | summarize count() by CallerIpAddress, OperationName"
+   ```
+
+2. Grep the org's repos for the leaked storage account name, the canonical env-var names, and the connection-string prefix:
+
+   ```bash
+   git grep -nE 'DefaultEndpointsProtocol=https;AccountName=|AzureWebJobsStorage|<account-name>'
+   ```
+
+3. List App Services and Function Apps in the subscription and inspect their app settings:
+
+   ```bash
+   az webapp list --query '[].{name:name, rg:resourceGroup}' -o tsv \
+     | while read name rg; do az webapp config appsettings list \
+         --name "$name" --resource-group "$rg" --query "[?contains(value,'<account-name>')]" -o tsv; done
+   ```
+
+4. Inventory Kubernetes secrets in AKS clusters that may hold the connection string (`kubectl get secrets -A`).
+5. Check Azure Key Vault entries that may wrap the storage key and the consumers that read from each vault.
+6. Inventory Data Factory pipelines and linked services connected to the storage account.
+
+The dual-key overlap pattern is the standard rollout: rotate `key1` first (the leaked one) → confirm consumers switched to `key2` (which had been less commonly used) → wait for the soak window → optionally rotate `key2` next as a defense-in-depth measure if you suspect it was also exposed.
+
+**Post-rotation verification.**
+
+- Attempt to authenticate with the old key in a connection string and expect failure:
+
+  ```bash
+  az storage blob list \
+    --account-name <acct> \
+    --account-key '<old-key>' \
+    --container-name <some-container>
+  # expect: AuthenticationFailed — Server failed to authenticate the request.
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch Storage account diagnostic logs for `AuthenticationFailed` events for 24–72h; surfaces consumers that were missed.
+
+**Variations for related Azure resources.**
+
+- **Service Bus / Event Hubs** — *Shared access policies* live under the namespace; rotation path is *Primary key* / *Secondary key* on each policy. Same two-key overlap pattern.
+- **Cosmos DB** — *Keys* tab on the account; *Read-write keys* and *Read-only keys* each have primary/secondary. Same overlap mechanism.
+- **App Configuration** — *Access keys* on the store; primary/secondary per key type.
+- **Cache for Redis** — *Access keys* in the portal; primary/secondary.
+
+The doctrine flow is identical across these resources; substitute the resource type when applying. Canonical Azure Storage reference: <https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage>.
+
+### 9.10 OAuth refresh tokens
+
+**What it is.** A long-lived token issued by an OAuth 2.0 authorization server that lets a client exchange it for fresh access tokens without re-prompting the user. Refresh tokens are issued per-(user, client, scope) — leaking one compromises *that user's* grant on *that client*, not the whole application.
+
+This worked example is the **hardest of the ten** because rotation is asymmetric: revoking the leaked token is straightforward; restoring the consumer's ability to operate requires the affected user(s) to re-authorize, which the agent cannot do on their behalf without orchestrating a new OAuth flow. Plan accordingly.
+
+**Revoke location.** The OAuth provider's token endpoint or admin console:
+
+- **Standard OAuth 2.0 (RFC 7009 token revocation)** — POST to the provider's revocation endpoint with the refresh token. Example for Google:
+
+  ```bash
+  curl -X POST https://oauth2.googleapis.com/revoke \
+    -d "token=<leaked-refresh-token>"
+  # expect: 200 OK, empty body
+  ```
+
+- **Provider admin console** — most providers expose per-user grants in the user's account settings (Google: myaccount.google.com → Security → Third-party apps with account access). Workspace / Org admins typically have a console to revoke org-wide.
+- **App-side revocation** — if your app holds the refresh tokens for users (server-side OAuth client), you delete them from your token store and they become unusable on next refresh-grant attempt.
+
+**Regenerate location.** Refresh tokens cannot be re-issued without user interaction. The user must complete the authorization flow again (consent screen → authorization code → token exchange) for your client to receive a new refresh token. The agent's job is to facilitate this — typically by surfacing a re-authorization link or an admin-impersonation flow if the provider supports it.
+
+**Common consumers.**
+
+- **Server-side stores** keyed by user ID — your application's database or a dedicated token store (Redis, vault) holding `(user_id, refresh_token, scopes, issued_at, expires_at)` rows
+- **Mobile app keychains** (iOS Keychain, Android Keystore) — one refresh token per logged-in user, on the device
+- **Browser local storage / cookies** for SPAs using OAuth — one per session; if these leaked into a public repo, every session in scope is compromised
+- **Third-party integrations** where your app is the OAuth client — a CRM, billing tool, or analytics platform holding a refresh token for the user's connected account
+- **Desktop apps and CLIs** storing tokens in user-config directories (`~/.config/<app>/credentials`, `~/.<app>/auth.json`)
+
+**Dependency mapping for this type.**
+
+This is the most asymmetric of the ten dependency maps because the affected surface is *users*, not *services*:
+
+1. The OAuth provider's admin console typically lists active grants per user and per client. Filter to your client; the count gives you the user-impact scope.
+2. Identify whether the leak was a *single user's* refresh token (one row in your token store) or a *bulk* leak (your entire token store, an export, a backup). The remediation is fundamentally different:
+   - **Single token** — revoke the one, ask that user to re-authorize, done.
+   - **Bulk leak** — revoke all grants for the client (provider-side bulk revocation), notify every affected user that they need to re-authorize, prepare for support volume.
+3. Grep your codebase for token-storage code paths:
+
+   ```bash
+   git grep -nE 'refresh_token|refreshToken|oauth.*token'
+   ```
+
+4. List the token-storage tables / collections in your application database and inventory whether their contents were exposed.
+5. For mobile / SPA leaks, the affected device count is your installed-user count for the affected version; communications must go through the app's standard channels (push notification, force-logout on next launch, mandatory re-authentication).
+
+Owners are not other teams — they're *end users*. The coordination framework specializes here as a user-communications plan rather than a service-team rollout.
+
+**Post-rotation verification.**
+
+- Attempt to use the old refresh token at the provider's token endpoint and expect failure:
+
+  ```bash
+  curl -X POST https://oauth2.googleapis.com/token \
+    -d "client_id=<client-id>&client_secret=<client-secret>&refresh_token=<old-token>&grant_type=refresh_token"
+  # expect: 400 Bad Request, {"error": "invalid_grant"}
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch your application's auth-failure logs for users hitting re-authorization flows over the next 7–30 days; this is the natural signal that affected users are reconnecting (or churning silently if you don't have the comms in place — plan the user-facing comms before the revocation).
+
+**Special case: token-leak detected by an audit, user not yet aware.** Revoking forces a visible re-auth prompt. Coordinate with product / support before revoking en masse so the comms reach affected users at the same time as the prompt does.
+
 ---
 
 ## 10. Generic coordination framework
