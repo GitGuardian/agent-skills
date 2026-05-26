@@ -208,3 +208,54 @@ Dispatch to the deliverable mode:
 | Corp-owned | Production-critical | **Containment** |
 
 In every cell, surface the public-leak takedown action (see [§ 11](#11-public-leak-takedown--reporting)) as parallel — it does not replace rotation, but it slows secondary scrapes and creates an audit trail.
+
+---
+
+## 7. Post-leak / internal-private track
+
+The credential is on an internal git host (private GitHub, GitLab, Bitbucket, Gitea, internal mirror) accessible only to organization members. **Rotation is usually required by security policy**, but urgency and history-rewrite viability differ materially from the public-facing track.
+
+### The spectrum within "private"
+
+"Private" is not a binary. Before assuming the internal-private playbook applies, the agent walks the user through a short read-path checklist:
+
+- Does the repo have **third-party integrations** with read access? (Dependabot, Renovate, Copilot indexing, code-search appliances, security scanners, CI providers that mirror the repo.)
+- Does the repo get **backed up or mirrored** to an external system? (Cloud backup vendor, archival service, disaster-recovery mirror in a different jurisdiction.)
+- Is the **set of cloners auditable**? A repo with 8 humans and no automation is closer to "no leak." A repo with broad org-member access plus the integrations above blurs into the public-facing track.
+
+If any of the above produces a "yes" that the user can't confidently constrain, **dispatch to the public-facing track instead.** The read-path is too wide to treat as private.
+
+### History rewrite: viable, but coordinated
+
+In a truly auditable private repo, force-push + coordinated re-clone is a real option:
+
+1. **Inventory clones** — `git log --all` on the server, plus any known forks. List the set of machines that have fetched the repo.
+2. **Rotate first** (always — see [Triage flow](#triage-flow-1) below). Don't rely on the rewrite to stop the attack.
+3. **Rewrite** — BFG Repo Cleaner for large repos, `git filter-repo` for surgical removal.
+4. **Force-push** to the canonical branch(es).
+5. **Notify cloners** — each human re-clones (or carefully rebases) within an agreed window.
+6. **Verify** — re-scan the repo (`ggshield secret scan repo . --json`); the secret should no longer appear in any commit.
+
+Step 1 is the load-bearing one. If the cloner set isn't really auditable, you're in the public-facing track.
+
+### Triage flow
+
+Exposure is already answered: internal-private. Ask the remaining two axes:
+
+1. **Ownership** — does the developer have authority to revoke this credential right now?
+2. **Blast radius** — sandbox / shared dev / production-critical?
+
+Dispatch:
+
+| Ownership | Blast | Mode |
+|---|---|---|
+| Own | Sandbox or shared dev | Driver |
+| Own | Production-critical | Coordination |
+| Corp-owned | Sandbox or shared dev | Escalation |
+| Corp-owned | Production-critical | Escalation (not Containment — see below) |
+
+### Why not Containment in the internal-private track
+
+Containment mode is reserved for the public + corp + production worst case, where the credential is provably out and the developer is provably not the right responder. In the internal-private track, the credential is on a finite, auditable surface — Escalation is the right mode even for production-critical corp-owned secrets, because there's a path to actually fix the underlying exposure (rotation + history rewrite + clone audit) that doesn't exist publicly. The owning team can drive the full remediation; containment-style triage is over-escalation.
+
+If the read-path checklist above flips this finding into the public-facing track, the worst case re-becomes Containment there.
