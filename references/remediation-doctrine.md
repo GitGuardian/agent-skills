@@ -294,6 +294,111 @@ For the off-repo track, the agent also surfaces "remove the credential from the 
 
 ---
 
+## 9. Per-secret-type appendix
+
+This appendix is the only section that's mostly invariant across implementations — rotating an AWS key is the same job whether the in-app agent or the open-source skill drives it. The doctrine ships ten worked examples plus a schema for the long tail.
+
+> **Vendor-link caveat.** Console navigation paths and admin URLs change. Every implementation that consumes this appendix should cross-check the vendor's current docs at use time. Where a worked example below cites a console path, the path is current as of this doctrine's date; if the vendor moved the page, follow the vendor's current breadcrumb. The conceptual flow (revoke → regenerate → update-callers → verify) is stable; the click-path is not.
+
+### 9.0 Schema
+
+Every per-type entry contains the same six fields, in the same order. The schema is the template for any secret type not in the worked examples below: the implementing agent fills it using vendor documentation and its own context.
+
+| Field | Content |
+|---|---|
+| **What it is** | One sentence: what the credential authorizes and where it's typically issued. |
+| **Revoke location** | The exact navigation path in the issuing vendor's console (or API call) to deactivate / invalidate the credential. |
+| **Regenerate location** | Where a new credential is created. Often (not always) the same console page. |
+| **Common consumers** | Where this credential type is typically wired in: env vars, secrets-manager entries, CI configs, IaC files, dotfiles. Used by [Driver mode](#3-the-four-deliverable-modes). |
+| **Dependency mapping for this type** | Specialization of [§ 10 steps 2–3](#10-generic-coordination-framework) for this credential type. Concrete commands and reports for finding consumers and their owners. Used by [Coordination mode](#3-the-four-deliverable-modes). |
+| **Post-rotation verification** | How to confirm the old credential is dead and the new one works. Service-specific check + a generic re-scan. |
+
+### 9.1 AWS access keys
+
+**What it is.** An access-key-ID + secret-access-key pair issued to an IAM user (less commonly bound to an IAM role via STS). Authenticates AWS SDK / CLI / API calls against the IAM principal's attached policies.
+
+**Revoke location.** AWS Console → IAM → Users → *username* → Security credentials → Access keys → set the leaked key to *Inactive*, then *Delete* once you've confirmed no consumer still uses it. CLI equivalent:
+
+```bash
+aws iam update-access-key --access-key-id AKIA... --status Inactive --user-name <user>
+aws iam delete-access-key  --access-key-id AKIA... --user-name <user>
+```
+
+Always go *Inactive → confirm no breakage → Delete*. Deactivation is reversible for ~24h of consumer-discovery; deletion is not.
+
+**Regenerate location.** Same page → *Create access key*. IAM users can hold two active access keys simultaneously, which is the overlap mechanism for graceful rotation. Strongly prefer short-lived STS credentials or IAM Identity Center for new workloads; if you're issuing a long-lived access key in 2026, flag the underlying pattern as itself a finding worth addressing.
+
+**Common consumers.**
+
+- `~/.aws/credentials` and `~/.aws/config` on developer / build machines
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, sometimes `AWS_SESSION_TOKEN`) on services, Lambda functions, ECS task definitions, EC2 user-data, Kubernetes secrets
+- CI provider secrets (GitHub Actions secrets, GitLab CI variables, CircleCI contexts, Buildkite agent env)
+- IaC files (Terraform `aws_iam_access_key` resources, Pulumi equivalents) — note that hardcoding keys in IaC is itself a finding
+- Third-party SaaS integrations configured with the IAM user's keys (CI/CD, monitoring, backup vendors, data warehouses with S3 sources)
+- AWS Secrets Manager / Parameter Store entries that wrap the access key (rare but happens)
+
+**Dependency mapping for this type.**
+
+1. Pull the **IAM credential report** to see when the key was last used and against which service:
+
+   ```bash
+   aws iam generate-credential-report
+   aws iam get-credential-report --query Content --output text | base64 -d
+   ```
+
+2. Query **CloudTrail** for the access key ID over the relevant window. This produces the list of services and IPs that invoked the credential:
+
+   ```bash
+   aws cloudtrail lookup-events \
+     --lookup-attributes AttributeKey=AccessKeyId,AttributeValue=AKIA... \
+     --start-time <ISO8601> --end-time <ISO8601>
+   ```
+
+3. Grep the org's repos for the access key ID and the canonical env-var names:
+
+   ```bash
+   git grep -nE 'AKIA[0-9A-Z]{16}|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY'
+   ```
+
+4. List runtime consumers that may hold the key in environment configuration:
+
+   ```bash
+   # Lambda functions
+   aws lambda list-functions --query 'Functions[].FunctionName' --output text \
+     | tr '\t' '\n' \
+     | while read -r fn; do aws lambda get-function-configuration --function-name "$fn" \
+       --query 'Environment.Variables' --output json; done
+
+   # ECS task definitions (current revisions only)
+   aws ecs list-task-definitions --status ACTIVE --query 'taskDefinitionArns[]' --output text
+
+   # EC2 instances with user-data that may template the key
+   aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'
+   ```
+
+5. Check each CI provider's secrets configuration (GitHub Actions `repo:variables`, GitLab CI variables, CircleCI context env, etc.).
+
+6. Inventory third-party integrations in the AWS account by reviewing the IAM user's tags / description and any cross-account roles that wrap it.
+
+Map consumers from steps 1–6 to owning teams. Each owner gets a wave in the rollout sequence. AWS access keys support overlap (two active per user), so the standard rollout is: create new key → distribute to consumers wave-by-wave with the old key still active → deactivate the old key for a soak window → delete.
+
+**Post-rotation verification.**
+
+- Confirm the old key is *Deleted* (not just *Inactive*) in the IAM console once the soak window passes.
+- Issue a deliberate AWS API call using the old key and confirm `InvalidClientTokenId`:
+
+  ```bash
+  AWS_ACCESS_KEY_ID=AKIA... AWS_SECRET_ACCESS_KEY=... aws sts get-caller-identity
+  # expect: An error occurred (InvalidClientTokenId) when calling the GetCallerIdentity operation
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Spot-check CloudTrail for `Failure` events using the old access key ID for 24–72h after the rotation completes — surfaces consumers that were missed in the dependency map.
+
+Canonical AWS reference: <https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html>.
+
+---
+
 ## 10. Generic coordination framework
 
 Used by [Coordination mode](#3-the-four-deliverable-modes) (own + production blast) to structure the rotation as a project rather than a click. Each per-type worked example in [§ 9](#9-per-secret-type-appendix) specializes steps 2–3 of this framework into concrete commands for that secret type.
