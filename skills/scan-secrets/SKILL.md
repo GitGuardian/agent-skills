@@ -16,10 +16,16 @@ description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, D
 **Do not skip this section.**
 
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
+- **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation.md`](references/remediation.md) before composing any user-facing remediation message** — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
-- **Do not surface code containing a detected secret.** When a finding is reported, stop. Report each finding (file, line, secret type, validity), then walk the user through removal and rotation per [references/remediation.md](references/remediation.md) — do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
+- **Do not surface code containing a detected secret.** When a finding is reported:
+  1. Stop. Report each finding (file, line, secret type, **validity**).
+  2. **Read [`references/remediation.md`](references/remediation.md) end-to-end** — do not skip this step. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
+  3. Compose the remediation message: rotation first, HMSL follow-up for unverifiable-validity findings, history-rewrite only under the narrow conditions listed in the reference.
+
+  Do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
 - **Do not extend this skill's agent-executable contract to HMSL.** When a finding's `validity` is `unknown`, `cannot_check`, or `no_checker`, the natural follow-up is HasMySecretLeaked (HMSL) — GitGuardian's privacy-preserving hash-lookup service for *known* credentials against the public-leak corpus. HMSL has a **different execution model — user-run only** — and the contract holds whether or not the user has the dedicated `check-hmsl` skill installed:
   - Do **not** invoke `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager` yourself.
   - Do **not** read the credential file with `Read` / `Grep` / `cat` / `head` / `tail` / `sed` / `awk` / `less` / `xxd` / `wc` / `file` / `ls` or any other tool — that pulls plaintext into the agent context before HMSL's local-hashing protocol can protect it.
@@ -108,6 +114,14 @@ Key flags:
 | `--output <file>` | Write results to a file instead of stdout |
 
 Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected error.
+
+## When findings are present — quick reference
+
+Full doctrine in [`references/remediation.md`](references/remediation.md) — load it before composing any user-facing remediation message. The three triggers most often missed:
+
+- **Pushed to a remote → rotate.** History rewriting is generally discouraged once secrets are pushed; rotation is the actual remediation. Do not lead with `git filter-repo` / BFG.
+- **Validity is `unknown` / `cannot_check` / `no_checker` / `failed_to_check` → propose HMSL** as the natural follow-up to check public leakage. Prepare the command (`ggshield hmsl quota`, then `ggshield hmsl check ... -n none --json`); **the user runs it**. Never invoke `ggshield hmsl *` yourself, never read the credential file.
+- **Local, never pushed → remove, don't rotate.** Rewriting unpushed history is cheap and worth doing here.
 
 ## Best Practices
 
