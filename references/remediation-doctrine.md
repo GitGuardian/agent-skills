@@ -397,6 +397,115 @@ Map consumers from steps 1–6 to owning teams. Each owner gets a wave in the ro
 
 Canonical AWS reference: <https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html>.
 
+### 9.2 GitHub personal access tokens
+
+**What it is.** A token issued to a GitHub user account that grants programmatic access on the user's behalf. Two flavors:
+
+- **Classic PAT** — broad scopes (`repo`, `workflow`, `admin:org`, …), all-or-nothing per scope, no per-repo restriction, no built-in expiration unless the user sets one. Avoid for new use.
+- **Fine-grained PAT** — scoped to specific repositories, with per-permission grants (read/write per resource), mandatory expiration. The recommended form for new tokens.
+
+**Revoke location.** GitHub → Settings (user) → Developer settings → Personal access tokens → *Tokens (classic)* or *Fine-grained tokens* → click the token → *Delete*. CLI equivalent for classic PATs via the OAuth Authorizations API (requires basic auth + 2FA OTP header):
+
+```bash
+# Replace TOKEN_ID with the authorization ID; see /authorizations endpoint
+gh api -X DELETE /authorizations/<TOKEN_ID>
+```
+
+For fine-grained PATs, deletion is UI-only — no public API surface yet. The agent surfaces the UI path and stops.
+
+**Regenerate location.** Same page → *Generate new token* (fine-grained recommended). The new token is shown once; cannot be retrieved later. If the original token was a classic PAT, the rotation is also the right moment to migrate to a fine-grained PAT with scoped repo + permission grants.
+
+**Common consumers.**
+
+- `~/.gitconfig` or `~/.git-credentials` via the Git credential helper (`git config --global credential.helper`)
+- `~/.config/gh/hosts.yml` if installed via `gh auth login`
+- Environment variables on developer machines / CI: `GH_TOKEN`, `GITHUB_TOKEN` (note `GITHUB_TOKEN` is *also* the auto-injected job-scoped token in GitHub Actions — distinguish before assuming a leak)
+- GitHub Actions secrets used by workflows to call back into the API at a higher privilege than the auto-injected `GITHUB_TOKEN` allows (cross-repo dispatch, package publish, admin operations)
+- Third-party CI integrations (Codecov, Sentry releases, deployment platforms) configured with a PAT instead of an installation token
+- Bots and automation accounts whose PATs power org-wide tooling — these are the highest-impact rotations because consumers are often opaque
+
+**Dependency mapping for this type.**
+
+1. Check the token's **Last used** timestamp and accessed-repo list on the token detail page (fine-grained PATs show this directly; classic PATs show last-used date only).
+2. Inventory what the token has access to:
+
+   ```bash
+   GH_TOKEN=<old-token> gh api /user/repos --paginate --jq '.[].full_name'
+   GH_TOKEN=<old-token> gh api /user/orgs   --paginate --jq '.[].login'
+   ```
+
+3. Grep the org's repos for likely env-var consumers and config patterns:
+
+   ```bash
+   git grep -nE 'GH_TOKEN|GITHUB_TOKEN|github\.com/[^/]+/[^/]+\.git.*[a-zA-Z0-9_]{20,}'
+   ```
+
+4. List GitHub Actions secrets across the org (requires admin):
+
+   ```bash
+   gh api /orgs/<org>/actions/secrets --paginate --jq '.secrets[].name'
+   for repo in $(gh repo list <org> --json nameWithOwner --jq '.[].nameWithOwner'); do
+     gh api "/repos/$repo/actions/secrets" --jq ".secrets[].name" 2>/dev/null
+   done
+   ```
+
+5. Check the audit log for actions performed by the token's owner user account, filtered to the suspected exposure window. GitHub's enterprise audit log API exposes this; smaller orgs can use the org-level audit log UI.
+
+6. For bot / automation PATs, ask the owning team for the consumer list — there's rarely a programmatic shortcut here.
+
+Map consumers to teams. Fine-grained PATs support multiple active tokens per user, so overlap rollout is possible: issue new token → distribute → deactivate old. Classic PATs have no overlap constraint per se, but each token's name/scope is distinct, so duplicating is straightforward.
+
+**Post-rotation verification.**
+
+- Confirm the old token no longer appears in the user's PAT list.
+- Issue a deliberate API call with the old token and confirm `401 Bad credentials`:
+
+  ```bash
+  curl -i -H "Authorization: Bearer <old-token>" https://api.github.com/user
+  # expect: HTTP/2 401 ... "message": "Bad credentials"
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch GitHub Actions runs and any external CI for `Bad credentials` failures over the next 24–48h — surfaces consumers that were missed.
+
+Canonical GitHub reference: <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens>.
+
+### 9.3 Generic API key
+
+**What it is.** The schema applied without service-specific hooks — the long-tail template for any vendor not given a dedicated entry below. Covers most SaaS API keys (vendor X issues `xxx_live_…` style tokens via a dashboard, you paste them into env vars). Use this entry as a thinking template when the specific vendor isn't catalogued.
+
+**Revoke location.** The issuing vendor's API key management page. Almost always under *Settings → API keys* (Datadog, Sentry, Stripe-style vendors), *Developers → API keys* (Stripe itself, Cloudflare), or *Account → Tokens* (Snowflake, Heroku). If the vendor offers per-key labels, the label is usually how you find the leaked key in the list; if it doesn't, you may need to revoke all and reissue.
+
+**Regenerate location.** Same page → *Create new key* / *Roll key* / *Generate token*. Some vendors (Stripe, Cloudflare) support per-key expiration and per-key scoping; prefer these on the new key. Many do not — they only offer "active key" or "revoked key" with no overlap.
+
+**Common consumers.**
+
+- Environment variables on the consuming service (the vendor's docs almost always tell you which env-var name they expect, e.g., `DATADOG_API_KEY`, `SENTRY_AUTH_TOKEN`).
+- Secrets-manager entries that templates / config systems pull from.
+- CI provider secrets, if the key is used during builds (for source map uploads, release tagging, deploy hooks).
+- **Client-side bundles.** A public-facing API key (publishable / publishable-style keys) is *meant* to be exposed and is not a leak. A secret API key that landed in a frontend bundle is a real leak — distinguish by inspecting the key's prefix and the vendor's docs. When in doubt, treat as secret.
+- IaC files for vendor-managed resources (Terraform providers usually accept the API key via env var or a `provider {}` block; the latter is itself a finding).
+
+**Dependency mapping for this type.**
+
+This is the [§ 10](#10-generic-coordination-framework) steps 2–3 with no vendor-specific shortcuts:
+
+1. The vendor's dashboard may show *last-used* or *recent API requests* per key. Check first — it's the cheapest signal.
+2. Grep the org's repos for the leaked key value (truncated, to avoid storing the full secret in your search tool's history) and for the vendor's canonical env-var name.
+3. List runtime services that depend on the vendor — your CMDB, service catalog, or `grep -r <vendor-name>` in deploy configs.
+4. Ask each likely owning team.
+
+If the vendor supports per-key scoping, the new key should be more narrowly scoped than the old; document the scope reduction in the change ticket.
+
+**Post-rotation verification.**
+
+- Issue a deliberate API call with the old key against any vendor endpoint and expect 401 / 403. Most vendors return one of:
+  - `HTTP 401 Unauthorized`
+  - `HTTP 403 Forbidden`
+  - Vendor-specific JSON with `code: "invalid_api_key"` or similar.
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch the vendor's dashboard (request volume, error rate) and the consuming services' logs for `Unauthorized` over the next 24h.
+
 ---
 
 ## 10. Generic coordination framework
