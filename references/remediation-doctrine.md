@@ -1046,3 +1046,49 @@ Two things the framework deliberately does *not* prescribe:
 
 - **Comms.** Telling the org "we're rotating credential X at time Y" is org-specific. The agent surfaces "comms needed" as a checklist item; the user owns the channel, audience, and tone.
 - **Post-incident review.** The framework drives rotation, not learning. PIR is downstream; depends on org maturity. The agent flags it as a follow-up where appropriate.
+
+---
+
+## 11. Public-leak takedown / reporting
+
+When exposure is public-facing, the agent surfaces takedown as a **parallel action** alongside the main deliverable. Takedown does not replace rotation; the credential is already burned. What takedown buys:
+
+- **Slowed secondary scrapes.** Once GitHub or the underlying host removes the artifact, search engines de-index over hours-to-days; some archive sites honor takedown requests.
+- **Audit trail.** A documented takedown request supports later compliance / incident reporting.
+- **Reduces casual reuse.** Lowers the chance that a non-targeted attacker stumbles on the credential by browsing the public repo before the search-engine cache expires.
+
+### How the agent surfaces it
+
+The agent provides the user with:
+
+1. The URL of the public artifact (commit, gist, repo).
+2. The takedown / reporting path appropriate for the host:
+   - **Public GitHub:** request removal of sensitive data via GitHub Support per their published process. GitHub's docs at <https://docs.github.com/en/site-policy/content-removal-policies> document the standard removal request flow.
+   - **HMSL match in the GitGuardian corpus:** the GitGuardian workspace surfaces the source(s); customers with appropriate plan tiers can request takedown via the GitGuardian platform. Consult the canonical guidance on docs.gitguardian.com for the current request path.
+   - **Other public hosts** (gists, public GitLab, Pastebin, etc.): the agent links to the host's takedown contact.
+3. A one-line reminder that this is *parallel* to rotation, not a substitute.
+
+The doctrine does not specify the canonical GitGuardian takedown URL inline — that lives on `docs.gitguardian.com` and changes faster than this doc. The implementing skill or in-app agent links to the current canonical page.
+
+---
+
+## 12. Validation
+
+Every mode ends with verification. Without it, the agent does not know whether the remediation actually worked.
+
+### Universal validation
+
+- **Re-scan the affected artifact.** `ggshield secret scan path <files-or-paths> --json` for file / path findings; `ggshield secret scan repo . --json` for repo-scope findings. The secret should no longer appear. If it does, the remediation didn't reach every consumer or the in-place fix was incomplete.
+
+### Mode-specific validation
+
+| Mode | Additional validation |
+|---|---|
+| Driver | Confirm the old credential is dead by exercising it deliberately (a service-specific check from [§ 9](#9-per-secret-type-appendix), e.g., `aws sts get-caller-identity` with the old key → expect failure). |
+| Coordination | Verify each consumer in the dependency map now uses the new credential, in the order defined by the rollout sequence. Spot-check failure logs for `Unauthorized` / `InvalidClientTokenId` style errors from missed consumers. |
+| Escalation | The agent's deliverable is a ticket; the owning team validates. The agent surfaces "ask the owning team to confirm rotation completion and re-scan the affected artifact" as a follow-up. |
+| Containment | Check for evidence of replay attempts: service logs / cloud audit trails (CloudTrail, GCP audit logs, Azure activity log) for the window from first public exposure to rotation. The agent does not drive forensics; it points at where to look and flags anomalies (anomalous source IPs, unusual API patterns, unexpected resource creation). |
+
+### When validation fails
+
+If the re-scan still finds the secret: the fix didn't propagate. Re-enter the relevant track (most often the original detection context's track) with the now-known consumer that wasn't updated. If a forensic check reveals replay activity: escalate per the org's IR process; this is no longer a remediation problem.
