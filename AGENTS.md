@@ -306,13 +306,9 @@ Two reasons we keep this out of `evals.json` itself: (1) the spec might tighten 
 
 ### Running evals manually
 
-We don't ship a driver. Each cell of the (eval × model) matrix is one documented command, with stderr, exit codes, and event stream visible by default. Set `REPO` once for the session, then paste the cell you want:
+We don't ship a driver. Each cell of the (eval × model) matrix is one documented command, with stderr, exit codes, and event stream visible by default. **Run all commands from the repo root.** The `cd` inside each run command happens in a subshell, so `$OLDPWD` resolves to the repo root and your interactive shell stays put. `--plugin-dir "$OLDPWD"` ensures every run exercises the in-tree skill on this branch, not whichever version is globally installed.
 
-```bash
-REPO=$(git rev-parse --show-toplevel)
-```
-
-The `--plugin-dir "$REPO"` flag ensures every run exercises the in-tree skill on this branch, not whichever version is globally installed. **Keep this section in sync with `targets.json`** — if you add a model to `.claude` or a test case to `evals.json`, append the corresponding command pair below.
+**Keep this section in sync with `targets.json`** — if you add a model to `.claude` or a test case to `evals.json`, append the corresponding command pair below.
 
 #### Eval 1 — `precommit-env-file`
 
@@ -321,25 +317,25 @@ The `--plugin-dir "$REPO"` flag ensures every run exercises the in-tree skill on
 Build the fixture (idempotent, wipes and rebuilds `_built/`):
 
 ```bash
-bash "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/setup.sh"
+bash skills/scan-secrets/evals/files/eval-1-precommit-env-file/setup.sh
 ```
 
 Run on `claude-sonnet-4-6`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
+( cd skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 Run on `claude-haiku-4-5-20251001`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+( cd skills/scan-secrets/evals/files/eval-1-precommit-env-file/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==1)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 #### Eval 2 — `aws-key-history-hunt`
@@ -349,25 +345,25 @@ Run on `claude-haiku-4-5-20251001`:
 Build the fixture:
 
 ```bash
-bash "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/setup.sh"
+bash skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/setup.sh
 ```
 
 Run on `claude-sonnet-4-6`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
+( cd skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 Run on `claude-haiku-4-5-20251001`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+( cd skills/scan-secrets/evals/files/eval-2-aws-key-history-hunt/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==2)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 #### Eval 3 — `ambiguous-project-scan`
@@ -377,25 +373,25 @@ Run on `claude-haiku-4-5-20251001`:
 Build the fixture:
 
 ```bash
-bash "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/setup.sh"
+bash skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/setup.sh
 ```
 
 Run on `claude-sonnet-4-6`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-sonnet-4-6 \
+( cd skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-sonnet-4-6 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 Run on `claude-haiku-4-5-20251001`:
 
 ```bash
-( cd "$REPO/skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built" && \
-  claude -p --plugin-dir "$REPO" --model claude-haiku-4-5-20251001 \
+( cd skills/scan-secrets/evals/files/eval-3-ambiguous-project-scan/_built && \
+  claude -p --plugin-dir "$OLDPWD" --model claude-haiku-4-5-20251001 \
     --permission-mode bypassPermissions --no-session-persistence \
-    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$REPO/skills/scan-secrets/evals/evals.json")" )
+    "$(jq -r '.evals[]|select(.id==3)|.prompt' "$OLDPWD/skills/scan-secrets/evals/evals.json")" )
 ```
 
 #### Tips
