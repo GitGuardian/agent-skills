@@ -1,6 +1,6 @@
 # ggshield: interpreting results and remediation
 
-Heavy reference loaded on demand from `SKILL.md`. Covers scan output structure, rotation rules, history rewriting, and false-positive handling.
+Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, false-positive handling, and the dispatch into the cross-skill remediation doctrine.
 
 ## Understanding Scan Output
 
@@ -42,9 +42,7 @@ Heavy reference loaded on demand from `SKILL.md`. Covers scan output structure, 
 | `severity` | Risk level: `critical`, `high`, `medium`, `low`, `info` |
 | `line_start` / `line_end` | Line numbers in the file |
 
-### Severity and rotation decision
-
-**Rotation rule:** rotation is absolutely necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that exists only locally (committed or uncommitted, but never pushed) does not need rotation; removing it from the code is sufficient.
+### Severity and minimum-severity filtering
 
 Use `--minimum-severity` to filter noise in large repos:
 
@@ -53,6 +51,8 @@ Use `--minimum-severity` to filter noise in large repos:
 # -y is required alongside -r to skip the "Confirm recursive scan." prompt
 ggshield secret scan path -r -y . --minimum-severity high --json
 ```
+
+Whether a finding warrants rotation depends on exposure, not just severity. See [Remediation](#remediation) below for the doctrine that drives the rotation decision.
 
 ### HMSL follow-up for unverifiable findings
 
@@ -77,83 +77,26 @@ ggshield hmsl check -t env /path/to/.env --json -n none      # .env-formatted in
 
 Exit codes: `0` = no matches found (not known to be leaked publicly); `1` = at least one secret matched (leaked); non-zero = error.
 
-A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — proceed straight to rotation per Step 2 below.
+A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — proceed via the post-leak / public-facing track of the doctrine (see [Remediation](#remediation) below).
 
 If the user has the `check-hmsl` skill installed locally, it covers additional flows (multi-stage `fingerprint`/`query`/`decrypt` for sensitive bulk audits, `check-secret-manager hashicorp-vault` for vault inventories, troubleshooting). The agent should load that skill for those flows. The rules above remain in force regardless.
 
 ---
 
-## Remediation Steps
+## Remediation
 
-### Step 1: Assess exposure
+`scan-secrets` defers all remediation guidance — triage, rotation runbooks, history-rewrite advice, per-secret-type playbooks, validation — to the **GitGuardian Remediation Doctrine** at [`references/remediation-doctrine.md`](remediation-doctrine.md). The doctrine covers the four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a schema for the long tail, the generic coordination framework, public-leak takedown, and per-mode validation.
 
-Before acting, determine whether the secret has been pushed to a remote:
+For `scan-secrets`, detection-context dispatch is fixed by which command produced the finding:
 
-- **Local only (never pushed)** — remove from code; if already committed locally, see Step 4 for cleanly scrubbing it from the unpushed commits. No rotation needed.
-- **Pushed to a remote** — rotate the credential and remove it from the current code. **Do not attempt to rewrite already-pushed history** — see Step 4 for why; rotation is the actual remediation.
+| Detection context | Doctrine entry point |
+|---|---|
+| Agent file-edit hook fired (in-buffer / just-saved file) | [§ 5.1](remediation-doctrine.md#51-agent-file-edit-hook-fired) |
+| Pre-commit hook fired (staged change blocked) | [§ 5.2](remediation-doctrine.md#52-pre-commit-hook-fired) |
+| Pre-push hook fired (unpushed commits blocked) | [§ 5.3](remediation-doctrine.md#53-pre-push-hook-fired) |
+| Repo / branch / commit / Docker image / PyPI package scan finding | Triage in [§ 6](remediation-doctrine.md#6-post-leak--public-facing-track) (public-facing) or [§ 7](remediation-doctrine.md#7-post-leak--internal-private-track) (internal-private) depending on where the artifact lives |
 
-### Step 2: Rotate the secret (if exposed on a remote)
-
-1. Go to the service that issued the secret (AWS console, GitHub settings, etc.)
-2. Revoke or delete the exposed credential
-3. Generate a new credential
-4. Update all systems that use the old credential
-
-### Step 3: Remove the secret from code
-
-Replace the hardcoded secret with an environment variable or secrets manager reference:
-
-```python
-# Before (bad)
-api_key = "sk-abc123xyz..."
-
-# After (good)
-import os
-api_key = os.environ["MY_SERVICE_API_KEY"]
-```
-
-### Step 4: Removing from git history — usually don't
-
-If the secret has already been pushed to a remote, **we generally advise against rewriting git history**. Once a credential has been on a remote, it must be rotated regardless — and rotation alone is the actual remediation. Rewriting history on top of that:
-
-- Requires a force-push that breaks every fork, clone, and open pull request
-- Does not retrieve the credential from systems that already mirrored or indexed the commit — other forks, search caches, archive sites, CI artifacts, log aggregators all keep their own copies
-- Demands hard coordination with every collaborator (each has to re-clone or carefully rebase)
-
-The rotated credential is dead — that is what stops the attack. Scrubbing history on top is a cosmetic step that buys very little for a high coordination cost.
-
-**The exception — secret committed but not yet pushed.** If the commits are still on a local branch and have not propagated to any remote, rewriting is cheap and worth doing — there is no force-push fallout and the credential never left the machine.
-
-For that local-only case:
-
-```bash
-# Most recent commit only — amend before pushing
-# 1) edit the file to remove the secret, then:
-git add <file>
-git commit --amend --no-edit
-
-# Multiple unpushed commits — interactive rebase
-# squash, fixup, or edit out the commits that introduced the secret
-git rebase -i <base>
-```
-
-After the rewrite, confirm the secret is gone everywhere:
-
-```bash
-ggshield secret scan repo . --json
-```
-
-**If you are forced to scrub already-pushed history** (regulatory or legal obligation, contractually-required data deletion), the tooling exists — BFG Repo Cleaner for large repos, `git filter-repo` for surgical removal — but only pursue this path *after* rotation, with explicit buy-in from every collaborator, and with the understanding that mirrors / forks / caches outside your control still hold the old credential.
-
-### Step 5: Verify the fix
-
-After removing and rotating:
-
-```bash
-ggshield secret scan repo . --json
-```
-
-Confirm the finding no longer appears.
+Read the doctrine end-to-end the first time you remediate a finding; thereafter the table above is the dispatch.
 
 ---
 
@@ -211,39 +154,3 @@ secret:
     - name: "placeholder key in docs"
       match: "AKIAIOSFODNN7EXAMPLE"
 ```
-
----
-
-## Common Secret Types and Where to Find Them
-
-| Secret Type | Typical Location |
-|---|---|
-| AWS Access Keys | `.env`, `config/`, `~/.aws/credentials` |
-| GitHub Tokens | `.env`, CI config, scripts |
-| Database URLs | `config/database.yml`, `.env`, `settings.py` |
-| Private Keys (RSA/EC) | `*.pem`, `*.key`, `id_rsa` |
-| Generic High Entropy | Any file with long random strings |
-| Stripe / Payment Keys | `.env`, backend config |
-| Slack Webhooks | CI config, notification scripts |
-
----
-
-## When an Agent Finds Secrets
-
-If ggshield detects secrets in code that an agent just wrote or modified:
-
-1. **Do not commit the code** — stop the workflow immediately
-2. **Report the finding** to the user with:
-   - The file and line number
-   - The secret type
-   - The validity status
-3. **Suggest remediation**:
-   - Replace the hardcoded value with an environment variable
-   - Point to where the user should store the actual value (`.env` file, secrets manager)
-4. **Re-scan after fixing**:
-
-   ```bash
-   ggshield secret scan path <modified-file> --json
-   ```
-
-5. Only proceed with committing once the scan returns clean.
