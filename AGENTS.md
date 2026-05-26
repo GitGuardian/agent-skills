@@ -29,7 +29,8 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md                          #   what the agent reads first
     references/                       #   long-form reference, loaded on demand
       workflows.md
-      remediation.md
+      remediation.md                  #   scan-secrets-specific pointer into the doctrine below
+      remediation-doctrine.md         #   shared doctrine, duplicated into every skill that touches remediation
       ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
       gitguardian-platform.md
     evals/
@@ -45,15 +46,18 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md
     references/
       planting-strategy.md
+      remediation-doctrine.md         #   duplicated
       ggshield-cli-setup.md
       gitguardian-platform.md
   scan-machine/
     SKILL.md
     references/
+      remediation-doctrine.md         #   duplicated
       gitguardian-platform.md
   check-hmsl/
     SKILL.md
     references/
+      remediation-doctrine.md         #   duplicated
       ggshield-cli-setup.md
       gitguardian-platform.md
 README.md                             # user-facing: what / install / what-you-can-do
@@ -138,6 +142,20 @@ This means truly-shared content (e.g., `ggshield-cli-setup.md` and `gitguardian-
 
 Skill-specific references (no duplication) — `scan-secrets/references/workflows.md`, `create-honeytokens/references/planting-strategy.md` — live alongside the shared ones in the same `references/` folder; only the *content* differs in whether it has copies elsewhere.
 
+### The remediation doctrine
+
+`remediation-doctrine.md` is the cross-skill / cross-agent doctrine for what to do when a leaked credential is found. It is read by every GitGuardian agent that reaches a remediation step (open-source skills shipped here, the in-app agent, future profiles). The doctrine covers the four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation.
+
+Per the self-contained-skills rule above, the doctrine is **duplicated** into every skill that touches remediation — currently `scan-secrets`, `check-hmsl`, `scan-machine`, and `create-honeytokens`. Skill-specific remediation prose (e.g., `scan-secrets/references/remediation.md`) is a *thin pointer* into the in-skill doctrine copy; it never duplicates the doctrine's content.
+
+When updating remediation guidance, update the doctrine in every skill that has a copy. The duplication-check pattern is the same as for `ggshield-cli-setup.md`:
+
+```bash
+for f in skills/*/references/remediation-doctrine.md; do shasum "$f"; done
+```
+
+All copies should share the same checksum after your edit.
+
 ### SKILL.md section order
 
 ```
@@ -212,11 +230,12 @@ To add a new slash invocation:
 
 ## Adding or editing a duplicated reference
 
-`ggshield-cli-setup.md` and `gitguardian-platform.md` are intentionally duplicated into every skill that links to them (see *Skills are self-contained* above). When you edit one of these files, propagate the same edit to every other copy. Quick check:
+`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `remediation-doctrine.md` are intentionally duplicated into every skill that links to them (see *Skills are self-contained* above). When you edit one of these files, propagate the same edit to every other copy. Quick check:
 
 ```bash
-for f in skills/*/references/ggshield-cli-setup.md; do shasum "$f"; done
-for f in skills/*/references/gitguardian-platform.md; do shasum "$f"; done
+for f in skills/*/references/ggshield-cli-setup.md;    do shasum "$f"; done
+for f in skills/*/references/gitguardian-platform.md;  do shasum "$f"; done
+for f in skills/*/references/remediation-doctrine.md;  do shasum "$f"; done
 ```
 
 All copies of a given file should share the same checksum after your edit. If you need a *new* duplicated reference (some content that genuinely applies to two or more skills), copy it into each consuming skill the same way.
