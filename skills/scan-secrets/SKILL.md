@@ -145,3 +145,5 @@ Full doctrine in [`references/remediation.md`](references/remediation.md) — lo
 **OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see **Onboarding → Headless / non-interactive environments** above.
 
 **Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing.
