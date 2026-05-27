@@ -105,6 +105,14 @@ $asset = $latest.assets | Where-Object { $_.name -like "*$AssetSuffix" }
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile ggshield.msi
 ```
 
+**Verify the download (ggshield 1.51.0+).** Release binaries on GitHub Releases ship with [GitHub Artifact Attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds) — signed SLSA build provenance. After downloading, verify the asset before installing:
+
+```bash
+gh attestation verify <downloaded-file> --repo GitGuardian/ggshield
+```
+
+Tool managers such as mise (via the aqua backend) verify automatically at install time, so this manual step is only needed for the direct-download path.
+
 Not supported by direct download: Linux ARM, Windows ARM, and Alpine/musl Linux. If direct download is unsupported, stop and ask the user how they want to proceed.
 
 After any install path, confirm the binary is on the normal PATH:
@@ -131,9 +139,22 @@ Tell the user it opens a browser to authorize the workstation. Once they confirm
 ggshield api-status
 ```
 
+As of ggshield 1.51.0, `ggshield api-status` also reports the **workspace ID** bound to the current token (in both text and `--json` output) — useful for confirming the user authenticated against the intended workspace.
+
 ## Headless and CI
 
-When `ggshield auth login` cannot open a browser, use token auth. The user creates a Personal Access Token with the `scan` scope, then runs:
+When `ggshield auth login` cannot open a browser (SSH session, container, headless server), there are two no-browser paths.
+
+**Out-of-band OAuth (`--method oob`, ggshield 1.51.0+ — preferred for interactive headless shells).** `ggshield` prints an authorization URL; the user opens it on any device with a browser, signs in, and pastes the code shown by the dashboard back into the terminal. No token to create by hand:
+
+```bash
+ggshield auth login --method oob
+ggshield auth login --method oob --instance https://dashboard.eu1.gitguardian.com
+```
+
+This uses the OAuth out-of-band sentinel (`urn:ietf:wg:oauth:2.0:oob`) and requires a GitGuardian instance that supports it.
+
+**Token auth (works on any version).** The user creates a Personal Access Token with the `scan` scope, then runs:
 
 ```bash
 ggshield auth login --method token
@@ -150,8 +171,22 @@ When the active skill needs hooks, install them after the CLI is authenticated:
 ggshield install -t claude-code -m global
 ggshield install -t cursor -m global
 ggshield install -t copilot -m global
+ggshield install -t codex -m global          # ggshield 1.51.0+
+ggshield install -t vscode -m global         # alias for copilot; ggshield 1.51.0+
 ggshield install --mode local --hook-type pre-commit
 ggshield install --mode local --hook-type pre-push
 ```
 
-Agent hooks require `ggshield` 1.49.0 or later.
+Agent hooks require `ggshield` 1.49.0 or later. The `codex` target and the `vscode` alias (for `copilot`) require 1.51.0 or later — the Codex hook is backed by Codex support added to `ggshield secret scan ai-hook` in 1.51.0.
+
+## What's new in ggshield 1.51.0
+
+Released 2026-05-26. The features relevant to these skills, and where they apply above:
+
+- **Browser-less login** — `ggshield auth login --method oob` for SSH sessions, containers, and headless servers. See [Headless and CI](#headless-and-ci).
+- **Codex agent hook** — `ggshield install -t codex`, backed by Codex support in `ggshield secret scan ai-hook`. See [Agent and git hooks](#agent-and-git-hooks).
+- **`vscode` hook alias** — `ggshield install -t vscode` now aliases `copilot`.
+- **Signed release binaries** — GitHub Releases assets ship with GitHub Artifact Attestations (SLSA provenance); verify with `gh attestation verify <file> --repo GitGuardian/ggshield`. See [Direct download from GitHub releases](#4-direct-download-from-github-releases).
+- **Plugins served from your instance** — `ggshield plugin install` / `update` / `status` now discover and pull plugins from the GitGuardian instance you're authenticated against (via `/v1/endpoints/plugins/<reference>/{download,signature}`) instead of a hard-coded GitHub URL. Requires the matching backend feature. This is the install path for the `machine_scan` plugin used by the scan-machine skill.
+- **`api-status` reports the workspace ID** — text and `--json` output now include the workspace bound to the current token. See [Authenticate and verify](#authenticate-and-verify).
+- **MCP-server detection** — ggshield now detects MCP servers installed via Claude plugins / Claude.ai and via Cursor plugins / extensions, feeding the AI-hook secret scanning.
