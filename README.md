@@ -158,7 +158,6 @@ skills/                               # one folder per skill — each fully self
     SKILL.md
     references/
       planting-strategy.md
-      remediation-doctrine.md         # duplicated
       ggshield-cli-setup.md
       gitguardian-platform.md
   scan-machine/
