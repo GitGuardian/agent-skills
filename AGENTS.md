@@ -30,7 +30,7 @@ skills/                               # one folder per skill — discovered by C
     references/                       #   long-form reference, loaded on demand
       workflows.md
       remediation.md                  #   scan-secrets-specific pointer into the doctrine below
-      remediation-doctrine.md         #   shared doctrine, duplicated into every skill that touches remediation
+      remediation-doctrine.md         #   scan-secrets remediation doctrine (per-skill; see note)
       ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
       gitguardian-platform.md
     evals/
@@ -51,7 +51,6 @@ skills/                               # one folder per skill — discovered by C
   scan-machine/
     SKILL.md
     references/
-      remediation-doctrine.md         #   duplicated
       gitguardian-platform.md
   check-hmsl/
     SKILL.md
@@ -142,22 +141,14 @@ Skill-specific references (no duplication) — `scan-secrets/references/workflow
 
 ### The remediation doctrine
 
-`remediation-doctrine.md` is the cross-skill / cross-agent doctrine for what to do when a leaked credential is found. It is read by every GitGuardian agent that reaches a remediation step (open-source skills shipped here, the in-app agent, future profiles). The doctrine covers the four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation.
+Remediation guidance is **per-skill, not shared**. Each skill that needs to tell the user what to do with a found credential gets its own remediation doctrine, tailored to that skill's detection context. There is no single cross-skill doctrine duplicated everywhere — that was tried and the fit was poor (an HMSL match is always public-facing; a honeytoken is never rotated; a machine-scan finding is always off-repo), so each skill's reality is different enough to warrant its own doctrine.
 
-Per the self-contained-skills rule above, the doctrine is **duplicated** into every skill that remediates a *leaked real credential* — currently `scan-secrets` and `scan-machine`. Skill-specific remediation prose (e.g., `scan-secrets/references/remediation.md`) is a *thin pointer* into the in-skill doctrine copy; it never duplicates the doctrine's content.
+Current state:
 
-Two skills deliberately do **not** carry the doctrine:
+- `scan-secrets/references/remediation-doctrine.md` — the full doctrine: four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation. `scan-secrets/references/remediation.md` is a thin pointer into it. This doctrine is also the right basis for a future incident-management skill, which shares scan-secrets' full-lifecycle detection context.
+- `check-hmsl`, `scan-machine`, `create-honeytokens` — keep short, self-contained remediation reminders inline (in their SKILL.md / planting-strategy.md), appropriate to their narrower context. Tailored per-skill doctrines for these are planned but not yet written; do **not** re-introduce a shared duplicated doctrine to cover them.
 
-- `create-honeytokens` — honeytokens are pre-emptive decoys (you never rotate a honeytoken), so the leaked-credential remediation flow does not apply. Its alert-response guidance is intrusion response, a different domain, and stays self-contained in `create-honeytokens/references/planting-strategy.md`.
-- `check-hmsl` — an HMSL match is always a *public-facing* leak, so most of the doctrine's four-track / four-mode triage is inapplicable. The full doctrine was a poor fit; `check-hmsl` keeps a self-contained "rotate, it's burned" reminder for now. A slimmer HMSL-specific remediation reference is planned but not yet written.
-
-When updating remediation guidance, update the doctrine in every skill that has a copy. The duplication-check pattern is the same as for `ggshield-cli-setup.md`:
-
-```bash
-for f in skills/*/references/remediation-doctrine.md; do shasum "$f"; done
-```
-
-All copies should share the same checksum after your edit.
+When you add a remediation doctrine for another skill, author it for that skill's detection context rather than copying scan-secrets' wholesale.
 
 ### SKILL.md section order
 
@@ -233,12 +224,11 @@ To add a new slash invocation:
 
 ## Adding or editing a duplicated reference
 
-`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `remediation-doctrine.md` are intentionally duplicated into every skill that links to them (see *Skills are self-contained* above). When you edit one of these files, propagate the same edit to every other copy. Quick check:
+`ggshield-cli-setup.md` and `gitguardian-platform.md` are intentionally duplicated into every skill that links to them (see *Skills are self-contained* above). When you edit one of these files, propagate the same edit to every other copy. Quick check:
 
 ```bash
-for f in skills/*/references/ggshield-cli-setup.md;    do shasum "$f"; done
-for f in skills/*/references/gitguardian-platform.md;  do shasum "$f"; done
-for f in skills/*/references/remediation-doctrine.md;  do shasum "$f"; done
+for f in skills/*/references/ggshield-cli-setup.md; do shasum "$f"; done
+for f in skills/*/references/gitguardian-platform.md; do shasum "$f"; done
 ```
 
 All copies of a given file should share the same checksum after your edit. If you need a *new* duplicated reference (some content that genuinely applies to two or more skills), copy it into each consuming skill the same way.
