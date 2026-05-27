@@ -29,7 +29,7 @@ skills/                               # one folder per skill — discovered by C
     SKILL.md                          #   what the agent reads first
     references/                       #   long-form reference, loaded on demand
       workflows.md
-      remediation.md                  #   scan-secrets-specific pointer into the doctrine below
+      interpreting-results.md         #   scan-output structure, HMSL handoff, false positives
       remediation-doctrine.md         #   scan-secrets remediation doctrine (per-skill; see note)
       ggshield-cli-setup.md           #   shared content, duplicated into every skill that links to it
       gitguardian-platform.md
@@ -145,7 +145,7 @@ Remediation guidance is **per-skill, not shared**. Each skill that needs to tell
 
 Current state:
 
-- `scan-secrets/references/remediation-doctrine.md` — the full doctrine: four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation. `scan-secrets/references/remediation.md` is a thin pointer into it. This doctrine is also the right basis for a future incident-management skill, which shares scan-secrets' full-lifecycle detection context.
+- `scan-secrets/references/remediation-doctrine.md` — the full doctrine: four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation. `SKILL.md` routes here directly when findings are present; the sibling `interpreting-results.md` is a *separate* reference for reading ggshield output (JSON shape, validity, severity), the HMSL handoff, and `ggignore` false positives — it is not a remediation file. This doctrine is also the right basis for a future incident-management skill, which shares scan-secrets' full-lifecycle detection context.
 - `check-hmsl` — keeps a short, self-contained remediation reminder inline (an HMSL match is always public-facing, so "it's burned, rotate it" is the whole story for now).
 - `scan-machine` and `create-honeytokens` — retain their existing remediation prose for now; each will get its own tailored doctrine later.
 

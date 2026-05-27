@@ -150,8 +150,8 @@ skills/                               # one folder per skill — each fully self
     SKILL.md
     references/                       # heavy reference, loaded on demand
       workflows.md
-      remediation.md                  # scan-secrets-specific pointer into the doctrine
-      remediation-doctrine.md         # cross-skill remediation doctrine (duplicated)
+      interpreting-results.md         # scan-output structure, HMSL handoff, false positives
+      remediation-doctrine.md         # scan-secrets remediation doctrine
       ggshield-cli-setup.md
       gitguardian-platform.md
   create-honeytokens/

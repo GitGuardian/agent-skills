@@ -1,6 +1,6 @@
-# ggshield: interpreting results and remediation
+# ggshield: interpreting results
 
-Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, false-positive handling, and the dispatch into the cross-skill remediation doctrine.
+Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, and false-positive handling. Remediation itself — triage, rotation, history-rewrite rules, per-secret-type runbooks — lives in [`remediation-doctrine.md`](remediation-doctrine.md); SKILL.md routes there directly when findings are present.
 
 ## Understanding Scan Output
 
@@ -77,26 +77,9 @@ ggshield hmsl check -t env /path/to/.env --json -n none      # .env-formatted in
 
 Exit codes: `0` = no matches found (not known to be leaked publicly); `1` = at least one secret matched (leaked); non-zero = error.
 
-A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — proceed via the post-leak / public-facing track of the doctrine (see [Remediation](#remediation) below).
+A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — the credential is public, so dispatch it to the post-leak / public-facing track in [`remediation-doctrine.md`](remediation-doctrine.md#6-post-leak--public-facing-track).
 
 If the user has the `check-hmsl` skill installed locally, it covers additional flows (multi-stage `fingerprint`/`query`/`decrypt` for sensitive bulk audits, `check-secret-manager hashicorp-vault` for vault inventories, troubleshooting). The agent should load that skill for those flows. The rules above remain in force regardless.
-
----
-
-## Remediation
-
-`scan-secrets` defers all remediation guidance — triage, rotation runbooks, history-rewrite advice, per-secret-type playbooks, validation — to the **GitGuardian Remediation Doctrine** at [`references/remediation-doctrine.md`](remediation-doctrine.md). The doctrine covers the four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a schema for the long tail, the generic coordination framework, public-leak takedown, and per-mode validation.
-
-For `scan-secrets`, detection-context dispatch is fixed by which command produced the finding:
-
-| Detection context | Doctrine entry point |
-|---|---|
-| Agent file-edit hook fired (in-buffer / just-saved file) | [§ 5.1](remediation-doctrine.md#51-agent-file-edit-hook-fired) |
-| Pre-commit hook fired (staged change blocked) | [§ 5.2](remediation-doctrine.md#52-pre-commit-hook-fired) |
-| Pre-push hook fired (unpushed commits blocked) | [§ 5.3](remediation-doctrine.md#53-pre-push-hook-fired) |
-| Repo / branch / commit / Docker image / PyPI package scan finding | Triage in [§ 6](remediation-doctrine.md#6-post-leak--public-facing-track) (public-facing) or [§ 7](remediation-doctrine.md#7-post-leak--internal-private-track) (internal-private) depending on where the artifact lives |
-
-Read the doctrine end-to-end the first time you remediate a finding; thereafter the table above is the dispatch.
 
 ---
 
