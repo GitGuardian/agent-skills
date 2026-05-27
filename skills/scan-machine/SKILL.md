@@ -200,3 +200,5 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 **Inventory hangs forever in a headless environment (CI, SSH, no browser)** — when the API key isn't on the command line, `ggshield machine inventory` spins up a localhost OAuth callback server and waits for a browser. Always pass `--api-key "$GITGUARDIAN_API_KEY"` explicitly in headless contexts; do not rely on the env var alone.
 
 **TLS / certificate errors behind a corporate proxy** — set `REQUESTS_CA_BUNDLE=/path/to/ca-bundle.pem` (or `SSL_CERT_FILE`, or pass `--ssl-certificate`) so the plugin trusts the proxy's CA. Priority: `--ssl-certificate` > `REQUESTS_CA_BUNDLE` > `SSL_CERT_FILE`.
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing.
