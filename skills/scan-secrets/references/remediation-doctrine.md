@@ -102,9 +102,13 @@ The cross-product of ownership × blast radius produces four distinct deliverabl
 
 Whenever exposure is public-facing, the agent surfaces GitGuardian's takedown / public-source reporting path as a parallel action, independent of which deliverable mode is producing the main artifact. **Takedown does not replace rotation** — the credential is already burned. Takedown slows secondary scrapes (search engines de-index, archive sites are notified) and creates an audit trail. See [§ 11](#11-public-leak-takedown--reporting).
 
-### One finding → one mode
+### Triage the whole finding set first
 
-The four modes do not stack. Every finding produces exactly one main deliverable (driver, coordination, escalation, or containment) plus, when public, the parallel takedown surfacing. The triage answers in § 2 select the mode; they do not combine into a richer hybrid.
+Take in the *complete* set of findings before selecting any mode — do not start remediating on the first hit. A single scan typically returns many findings, and the same credential value often appears across multiple files, commits, or artifacts. Collapse those into one credential first: **one credential is one rotation, even if it leaked in five places.** Triage then runs once over the deduplicated set, so blast radius and ownership are assessed per credential rather than re-litigated per occurrence. Mode selection (below) happens only after the full set is known.
+
+### One credential → one mode
+
+The four modes do not stack. Each distinct credential produces exactly one main deliverable (driver, coordination, escalation, or containment) plus, when public, the parallel takedown surfacing. The triage answers in § 2 select the mode; they do not combine into a richer hybrid.
 
 ---
 
