@@ -127,6 +127,8 @@ Show me which of these credentials have appeared in public leaks
 
 All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented inside each skill at `references/ggshield-cli-setup.md`. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see `references/gitguardian-platform.md`.
 
+When `scan-secrets` surfaces a leaked credential, remediation is driven by its **GitGuardian Remediation Doctrine** (`scan-secrets/references/remediation-doctrine.md`) — triage axes, deliverable modes, lifecycle tracks, per-secret-type rotation runbooks, and validation. The other skills carry short, self-contained remediation reminders suited to their narrower context.
+
 ## Repository layout
 
 ```
@@ -148,7 +150,8 @@ skills/                               # one folder per skill — each fully self
     SKILL.md
     references/                       # heavy reference, loaded on demand
       workflows.md
-      remediation.md
+      interpreting-results.md         # scan-output structure, HMSL handoff, false positives
+      remediation-doctrine.md         # scan-secrets remediation doctrine
       ggshield-cli-setup.md
       gitguardian-platform.md
   create-honeytokens/
