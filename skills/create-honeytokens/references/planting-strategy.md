@@ -152,7 +152,7 @@ A GitGuardian alert means **someone tried to authenticate with the decoy credent
 2. **Locate the planting record.** Internal wiki / vault note / ticket. Confirm the location matches the description.
 3. **Investigate the surface.** Who has access to the location? Has anything been published, forked, copied recently? Check access logs (Confluence, Notion, GitHub access events, S3 bucket logs).
 4. **Do not rotate the honeytoken.** Honeytokens are designed to fire repeatedly — leave the trap armed. If the attacker tries again, you get more signal.
-5. **Hunt for adjacent credentials.** If the attacker found the honeytoken, they may have also found *real* credentials in the same location. Treat every real credential surfaced this way as compromised: rotate it at the issuing service, update every system that consumes it, and remove it from the location where it leaked. How urgent the rotation is, and whether rewriting history is worth it, depend on where the credential was exposed (public vs internal) and what it unlocks (sandbox vs production).
+5. **Hunt for adjacent credentials.** If the attacker found the honeytoken, they may have also found *real* credentials in the same location. Rotate any real credentials that lived alongside the decoy.
 6. **Decide whether to plant more.** A confirmed compromise on one surface often means other surfaces in the same system are also exposed. Consider planting additional honeytokens with finer-grained naming to triangulate the leak source.
 
 ## Maintenance

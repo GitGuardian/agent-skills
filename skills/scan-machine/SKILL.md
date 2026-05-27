@@ -56,7 +56,7 @@ What `ggshield machine` covers:
 - Generate a JSON inventory and upload to GitGuardian for governance (`ggshield machine inventory`)
 
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
-For remediation once findings are surfaced: a found credential is a found credential. Treat live credentials as compromised — rotate them at the issuing service and update every system that consumes them; remove dead credentials in place. Machine findings sit off-repo (dotfiles, shell history, CLI configs), so also scrub the credential from the location it was found. How urgent the rotation is depends on the machine (a shared / corp-issued machine or a backed-up home directory widens the blast radius past you) and on what the credential unlocks.
+For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation.md` applies — a found credential is a found credential regardless of which scanner found it.
 
 ## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
 
@@ -169,7 +169,7 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 - **Default to `--mode quick` for the first run.** It targets known credential files specifically — fast, low surprise. Escalate to `standard` or `full` only after the user has seen the quick-mode output and wants broader coverage.
 - **Always pair `-f json` with `--show-findings`** in agent contexts. Without `--show-findings`, you only get counts.
 - **Suggest `ggshield machine dashboard` for triage when the scan finds more than ~10 results.** The local web UI groups findings by detector, file, and validity — much easier than scrolling through JSON output.
-- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding — rotate the live ones at the issuing service and scrub every credential from the off-repo location it was found in.
+- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding — the same remediation flow as `scan-secrets/references/remediation.md` applies.
 - **Do not paste raw secret values into the response.** Report file, line, secret type, and validity only. The user can read the value from the file themselves if they need it.
 - **`ggshield machine inventory` uploads findings to GitGuardian.** Only run it when the user wants the machine's credentials inventoried in their workspace (governance / compliance use case). For a plain audit, stick with `ggshield machine scan`.
 

@@ -146,7 +146,10 @@ Remediation guidance is **per-skill, not shared**. Each skill that needs to tell
 Current state:
 
 - `scan-secrets/references/remediation-doctrine.md` — the full doctrine: four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation. `scan-secrets/references/remediation.md` is a thin pointer into it. This doctrine is also the right basis for a future incident-management skill, which shares scan-secrets' full-lifecycle detection context.
-- `check-hmsl`, `scan-machine`, `create-honeytokens` — keep short, self-contained remediation reminders inline (in their SKILL.md / planting-strategy.md), appropriate to their narrower context. Tailored per-skill doctrines for these are planned but not yet written; do **not** re-introduce a shared duplicated doctrine to cover them.
+- `check-hmsl` — keeps a short, self-contained remediation reminder inline (an HMSL match is always public-facing, so "it's burned, rotate it" is the whole story for now).
+- `scan-machine` and `create-honeytokens` — retain their existing remediation prose for now; each will get its own tailored doctrine later.
+
+Do **not** re-introduce a single shared doctrine duplicated across these skills to cover them — author per-skill doctrines instead.
 
 When you add a remediation doctrine for another skill, author it for that skill's detection context rather than copying scan-secrets' wholesale.
 
