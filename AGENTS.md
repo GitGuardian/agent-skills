@@ -56,7 +56,6 @@ skills/                               # one folder per skill — discovered by C
   check-hmsl/
     SKILL.md
     references/
-      remediation-doctrine.md         #   duplicated
       ggshield-cli-setup.md
       gitguardian-platform.md
 README.md                             # user-facing: what / install / what-you-can-do
@@ -145,9 +144,12 @@ Skill-specific references (no duplication) — `scan-secrets/references/workflow
 
 `remediation-doctrine.md` is the cross-skill / cross-agent doctrine for what to do when a leaked credential is found. It is read by every GitGuardian agent that reaches a remediation step (open-source skills shipped here, the in-app agent, future profiles). The doctrine covers the four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation.
 
-Per the self-contained-skills rule above, the doctrine is **duplicated** into every skill that remediates a *leaked real credential* — currently `scan-secrets`, `check-hmsl`, and `scan-machine`. Skill-specific remediation prose (e.g., `scan-secrets/references/remediation.md`) is a *thin pointer* into the in-skill doctrine copy; it never duplicates the doctrine's content.
+Per the self-contained-skills rule above, the doctrine is **duplicated** into every skill that remediates a *leaked real credential* — currently `scan-secrets` and `scan-machine`. Skill-specific remediation prose (e.g., `scan-secrets/references/remediation.md`) is a *thin pointer* into the in-skill doctrine copy; it never duplicates the doctrine's content.
 
-`create-honeytokens` deliberately does **not** carry the doctrine. Honeytokens are pre-emptive decoys — you never rotate a honeytoken — so the leaked-credential remediation flow does not apply. Its alert-response guidance (what to do when a planted token fires) is intrusion response, a different domain, and stays self-contained in `create-honeytokens/references/planting-strategy.md`.
+Two skills deliberately do **not** carry the doctrine:
+
+- `create-honeytokens` — honeytokens are pre-emptive decoys (you never rotate a honeytoken), so the leaked-credential remediation flow does not apply. Its alert-response guidance is intrusion response, a different domain, and stays self-contained in `create-honeytokens/references/planting-strategy.md`.
+- `check-hmsl` — an HMSL match is always a *public-facing* leak, so most of the doctrine's four-track / four-mode triage is inapplicable. The full doctrine was a poor fit; `check-hmsl` keeps a self-contained "rotate, it's burned" reminder for now. A slimmer HMSL-specific remediation reference is planned but not yet written.
 
 When updating remediation guidance, update the doctrine in every skill that has a copy. The duplication-check pattern is the same as for `ggshield-cli-setup.md`:
 

@@ -168,7 +168,6 @@ skills/                               # one folder per skill — each fully self
   check-hmsl/
     SKILL.md
     references/
-      remediation-doctrine.md         # duplicated
       ggshield-cli-setup.md
       gitguardian-platform.md
 kiro/                                 # Kiro power (separate format)
