@@ -1,0 +1,95 @@
+name: Bug report
+description: A skill isn't triggering, a command fails, or the output is wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug.
+
+        **Do not paste real secrets.** This project detects credentials, so bug reports
+        often involve secret-like strings. Redact anything real or replace it with an
+        obviously fake placeholder (e.g. `AKIAIOSFODNN7EXAMPLE`). If you are reporting a
+        security vulnerability in GitGuardian itself, do **not** open a public issue —
+        use the security contact instead.
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      description: Which skill is involved?
+      options:
+        - scan-secrets
+        - create-honeytokens
+        - scan-machine
+        - check-hmsl
+        - Not sure / not skill-specific
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      description: Which coding agent were you using?
+      options:
+        - Claude Code
+        - Cursor
+        - Codex
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: Which model was driving the agent?
+      placeholder: e.g. Claude Opus 4.8, GPT-4o, Gemini 2.5 Pro
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the actual behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: Describe the expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, in order, that led to the bug?
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: ggshield-version
+    attributes:
+      label: ggshield version
+      description: Output of `ggshield --version`. Leave blank if the bug doesn't involve ggshield.
+      placeholder: e.g. ggshield, version 1.32.0
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS / shell
+      placeholder: e.g. macOS 15, zsh
+    validations:
+      required: false

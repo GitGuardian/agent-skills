@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a new skill, a new detection context, or an improvement to an existing skill
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      description: Which skill does this relate to?
+      options:
+        - scan-secrets
+        - create-honeytokens
+        - scan-machine
+        - check-hmsl
+        - New skill
+        - Not skill-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What are you trying to do? What triggers this need?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should the agent do differently, or what's missing?
+      description: Describe the desired behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround you're using today
+      description: If any — leave blank if none.
+    validations:
+      required: false
