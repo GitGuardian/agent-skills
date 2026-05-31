@@ -33,7 +33,7 @@ README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
 ```
 
-The four skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
+The five skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-git-hooks`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
 
 ## Skills index
 
@@ -43,6 +43,7 @@ The four skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
 | [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials across local git repositories, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees. **Requires endpoint scanning to be enabled on the GitGuardian workspace** (gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
+| [`install-git-hooks`](skills/install-git-hooks/SKILL.md) | Install `ggshield` as a git pre-commit or pre-push hook (local or global) so secrets are blocked before they enter history. The prevention counterpart to `scan-secrets`. Auto-triggers when setting up a repo, when asked to block/stop secrets from being committed, or when hardening after a secret was caught. |
 
 ## Slash commands
 
@@ -54,6 +55,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:create-honeytokens` | `skills/create-honeytokens/SKILL.md` |
 | `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
+| `/gitguardian:install-git-hooks` | `skills/install-git-hooks/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
