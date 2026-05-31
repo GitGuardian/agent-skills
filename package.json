@@ -1,6 +1,6 @@
 {
   "name": "gitguardian-agent-skills",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Tooling-only package for testing the GitGuardian agent-skills plugin locally and in CI. Skill content lives in skills/ and is independent of this package.",
   "private": true,
   "license": "MIT",

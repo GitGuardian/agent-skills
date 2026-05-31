@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/GitGuardian/agent-skills/compare/v0.1.5...v0.1.6) (2026-05-31)
+
+
+### Features
+
+* **scan-secrets:** mandate ggshield CLI over the MCP scan_secrets tool ([#59](https://github.com/GitGuardian/agent-skills/issues/59)) ([4791eb2](https://github.com/GitGuardian/agent-skills/commit/4791eb28b31a6345cf7c72957fc93f6d261b48fe))
+
 ## [0.1.5](https://github.com/GitGuardian/agent-skills/compare/v0.1.4...v0.1.5) (2026-05-31)
 
 
