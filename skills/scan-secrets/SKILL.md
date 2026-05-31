@@ -1,6 +1,8 @@
 ---
 name: scan-secrets
-description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing. Authorization to run `ggshield secret scan` does NOT extend to `ggshield hmsl *` — HMSL is user-run only (agent prepares the command, the user executes it)."
+description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
+metadata:
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -16,16 +18,19 @@ description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, D
 **Do not skip this section.**
 
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
-- **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation.md`](references/remediation.md) before composing any user-facing remediation message** — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
+- **The `ggshield` CLI is mandatory for scanning — do not use the GitGuardian Developer MCP `scan_secrets` tool as a substitute.** If the MCP server is connected, its `scan_secrets` tool will be tempting as a no-install shortcut. It is the wrong tool for this skill: it scans a single in-memory payload you paste in, so it is slow for anything larger than a snippet and **cannot scan git history, commit ranges, staged changes, repositories, Docker images, or PyPI packages** — which is the core of what this skill does. The CLI streams files locally and audits full history in one pass; the MCP path cannot. So:
+  - **Never** silently fall back to `scan_secrets` (MCP) because the CLI isn't installed yet.
+  - If `ggshield` is not installed, **strongly recommend the user install it** before scanning — one command, under a minute, and it unlocks history/commit/Docker/PyPI scanning the MCP tool can't do. Run Onboarding (below) and make the case rather than reaching for the MCP shortcut. Only if the user explicitly declines to install should you note that MCP `scan_secrets` exists, and even then only for a single pasted snippet — never for history, a repo, or any command in **Scan commands**.
+- **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) before composing any user-facing remediation message** — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
-- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
-- **Do not surface code containing a detected secret.** When a finding is reported:
-  1. Stop. Report each finding (file, line, secret type, **validity**).
-  2. **Read [`references/remediation.md`](references/remediation.md) end-to-end** — do not skip this step. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
-  3. Compose the remediation message: rotation first, HMSL follow-up for unverifiable-validity findings, history-rewrite only under the narrow conditions listed in the reference.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan, and strongly recommend the user install it — do not reach for the MCP `scan_secrets` tool as a workaround (see the CLI-is-mandatory rule above). Every scan command is useless until the CLI is installed and authenticated.
+- **Do not surface code containing a detected secret. Let the scan finish first.** Do not begin remediation on the first hit — `ggshield` reports the complete finding set in one run, and the same credential often appears across several files or commits. Only once the scan has completed:
+  1. Stop. Enumerate **every** finding, then group them: collapse the same credential value seen across multiple files / commits / artifacts into a single item, and keep distinct credentials separate. Report the grouped set (file(s), line(s), secret type, **validity**).
+  2. **Read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) end-to-end** — do not skip this step. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
+  3. Triage the complete, deduplicated set, then compose **one consolidated** remediation plan: rotation first, HMSL follow-up for unverifiable-validity findings, history-rewrite only under the narrow conditions listed in the reference. One credential is one rotation, even if it leaked in five places.
 
-  Do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later."
+  Do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later," and do not start rotating one finding while others are still being scanned or triaged.
 - **Do not extend this skill's agent-executable contract to HMSL.** When a finding's `validity` is `unknown`, `cannot_check`, or `no_checker`, the natural follow-up is HasMySecretLeaked (HMSL) — GitGuardian's privacy-preserving hash-lookup service for *known* credentials against the public-leak corpus. HMSL has a **different execution model — user-run only** — and the contract holds whether or not the user has the dedicated `check-hmsl` skill installed:
   - Do **not** invoke `ggshield hmsl check`, `fingerprint`, `query`, `decrypt`, or `check-secret-manager` yourself.
   - Do **not** read the credential file with `Read` / `Grep` / `cat` / `head` / `tail` / `sed` / `awk` / `less` / `xxd` / `wc` / `file` / `ls` or any other tool — that pulls plaintext into the agent context before HMSL's local-hashing protocol can protect it.
@@ -51,9 +56,18 @@ What `ggshield` covers:
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
 For detailed command variants, expected JSON output shapes, and CI integration, see [references/workflows.md](references/workflows.md).
-For interpreting scan output, rotation rules, when (and when not) to rewrite git history, and false-positive workflows, see [references/remediation.md](references/remediation.md).
+For interpreting scan output, the HMSL follow-up contract, and false-positive workflows, see [references/interpreting-results.md](references/interpreting-results.md).
+For remediation — triage, rotation rules, when (and when not) to rewrite git history, per-secret-type runbooks, and validation, see [references/remediation-doctrine.md](references/remediation-doctrine.md).
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+
+## When Not to Use
+
+Do not use this skill when:
+
+- The user already holds a *known* credential and wants to know whether it has leaked publicly — use `check-hmsl`. This skill finds *unknown* secrets; that one checks known ones against the public-leak corpus.
+- The request is to inventory credentials across the whole machine (dotfiles, cloud CLI configs, shell history, other repos) — use `scan-machine`.
+- You are tempted to substitute a grep one-liner, regex hunt, or custom secret-finding script. Use `ggshield secret scan` — the detectors are tuned and validated; ad-hoc patterns are not.
 
 ## Onboarding (first use)
 
@@ -117,7 +131,16 @@ Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected e
 
 ## When findings are present — quick reference
 
-Full doctrine in [`references/remediation.md`](references/remediation.md) — load it before composing any user-facing remediation message. The three triggers most often missed:
+Full doctrine in [`references/remediation-doctrine.md`](references/remediation-doctrine.md) — load it before composing any user-facing remediation message. Dispatch by which command produced the finding:
+
+| Detection context | Doctrine entry point |
+|---|---|
+| Agent file-edit hook fired (in-buffer / just-saved file) | [§ 5.1](references/remediation-doctrine.md#51-agent-file-edit-hook-fired) |
+| Pre-commit hook fired (staged change blocked) | [§ 5.2](references/remediation-doctrine.md#52-pre-commit-hook-fired) |
+| Pre-push hook fired (unpushed commits blocked) | [§ 5.3](references/remediation-doctrine.md#53-pre-push-hook-fired) |
+| Repo / commit / Docker image / PyPI package scan finding | Triage in [§ 6](references/remediation-doctrine.md#6-post-leak--public-facing-track) (public) or [§ 7](references/remediation-doctrine.md#7-post-leak--internal-private-track) (internal-private) per where the artifact lives |
+
+The three triggers most often missed:
 
 - **Pushed to a remote → rotate.** History rewriting is generally discouraged once secrets are pushed; rotation is the actual remediation. Do not lead with `git filter-repo` / BFG.
 - **Validity is `unknown` / `cannot_check` / `no_checker` / `failed_to_check` → propose HMSL** as the natural follow-up to check public leakage. Prepare the command (`ggshield hmsl quota`, then `ggshield hmsl check ... -n none --json`); **the user runs it**. Never invoke `ggshield hmsl *` yourself, never read the credential file.

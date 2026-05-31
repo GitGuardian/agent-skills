@@ -1,6 +1,9 @@
 ---
 name: check-hmsl
-description: "[USER-RUN ONLY — agent prepares commands, the user executes them in their own terminal] Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service for public GitHub leaks. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks \"has this secret leaked / is this compromised / check against HMSL\". Distinct from `scan-secrets` — that finds *unknown* secrets in code; this checks *known* secrets against the HMSL corpus."
+description: Check whether a known credential has already leaked publicly via GitGuardian's HasMySecretLeaked (HMSL) hash-lookup service. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks "has this secret leaked", "is this compromised", or "check against HMSL". Distinct from scan-secrets, which finds unknown secrets in code; this checks known secrets against the HMSL corpus. User-run only — this is a command-handoff skill, so the agent prepares the commands, the user runs them in their own terminal, and the agent only interprets the sanitized output the user pastes back.
+metadata:
+  command-handoff: "true"
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)
@@ -83,6 +86,13 @@ What `ggshield hmsl` covers:
 
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+
+## When Not to Use
+
+Do not use this skill when:
+
+- The task is to find *unknown* secrets in code, files, or git history — use `scan-secrets` instead. This skill checks *known* credentials you already hold.
+- You are tempted to run `ggshield hmsl` yourself or to read the credential file with `Read`, `cat`, `Grep`, or similar. HMSL operations are user-run only by design — running them agent-side pulls the plaintext into the agent context. Hand the command to the user.
 
 ## Onboarding (first use)
 
@@ -198,7 +208,7 @@ Exit codes: `0` = no matches found, `1` = at least one secret matched (leaked pu
 - **Default to `-n none` for output pasted back to the agent.** Do not ask the user to paste output generated with `-n key`, `-n censored`, or `-n cleartext`.
 - **Ask the user to check quota before bulk runs.** Prefix mode currently consumes multiple credits per checked secret, so `ggshield hmsl quota` first.
 - **For a small handful of secrets, use `check`. For sensitive bulk audits, use the `fingerprint` / `query` / `decrypt` split.** The split lets the user inspect what's being sent and decouples the local hashing step from the network call.
-- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. Walk the user through rotation (`scan-secrets/references/remediation.md`) for every match.
+- **Treat a match as confirmation, not coincidence.** HMSL's corpus is built from indexed public sources — a match means GitGuardian saw your exact secret in a public artifact. The credential is public and must be considered burned: rotate it at the issuing service and update every system that consumes it. Takedown of the public source does not substitute for rotation.
 - **HMSL is read-only.** A check does not "report" or "remove" the secret from anywhere — it only tells the user it's already public. Removal requires takedown action on the underlying source (e.g., a public GitHub repo).
 - **The `hash` field in HMSL output is a one-way SHA-256** — safe to report back to the user, but don't publish it in issues, PR comments, or logs unless the user asks. The `url` field points to a public source (e.g., a leaked GitHub commit) — safe and useful; this is the actionable information.
 

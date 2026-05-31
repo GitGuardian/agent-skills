@@ -1,6 +1,8 @@
 ---
 name: scan-machine
-description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, and abandoned project trees via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. **Requires endpoint scanning to be enabled on the GitGuardian workspace; not available on Free.**
+description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, browser profile databases, shell history, AI agent caches, and abandoned project trees via ggshield machine scan. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. Requires endpoint scanning enabled on the GitGuardian workspace; not available on Free.
+metadata:
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — Scan Machine
@@ -56,7 +58,16 @@ What `ggshield machine` covers:
 - Generate a JSON inventory and upload to GitGuardian for governance (`ggshield machine inventory`)
 
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
-For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation.md` applies — a found credential is a found credential regardless of which scanner found it.
+For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation-doctrine.md` applies — a found credential is a found credential regardless of which scanner found it.
+
+## When Not to Use
+
+Do not use this skill when:
+
+- You only need to scan a single repository, directory, path, commit, Docker image, or package — use `scan-secrets`. Machine scan targets the whole home directory and is heavier than you want for a scoped check.
+- You need a CI gate. Machine scan is an interactive endpoint-hygiene tool that writes to a local SQLite database and dashboard; it is not a pipeline pass/fail check — `scan-secrets` is.
+- The workspace is on Free or does not have endpoint scanning enabled, or the `machine_scan` plugin is not installed and enabled. The scan cannot run; confirm both prerequisites first and otherwise redirect the user to `scan-secrets`.
+- The goal is to check a *known* credential against the public-leak corpus — use `check-hmsl`.
 
 ## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
 
@@ -169,7 +180,7 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 - **Default to `--mode quick` for the first run.** It targets known credential files specifically — fast, low surprise. Escalate to `standard` or `full` only after the user has seen the quick-mode output and wants broader coverage.
 - **Always pair `-f json` with `--show-findings`** in agent contexts. Without `--show-findings`, you only get counts.
 - **Suggest `ggshield machine dashboard` for triage when the scan finds more than ~10 results.** The local web UI groups findings by detector, file, and validity — much easier than scrolling through JSON output.
-- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding — the same remediation flow as `scan-secrets/references/remediation.md` applies.
+- **Treat findings by validity:** live credentials need rotation now; dead credentials can be deleted in place. Walk the user through both per finding — the same remediation flow as `scan-secrets/references/remediation-doctrine.md` applies.
 - **Do not paste raw secret values into the response.** Report file, line, secret type, and validity only. The user can read the value from the file themselves if they need it.
 - **`ggshield machine inventory` uploads findings to GitGuardian.** Only run it when the user wants the machine's credentials inventoried in their workspace (governance / compliance use case). For a plain audit, stick with `ggshield machine scan`.
 

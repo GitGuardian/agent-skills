@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.6](https://github.com/GitGuardian/agent-skills/compare/v0.1.5...v0.1.6) (2026-05-31)
+
+
+### Features
+
+* **scan-secrets:** mandate ggshield CLI over the MCP scan_secrets tool ([#59](https://github.com/GitGuardian/agent-skills/issues/59)) ([4791eb2](https://github.com/GitGuardian/agent-skills/commit/4791eb28b31a6345cf7c72957fc93f6d261b48fe))
+
+## [0.1.5](https://github.com/GitGuardian/agent-skills/compare/v0.1.4...v0.1.5) (2026-05-31)
+
+
+### Features
+
+* **skills:** clean frontmatter descriptions, add command-handoff metadata and When Not to Use sections ([#54](https://github.com/GitGuardian/agent-skills/issues/54)) ([6813385](https://github.com/GitGuardian/agent-skills/commit/6813385128abe0d42d719ed19117d7a605654b29))
+
 ## [0.1.4](https://github.com/GitGuardian/agent-skills/compare/v0.1.3...v0.1.4) (2026-05-24)
 
 
