@@ -7,7 +7,7 @@
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install instructions below.
 
 ## Installation
 
@@ -48,6 +48,16 @@ codex
 ```
 
 Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
+
+### VS Code (GitHub Copilot)
+
+Open the Command Palette, run **Chat: Install Plugin From Source**, and paste this repo's URL:
+
+```
+https://github.com/GitGuardian/agent-skills
+```
+
+Copilot installs the `gitguardian` plugin (it auto-detects the manifest at `.claude-plugin/plugin.json`). The skills then auto-trigger the same way they do in Claude Code, with commands namespaced under `/gitguardian:`, and the bundled MCP config is picked up automatically.
 
 ### Cursor, Copilot, and 50+ other agents
 
