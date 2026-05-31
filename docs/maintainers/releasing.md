@@ -4,15 +4,20 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ## Source of truth
 
-The plugin version lives in **five files** that must move together:
+The plugin version lives in **ten files** that must move together:
 
+- `package.json` → `version`
 - `.claude-plugin/plugin.json` → `version`
 - `.claude-plugin/marketplace.json` → `metadata.version`
 - `.cursor-plugin/plugin.json` → `version`
 - `.cursor-plugin/marketplace.json` → `metadata.version`
 - `.codex-plugin/plugin.json` → `version`
+- `skills/scan-secrets/SKILL.md` → `metadata.version` (via `# x-release-please-version` annotation)
+- `skills/create-honeytokens/SKILL.md` → `metadata.version` (same)
+- `skills/scan-machine/SKILL.md` → `metadata.version` (same)
+- `skills/check-hmsl/SKILL.md` → `metadata.version` (same)
 
-Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+All ten are registered in `release-please-config.json` (the manifests as `json` extra-files, the four SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
 ## When to bump
 
@@ -43,6 +48,8 @@ The semver bump is driven by Conventional Commit prefixes. Pre-1.0 the config is
 | `chore:` / `docs:` / `ci:` / `refactor:` / `test:` | none (still appears in changelog) | none |
 
 (Toggles: `bump-patch-for-minor-pre-major` and `bump-minor-pre-major`, both `true` in our config. Flip to `false` once we cross 1.0.)
+
+**Skill content is the product — use `feat:`, not `docs:`.** A `SKILL.md` (its `description`, `metadata`, body instructions, or `references/`) is what we ship to agents, so any change to it is a feature update and must use `feat:` (or `feat!:` for a breaking change) so Release Please cuts a version. Reserve `docs:` for repo/maintainer documentation that users never receive — `README.md`, `AGENTS.md`, `docs/maintainers/`, code comments. Rule of thumb: if the change reaches someone who installed the plugin, it is `feat:`/`fix:`, not `docs:`.
 
 **2. Review the release PR, then merge.**
 
