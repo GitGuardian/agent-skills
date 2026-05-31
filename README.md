@@ -1,209 +1,215 @@
-# GitGuardian Agent Skills
-
-
 <img src="assets/agent-skills-readme-visual.svg" alt="GitGuardian Agent Skills visual" width="1200">
 
+# GitGuardian Agent Skills
 
-
-Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
+Find exposed credentials before attackers abuse them, block new leaks before they ship, and plant honeytokens to detect future misuse. This repo ships skill files that teach AI coding agents how to use GitGuardian through the GitGuardian CLI ([`ggshield`](https://github.com/GitGuardian/ggshield)), the Developer MCP server, and API-backed workflows where appropriate - when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens.
 
 Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install instructions below.
 
-## Installation
+## Skills and Commands
 
-### Claude Code
+Four skills map to four slash commands:
+
+| Workflow | Command | Skill | Use when | Key rule |
+|---|---|---|---|---|
+| Find hardcoded secrets in code, commits, history, Docker images, or packages | `/gitguardian:scan-secrets` | [`scan-secrets`](skills/scan-secrets/SKILL.md) | You are handling credentials, editing `.env` or CI files, preparing a commit or push, or auditing a repo for leaked secrets. | Scan first, remediate from structured findings. |
+| Generate and place decoy AWS credentials | `/gitguardian:create-honeytokens` | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | You want decoy credentials in `.env.example`, docs, runbooks, archived repos, or other attractive leak surfaces. | Plant where attackers look, not where engineers import. |
+| Audit a whole developer machine for credentials | `/gitguardian:scan-machine` | [`scan-machine`](skills/scan-machine/SKILL.md) | You are wiping, selling, returning, or auditing a developer machine. | Broad endpoint scan; requires workspace endpoint scanning. |
+| Check known credentials against public leaks | `/gitguardian:check-hmsl` | [`check-hmsl`](skills/check-hmsl/SKILL.md) | You already have a token, key, `.env`, vault inventory, or inherited credential list and want to know whether any value has appeared in indexed public leaks. | User-run handoff only; never read or run against the credential file. |
+
+Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
+
+## Quick Start
+
+<details open>
+<summary><strong>Claude Code</strong></summary>
 
 Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 
-```
+```text
 /plugin marketplace add GitGuardian/agent-skills
 /plugin install gitguardian
 ```
 
-You then have access to 4 commands:
-
-- `/gitguardian:scan-secrets` — scan code for hardcoded secrets (working tree, full git history, staged changes, a specific path, a commit, a Docker image, or a PyPI package; just say which in the prompt)
-- `/gitguardian:create-honeytokens` — generate a honeytoken (decoy AWS credential) to plant in an attractive location
-- `/gitguardian:scan-machine` — scan the entire developer machine for credentials, including local git repositories, dotfiles, `~/.aws`, shell history, and AI agent caches. Requires endpoint scanning to be enabled on the GitGuardian workspace
-- `/gitguardian:check-hmsl` — check whether a *known* credential has been seen leaking publicly via HasMySecretLeaked
-
-**Defense in depth (recommended).** Once `ggshield` is installed and authenticated, install the agent hook so `ggshield` scans prompts, tool calls, and tool outputs from inside Claude Code:
+Recommended defense in depth after `ggshield` is installed and authenticated:
 
 ```bash
 ggshield install -t claude-code -m global
 ```
 
-Requires ggshield 1.49.0+. The hook is merged into `~/.claude/settings.json` (global) or `.claude/settings.json` (local) — uninstall by removing the `ggshield` entries from that file.
+The hook scans prompts, tool calls, and tool outputs from inside Claude Code. It requires `ggshield` 1.49.0 or later.
 
-**MCP server (bundled).** The plugin also ships a `.mcp.json` at the repo root that registers the [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp). Claude Code picks it up automatically on install — you get tools for incident triage, honeytoken management, and live scans against the GitGuardian API from inside the agent. Requires [`uvx`](https://docs.astral.sh/uv/) on your PATH (Claude Code will spawn the server with `uvx --from git+https://github.com/GitGuardian/ggmcp.git developer-mcp-server`). First run opens a browser for OAuth against your GitGuardian instance; subsequent runs reuse the cached token. For EU SaaS or self-hosted, set `GITGUARDIAN_URL` in the MCP server config (see the [ggmcp README](https://github.com/GitGuardian/ggmcp#configuration-for-different-gitguardian-instances)).
+</details>
 
-### Codex
+<details>
+<summary><strong>Codex</strong></summary>
 
-Add this repo as a Codex plugin marketplace, then install the `gitguardian` plugin from the plugin browser:
+Add the marketplace, then install `gitguardian` from the plugin browser:
 
-```
+```bash
 codex plugin marketplace add GitGuardian/agent-skills
 codex
 /plugins
 ```
 
-Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
+Requires Codex CLI v0.117.0 or later. Select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**.
 
-### VS Code (GitHub Copilot)
+</details>
 
-Open the Command Palette, run **Chat: Install Plugin From Source**, and paste this repo's URL:
+<details>
+<summary><strong>VS Code with GitHub Copilot</strong></summary>
 
-```
+Open the Command Palette, run **Chat: Install Plugin From Source**, and paste:
+
+```text
 https://github.com/GitGuardian/agent-skills
 ```
 
-Copilot installs the `gitguardian` plugin (it auto-detects the manifest at `.claude-plugin/plugin.json`). The skills then auto-trigger the same way they do in Claude Code, with commands namespaced under `/gitguardian:`, and the bundled MCP config is picked up automatically.
+Copilot detects the plugin manifest and installs the `gitguardian` plugin.
 
-### Cursor, Copilot, and 50+ other agents
+</details>
 
-Install with the [skills.sh](https://skills.sh) CLI — auto-detects which agents you have on your machine:
+<details>
+<summary><strong>Cursor and 50+ other agents</strong></summary>
+
+Install with the [skills.sh](https://skills.sh) CLI:
 
 ```bash
 npx skills add gitguardian/agent-skills
 ```
 
-Works with Cursor, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and [50+ other agents](https://github.com/vercel-labs/skills#supported-agents).
+This works with Cursor, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, Kiro CLI, and other supported agents.
 
-### Kiro
+</details>
 
-1. Open Kiro and go to **Powers → Add Power**.
-2. Choose **Add power from GitHub URL** and enter:
+<details>
+<summary><strong>Kiro</strong></summary>
 
-   ```
+1. Open Kiro and go to **Powers -> Add Power**.
+2. Choose **Add power from GitHub URL**.
+3. Enter:
+
+   ```text
    https://github.com/GitGuardian/agent-skills/tree/main/kiro
    ```
 
-   The `kiro/` subdirectory holds `POWER.md` and the steering files.
-3. If the GitHub install does not accept a subdirectory in your version of Kiro, fall back to **Add power from local path**: clone this repo and point Kiro at the `kiro/` folder.
+If your Kiro version does not accept a GitHub subdirectory, clone this repo and add the local `kiro/` folder instead.
 
-Once installed, Kiro will activate the power based on its keywords (`ggshield`, `secrets`, `credentials`, etc.) and load the steering files in `kiro/steering/` contextually as you work.
+</details>
 
-## What you can ask
+## Example Prompts
 
-**Scan for secrets** — auto-triggers when you write or edit code that touches credentials, runs on demand for any path, history, or artifact. Reports findings with file, line, secret type, and validity. Walks you through removal and rotation.
+### Scan For Secrets
 
-```
+```text
 Scan this repo for hardcoded credentials
 Audit the full git history for leaked secrets
-Check this Dockerfile and the CI config for AWS keys
 Did I just commit any tokens? Scan the staged changes first
 Find the secrets I leaked in commit abc1234
-Scan the working tree before I push
 Scan this Docker image for embedded credentials
 ```
 
-**Plant a honeytoken** — generates an AWS decoy credential, suggests where to plant it for highest signal, and avoids the foot-gun of dropping it in a code path real engineers will import.
+### Plant Honeytokens
 
-```
+```text
 Drop a honeytoken in my .env.example before I publish this repo
 Generate a decoy AWS credential for my Confluence runbook
 Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
-**Scan the whole machine for credentials** — scans local git repositories, dotfiles, shell history, `~/.aws`, `~/.kube`, AI agent caches, browser profiles, and abandoned project trees for credentials on the laptop itself. Distinct from the targeted repo-scan use case: this scans broadly across the machine instead of one chosen repository or path. **Requires endpoint scanning to be enabled on the GitGuardian workspace; this is not available on the Free plan.**
+### Scan A Whole Machine
 
-```
+```text
 Audit my whole machine for credentials before I wipe it
 Scan my home folder for AWS keys and SSH credentials
 What credentials are sitting on this machine?
-Inventory the secrets on this laptop before I hand it back
 Check ~/.aws, ~/.kube and my shell history for live tokens
 ```
 
-**Install secret-scanning hooks** — wires `ggshield` into your editor and git workflow so secrets are caught before they reach a commit. The agent picks the right hook type (`claude-code`, `cursor`, `copilot`, `pre-commit`, `pre-push`) and scope (`global` for every project on this machine, `local` for the current repo) based on what you ask.
+### Check Known Credentials With HMSL
 
-```
-Install the ggshield hook for Claude Code
-Set up ggshield in Cursor so it scans my prompts and tool calls
-Wire up ggshield in VS Code with Copilot
-Add a pre-commit hook to block secrets before commit
-Install ggshield as a pre-push hook for this repo
-Set up the strongest secret-scanning coverage on this machine
-```
-
-**Check whether a known credential has been leaked publicly** — looks up a credential (or a whole file / vault inventory) against GitGuardian's HasMySecretLeaked corpus of indexed public GitHub leaks. Plaintext never leaves the machine — by default, only hash prefixes go over the wire. The inverse of *Scan for secrets*: that finds unknown secrets in code; this checks known secrets against HMSL.
-
-```
-I inherited a .env from a former teammate — check if any of these are compromised
+```text
+I inherited a .env from a former teammate. Check if any of these are compromised
 Run an HMSL check on this list of API keys
 Show me which of these credentials have appeared in public leaks
 ```
 
-All skills share the same `ggshield` setup flow — detect the user's package manager, install `ggshield`, and walk through OAuth or token authentication — documented inside each skill at `references/ggshield-cli-setup.md`. Honeytokens additionally need Manager access on the GitGuardian workspace and a PAT with the `honeytokens:write` scope; the agent can drive the scope upgrade on the user's behalf via `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write` — see `references/gitguardian-platform.md`.
+For HMSL, the agent should not run the check itself. It should hand you a command such as:
 
-When `scan-secrets` surfaces a leaked credential, remediation is driven by its **GitGuardian Remediation Doctrine** (`scan-secrets/references/remediation-doctrine.md`) — triage axes, deliverable modes, lifecycle tracks, per-secret-type rotation runbooks, and validation. The other skills carry short, self-contained remediation reminders suited to their narrower context.
-
-## Repository layout
-
+```bash
+ggshield hmsl check /path/to/secrets.txt --json -n none
 ```
-.claude-plugin/                       # Claude Code plugin manifest
-  marketplace.json
-  plugin.json
-.cursor-plugin/                       # Cursor plugin manifest
-  marketplace.json
-  plugin.json
-.codex-plugin/                        # Codex plugin manifest
-  plugin.json
-.agents/plugins/                      # Codex repo-scoped marketplace
-  marketplace.json
-.codex-mcp.json                       # GitGuardian Developer MCP server config (Codex)
-.mcp.json                             # GitGuardian Developer MCP server config (Claude Code)
-mcp.json                              # same, for Cursor
-skills/                               # one folder per skill — each fully self-contained
-  scan-secrets/
-    SKILL.md
-    references/                       # heavy reference, loaded on demand
-      workflows.md
-      interpreting-results.md         # scan-output structure, HMSL handoff, false positives
-      remediation-doctrine.md         # scan-secrets remediation doctrine
-      ggshield-cli-setup.md
-      gitguardian-platform.md
-  create-honeytokens/
-    SKILL.md
-    references/
-      planting-strategy.md
-      ggshield-cli-setup.md
-      gitguardian-platform.md
-  scan-machine/
-    SKILL.md
-    references/
-      gitguardian-platform.md
-  check-hmsl/
-    SKILL.md
-    references/
-      ggshield-cli-setup.md
-      gitguardian-platform.md
-kiro/                                 # Kiro power (separate format)
-  POWER.md
-  steering/                           # contextually-loaded guidance
-    scan-workflows.md
-    scan-remediation.md
-    honeytoken-planting.md
+
+You run it locally, then paste back only sanitized `--json -n none` output or a human summary.
+
+## How the Skills Work
+
+Every skill is self-contained:
+
+```text
+skills/<skill>/
+  SKILL.md              # entry point the agent reads first
+  references/           # deeper workflow docs loaded only when needed
+  evals/                # optional eval prompts and fixtures
 ```
+
+Design choices:
+
+- **CLI-first scanning.** Secret detection uses `ggshield` because it can scan paths, staged changes, history, commits, Docker images, and packages locally.
+- **Progressive disclosure.** `SKILL.md` stays short enough to load quickly; long remediation, setup, and workflow details live in `references/`.
+- **Structured remediation.** `scan-secrets` points to the GitGuardian Remediation Doctrine before advising on rotation, false positives, history rewrite, or HMSL follow-up.
+- **HMSL handoff.** `check-hmsl` is intentionally user-run only. The agent prepares commands and interprets sanitized output, but it must not read credential files or invoke `ggshield hmsl` on them.
+- **Cross-agent packaging.** The same skills ship through Claude Code, Codex, Cursor, VS Code Copilot, skills.sh, and Kiro-specific power files.
 
 ## Requirements
 
-A [GitGuardian account](https://dashboard.gitguardian.com/signup) — the free tier is enough to get started. The shared setup reference handles installing the CLI and authenticating it on first use.
+- A [GitGuardian account](https://dashboard.gitguardian.com/signup). The free tier is enough for repo scanning and basic setup.
+- [`ggshield`](https://github.com/GitGuardian/ggshield) 1.49.0 or later for full hook support.
+- Additional workspace capabilities for some flows:
+  - Honeytokens require Manager access and a token with `honeytokens:write`.
+  - Machine scans require endpoint scanning enabled on the workspace.
+  - Authenticated HMSL checks use the user's workspace quota; anonymous checks have lower quota.
 
-## Testing locally
+## Bundled MCP Server
 
-When hacking on this repo, you don't need to publish to test changes — every plugin host has a "load this local directory as a plugin" path:
+The plugin includes GitGuardian Developer MCP server configuration for supported hosts:
 
-### Claude Code
+| Host | Config file |
+|---|---|
+| Claude Code | [`.mcp.json`](.mcp.json) |
+| Codex | [`.codex-mcp.json`](.codex-mcp.json) |
+| Cursor | [`mcp.json`](mcp.json) |
+
+The MCP server adds GitGuardian API-backed tools for incident triage and honeytoken management. Secret scanning stays CLI-first through `ggshield`, because the skills need local path, staged-change, history, Docker image, and package scanning. The MCP server requires [`uvx`](https://docs.astral.sh/uv/) on your PATH. For EU SaaS or self-hosted instances, set `GITGUARDIAN_URL` in the MCP server config.
+
+## Project Structure
+
+```text
+agent-skills/
+|-- .claude-plugin/         # Claude Code plugin manifest and marketplace entry
+|-- .cursor-plugin/         # Cursor plugin manifest and marketplace entry
+|-- .codex-plugin/          # Codex plugin manifest
+|-- .agents/plugins/        # Codex repo-scoped marketplace
+|-- skills/                 # self-contained GitGuardian skills
+|   |-- scan-secrets/       # secret detection and remediation
+|   |-- create-honeytokens/ # honeytoken generation and planting
+|   |-- scan-machine/       # endpoint-wide credential inventory
+|   `-- check-hmsl/         # user-run public leak checks for known credentials
+|-- kiro/                   # Kiro power and steering files
+|-- test/                   # install-flow sanity tests
+`-- assets/                 # README visual assets
+```
+
+## Local Development
+
+Load the repo directly while editing skills:
 
 ```bash
 claude --plugin-dir /path/to/agent-skills
 ```
 
-The session loads this repo as the `gitguardian` plugin (shadowing any installed version for the duration of the session). Edit a `SKILL.md`, then `/reload-plugins` to pick up the change without restarting.
-
-### Codex
+For Codex:
 
 ```bash
 codex plugin marketplace add file:///path/to/agent-skills
@@ -211,30 +217,37 @@ codex
 /plugins
 ```
 
-The repo's `.agents/plugins/marketplace.json` is picked up directly. In the plugin browser, select the local GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. Current Codex releases reject local marketplace entries that point at the marketplace root, so the checked-in marketplace points at the public Git source for install. To test unmerged branch content end to end, temporarily change the marketplace entry's `source.url` to a local `file:///...` Git URL and add a `ref` for your branch before installing. Use the same plugin browser to disable `gitguardian` when swapping back to the published version.
-
-### Cursor
+For Cursor:
 
 ```bash
 ln -s /path/to/agent-skills ~/.cursor/plugins/local/gitguardian
 ```
 
-Restart Cursor (or reload the plugins surface) so it picks up the symlinked local copy.
+Reload the host after editing `SKILL.md` files. Claude Code can pick up changes with `/reload-plugins`.
 
-### Sanity tests
+## Testing
 
-A behavioral install-flow test lives at [`test/sanity.test.ts`](test/sanity.test.ts). It runs `npx skills add` against this repo into a temp directory and asserts every skill installs, has a `SKILL.md`, and the `--skill <name>` filter works.
+Install dependencies once:
 
 ```bash
-npm install        # one-time, installs vitest + tsx
+npm install
+```
+
+Run the install-flow sanity suite:
+
+```bash
 npm run test:sanity
 ```
 
-CI runs the same suite on every PR via `.github/workflows/sanity.yml`. The full validation chain in CI is:
+Other validation used in CI:
 
-- `validate.yml` — JSON schema + frontmatter checks + `claude plugin validate .` + [`skills-ref validate`](https://agentskills.io/specification) (the canonical cross-vendor agent-skills spec validator)
-- `sanity.yml` — install-flow behavior (this file)
-- `ggshield.yml` — scans the repo itself for any accidental secret
+```bash
+for f in $(find . -name '*.json' -not -path './.git/*' -not -path './node_modules/*'); do jq empty "$f"; done
+find skills -mindepth 1 -maxdepth 1 -type d ! -name '*-workspace' -exec skills-ref validate {} \;
+ggshield secret scan path -r -y .
+```
+
+CI also runs `claude plugin validate .` and a repo-wide `ggshield` scan to catch accidental secrets before merge.
 
 ## License
 
