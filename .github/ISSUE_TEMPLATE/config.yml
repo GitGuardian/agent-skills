@@ -1,5 +1,1 @@
 blank_issues_enabled: true
-contact_links:
-  - name: Report a security vulnerability
-    url: https://github.com/GitGuardian/agent-skills/security/policy
-    about: Do not open a public issue for security vulnerabilities. See our security policy to report privately.
