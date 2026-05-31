@@ -10,18 +10,63 @@ Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.
 
 Four skills map to four slash commands:
 
-| Workflow | Command | Skill | Use when | Key rule |
-|---|---|---|---|---|
-| Find hardcoded secrets in code, commits, history, Docker images, or packages | `/gitguardian:scan-secrets` | [`scan-secrets`](skills/scan-secrets/SKILL.md) | You are handling credentials, editing `.env` or CI files, preparing a commit or push, or auditing a repo for leaked secrets. | Scan first, remediate from structured findings. |
-| Generate and place decoy AWS credentials | `/gitguardian:create-honeytokens` | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | You want decoy credentials in `.env.example`, docs, runbooks, archived repos, or other attractive leak surfaces. | Plant where attackers look, not where engineers import. |
-| Audit a whole developer machine for credentials | `/gitguardian:scan-machine` | [`scan-machine`](skills/scan-machine/SKILL.md) | You are wiping, selling, returning, or auditing a developer machine. | Broad endpoint scan; requires workspace endpoint scanning. |
-| Check known credentials against public leaks | `/gitguardian:check-hmsl` | [`check-hmsl`](skills/check-hmsl/SKILL.md) | You already have a token, key, `.env`, vault inventory, or inherited credential list and want to know whether any value has appeared in indexed public leaks. | User-run handoff only; never read or run against the credential file. |
+<details open>
+<summary><strong>Scan secrets</strong> — <code>/gitguardian:scan-secrets</code></summary>
+
+[`scan-secrets`](skills/scan-secrets/SKILL.md)
+
+Find hardcoded secrets in paths, staged changes, commits, full history, Docker images, and packages.
+
+**Use when:** handling credentials, editing `.env` or CI files, preparing a commit or push, or auditing a repo.
+
+**Key rule:** scan first, then remediate from structured findings.
+
+</details>
+
+<details>
+<summary><strong>Create honeytokens</strong> — <code>/gitguardian:create-honeytokens</code></summary>
+
+[`create-honeytokens`](skills/create-honeytokens/SKILL.md)
+
+Generate and place decoy AWS credentials.
+
+**Use when:** planting decoys in `.env.example`, docs, runbooks, archived repos, or other attractive leak surfaces.
+
+**Key rule:** plant where attackers look, not where engineers import.
+
+</details>
+
+<details>
+<summary><strong>Scan machine</strong> — <code>/gitguardian:scan-machine</code></summary>
+
+[`scan-machine`](skills/scan-machine/SKILL.md)
+
+Audit a whole developer machine for credentials across local repos, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees.
+
+**Use when:** wiping, selling, returning, or auditing a developer machine.
+
+**Key rule:** this is a broad endpoint scan and requires endpoint scanning on the GitGuardian workspace.
+
+</details>
+
+<details>
+<summary><strong>Check HMSL</strong> — <code>/gitguardian:check-hmsl</code></summary>
+
+[`check-hmsl`](skills/check-hmsl/SKILL.md)
+
+Check known credentials against HasMySecretLeaked without exposing plaintext to the agent.
+
+**Use when:** you already have a token, key, `.env`, vault inventory, or inherited credential list and want to know whether any value has appeared in indexed public leaks.
+
+**Key rule:** user-run handoff only; the agent must not read or run against the credential file.
+
+</details>
 
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
 
-<details open>
+<details>
 <summary><strong>Claude Code</strong></summary>
 
 Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
