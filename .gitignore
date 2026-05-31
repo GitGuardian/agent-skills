@@ -2,3 +2,10 @@ node_modules/
 *.log
 .DS_Store
 *-workspace/
+
+# Eval fixtures built at runtime by each eval's setup.sh (contain un-ggignored
+# secret values; never commit — would trip the CI ggshield scan).
+_built/
+
+# Added by ggshield
+.cache_ggshield
