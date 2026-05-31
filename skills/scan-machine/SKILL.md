@@ -2,7 +2,7 @@
 name: scan-machine
 description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, browser profile databases, shell history, AI agent caches, and abandoned project trees via ggshield machine scan. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. Requires endpoint scanning enabled on the GitGuardian workspace; not available on Free.
 metadata:
-  version: "0.1.5" # x-release-please-version
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — Scan Machine
@@ -211,3 +211,5 @@ Exit codes: `0` = no secrets found, non-zero = secrets found or an error occurre
 **Inventory hangs forever in a headless environment (CI, SSH, no browser)** — when the API key isn't on the command line, `ggshield machine inventory` spins up a localhost OAuth callback server and waits for a browser. Always pass `--api-key "$GITGUARDIAN_API_KEY"` explicitly in headless contexts; do not rely on the env var alone.
 
 **TLS / certificate errors behind a corporate proxy** — set `REQUESTS_CA_BUNDLE=/path/to/ca-bundle.pem` (or `SSL_CERT_FILE`, or pass `--ssl-certificate`) so the plugin trusts the proxy's CA. Priority: `--ssl-certificate` > `REQUESTS_CA_BUNDLE` > `SSL_CERT_FILE`.
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing.

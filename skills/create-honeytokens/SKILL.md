@@ -2,7 +2,7 @@
 name: create-honeytokens
 description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around .env.example, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
 metadata:
-  version: "0.1.5" # x-release-please-version
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — Create Honeytokens
@@ -118,3 +118,5 @@ Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / per
 The fix is the standard scope-recovery flow: `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`. See [references/gitguardian-platform.md](references/gitguardian-platform.md) for the full procedure — both commands are runnable on the user's behalf, the OAuth flow handles scope upgrade without any manual PAT creation, and the same file covers the Manager-role caveat and headless `--method token` fallback.
 
 **`--type` is required** — pass `--type AWS`. No other types are supported yet (this will change).
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing.

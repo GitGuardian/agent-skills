@@ -2,7 +2,7 @@
 name: scan-secrets
 description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
 metadata:
-  version: "0.1.5" # x-release-please-version
+  version: "0.1.6" # x-release-please-version
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -18,10 +18,13 @@ metadata:
 **Do not skip this section.**
 
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
+- **The `ggshield` CLI is mandatory for scanning — do not use the GitGuardian Developer MCP `scan_secrets` tool as a substitute.** If the MCP server is connected, its `scan_secrets` tool will be tempting as a no-install shortcut. It is the wrong tool for this skill: it scans a single in-memory payload you paste in, so it is slow for anything larger than a snippet and **cannot scan git history, commit ranges, staged changes, repositories, Docker images, or PyPI packages** — which is the core of what this skill does. The CLI streams files locally and audits full history in one pass; the MCP path cannot. So:
+  - **Never** silently fall back to `scan_secrets` (MCP) because the CLI isn't installed yet.
+  - If `ggshield` is not installed, **strongly recommend the user install it** before scanning — one command, under a minute, and it unlocks history/commit/Docker/PyPI scanning the MCP tool can't do. Run Onboarding (below) and make the case rather than reaching for the MCP shortcut. Only if the user explicitly declines to install should you note that MCP `scan_secrets` exists, and even then only for a single pasted snippet — never for history, a repo, or any command in **Scan commands**.
 - **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) before composing any user-facing remediation message** — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
-- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan. Every scan command is useless until the CLI is installed and authenticated.
+- **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan, and strongly recommend the user install it — do not reach for the MCP `scan_secrets` tool as a workaround (see the CLI-is-mandatory rule above). Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret. Let the scan finish first.** Do not begin remediation on the first hit — `ggshield` reports the complete finding set in one run, and the same credential often appears across several files or commits. Only once the scan has completed:
   1. Stop. Enumerate **every** finding, then group them: collapse the same credential value seen across multiple files / commits / artifacts into a single item, and keep distinct credentials separate. Report the grouped set (file(s), line(s), secret type, **validity**).
   2. **Read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) end-to-end** — do not skip this step. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
@@ -165,3 +168,5 @@ The three triggers most often missed:
 **OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see **Onboarding → Headless / non-interactive environments** above.
 
 **Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing.
