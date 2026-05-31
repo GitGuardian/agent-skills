@@ -1,6 +1,9 @@
 ---
 name: check-hmsl
-description: "[USER-RUN ONLY — agent prepares commands, the user executes them in their own terminal] Check whether a *known* credential has been seen leaking publicly via GitGuardian's HasMySecretLeaked (HMSL) — a privacy-preserving hash-lookup service for public GitHub leaks. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks \"has this secret leaked / is this compromised / check against HMSL\". Distinct from `scan-secrets` — that finds *unknown* secrets in code; this checks *known* secrets against the HMSL corpus."
+description: Check whether a known credential has already leaked publicly via GitGuardian's HasMySecretLeaked (HMSL) hash-lookup service. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks "has this secret leaked", "is this compromised", or "check against HMSL". Distinct from scan-secrets, which finds unknown secrets in code; this checks known secrets against the HMSL corpus. User-run only — this is a command-handoff skill, so the agent prepares the commands, the user runs them in their own terminal, and the agent only interprets the sanitized output the user pastes back.
+metadata:
+  command-handoff: "true"
+  version: "0.1.4" # x-release-please-version
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)
@@ -83,6 +86,13 @@ What `ggshield hmsl` covers:
 
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+
+## When Not to Use
+
+Do not use this skill when:
+
+- The task is to find *unknown* secrets in code, files, or git history — use `scan-secrets` instead. This skill checks *known* credentials you already hold.
+- You are tempted to run `ggshield hmsl` yourself or to read the credential file with `Read`, `cat`, `Grep`, or similar. HMSL operations are user-run only by design — running them agent-side pulls the plaintext into the agent context. Hand the command to the user.
 
 ## Onboarding (first use)
 

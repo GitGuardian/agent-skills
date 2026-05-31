@@ -152,6 +152,30 @@ Use when <concrete user condition>, when <file pattern>, when <error message>. U
 
 Keep it to ~50–60 words. Drop redundant credential-type enumerations and troubleshooting-detail hooks that belong in the Troubleshooting section.
 
+**No markdown or bracketed prefixes in `description`.** No `*emphasis*`, `**bold**`, backticks, or `[USER-RUN ONLY …]` / `[AGENT-EXECUTABLE]` prefixes — they render as literal noise in catalog indices and machine-parsed dropdowns. Write plain prose.
+
+**Do not mention execution in the description unless the skill is the command-handoff exception.** Agent-executable is the default, so stating it ("the agent runs X directly", "agent-executable") is noise — leave it out. Only a skill with `command-handoff: "true"` (below) states its execution contract in the description, and as a sentence ("User-run only — the agent prepares the commands, the user runs them…"), not a bracket. The machine-readable flag lives in `metadata`; the runtime enforcement lives in the body (the `check-hmsl` STOP block) — never collapse that human-readable contract out of a command-handoff skill's description.
+
+### `metadata.command-handoff` and `metadata.version`
+
+Every SKILL.md carries a `metadata` block (a string→string map per the [agent-skills spec](https://agentskills.io/specification)):
+
+```yaml
+metadata:
+  version: "0.1.4" # x-release-please-version
+```
+
+- **`command-handoff`** — the **exception flag**, set to `"true"` only on a skill where the agent must *not* run the tool itself. Skills are agent-executable by default, so the default carries no flag. The exception exists when running the command would pull sensitive content into the agent's context — e.g. `check-hmsl`, where reading the credential file or echoing its contents into the thread defeats HMSL's local-hashing protocol. On those skills the agent's job is to *build the command and hand it to the user to run*, then interpret the sanitized output the user pastes back. Only `check-hmsl` carries it today:
+
+  ```yaml
+  metadata:
+    command-handoff: "true"
+    version: "0.1.4" # x-release-please-version
+  ```
+
+  It is a label for catalogs/validators/routers — it does **not** enforce anything; the body (STOP block) is the enforcement.
+- **`version`** — mirrors the plugin/package version; **not** an independent per-skill semver. The line carries an `# x-release-please-version` annotation and is registered as a `generic` extra-file in `release-please-config.json`, so Release Please bumps it in lockstep with the manifests (see [`docs/maintainers/releasing.md`](docs/maintainers/releasing.md)). Quote it so YAML reads it as a string; never hand-edit it out of step.
+
 ### Verify before claiming
 
 Before listing GitGuardian product capabilities, check `gitguardian.com` or product docs — do not rely on training data. Before listing `ggshield` CLI capabilities, run `ggshield --help` and `ggshield <subcommand> --help` against the installed version. The product surface and the CLI surface are not the same; GitGuardian has dashboard features (Public Monitoring, NHI Governance) that aren't exposed through `ggshield`, and `ggshield` does **not** ship IaC or SCA scanning despite adjacent vendors doing both.

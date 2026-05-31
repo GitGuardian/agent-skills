@@ -1,6 +1,8 @@
 ---
 name: scan-secrets
-description: "[AGENT-EXECUTABLE] Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets. Use when editing credential-handling code, `.env` files, CI/CD workflows, Dockerfiles, deployment scripts, or before committing or pushing. Authorization to run `ggshield secret scan` does NOT extend to `ggshield hmsl *` — HMSL is user-run only (agent prepares the command, the user executes it)."
+description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
+metadata:
+  version: "0.1.4" # x-release-please-version
 ---
 
 # ggshield — GitGuardian Secret Scanner
@@ -55,6 +57,14 @@ For interpreting scan output, the HMSL follow-up contract, and false-positive wo
 For remediation — triage, rotation rules, when (and when not) to rewrite git history, per-secret-type runbooks, and validation, see [references/remediation-doctrine.md](references/remediation-doctrine.md).
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 For platform-wide topics that span every GitGuardian skill (public docs URL pattern, auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+
+## When Not to Use
+
+Do not use this skill when:
+
+- The user already holds a *known* credential and wants to know whether it has leaked publicly — use `check-hmsl`. This skill finds *unknown* secrets; that one checks known ones against the public-leak corpus.
+- The request is to inventory credentials across the whole machine (dotfiles, cloud CLI configs, shell history, other repos) — use `scan-machine`.
+- You are tempted to substitute a grep one-liner, regex hunt, or custom secret-finding script. Use `ggshield secret scan` — the detectors are tuned and validated; ad-hoc patterns are not.
 
 ## Onboarding (first use)
 

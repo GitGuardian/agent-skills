@@ -1,6 +1,8 @@
 ---
 name: scan-machine
-description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, `~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, browser profile databases, shell history, AI agent caches, and abandoned project trees via `ggshield machine scan`. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. **Requires endpoint scanning to be enabled on the GitGuardian workspace; not available on Free.**
+description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, browser profile databases, shell history, AI agent caches, and abandoned project trees via ggshield machine scan. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. Requires endpoint scanning enabled on the GitGuardian workspace; not available on Free.
+metadata:
+  version: "0.1.4" # x-release-please-version
 ---
 
 # ggshield — Scan Machine
@@ -57,6 +59,15 @@ What `ggshield machine` covers:
 
 For platform-wide topics (auth/scope recovery, instance URLs, headless setup), see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 For remediation guidance once findings are surfaced (rotation rules, removal flow), the same playbook as `scan-secrets/references/remediation-doctrine.md` applies — a found credential is a found credential regardless of which scanner found it.
+
+## When Not to Use
+
+Do not use this skill when:
+
+- You only need to scan a single repository, directory, path, commit, Docker image, or package — use `scan-secrets`. Machine scan targets the whole home directory and is heavier than you want for a scoped check.
+- You need a CI gate. Machine scan is an interactive endpoint-hygiene tool that writes to a local SQLite database and dashboard; it is not a pipeline pass/fail check — `scan-secrets` is.
+- The workspace is on Free or does not have endpoint scanning enabled, or the `machine_scan` plugin is not installed and enabled. The scan cannot run; confirm both prerequisites first and otherwise redirect the user to `scan-secrets`.
+- The goal is to check a *known* credential against the public-leak corpus — use `check-hmsl`.
 
 ## Quick Start (if ggshield is already installed, authorized, *and* the `machine_scan` plugin is enabled)
 

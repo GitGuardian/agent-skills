@@ -1,6 +1,8 @@
 ---
 name: create-honeytokens
-description: "[AGENT-EXECUTABLE — the agent generates the decoy and proposes a planting location; outputs are GitGuardian-issued tripwires, not user secrets] Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around `.env.example`, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces."
+description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around .env.example, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
+metadata:
+  version: "0.1.4" # x-release-please-version
 ---
 
 # ggshield — Create Honeytokens
@@ -36,6 +38,14 @@ Proactively suggest a honeytoken when:
 For *where* to plant (concrete placement strategy, naming conventions, monitoring) see [references/planting-strategy.md](references/planting-strategy.md).
 For shared `ggshield` install, authentication, headless setup, CI tokens, and hook-install commands, see [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 For auth/scope recovery, instance URLs, headless setup, and the GitGuardian public docs URL pattern, see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+
+## When Not to Use
+
+Do not use this skill when:
+
+- The task is to detect or remediate *real* secrets that already exist in code, files, or history — use `scan-secrets`. Honeytokens are decoys you plant, not secrets you find.
+- The user needs a decoy for a provider other than AWS. `ggshield honeytoken` currently issues AWS-shaped tokens only; do not fabricate a fake key for another provider.
+- The only available planting spot is somewhere an attacker would never look (a private local file the user alone sees). A honeytoken that no one can stumble on raises no alert and is wasted — confirm a real planting surface first.
 
 ## Quick Start (if ggshield is already installed and authorized)
 
