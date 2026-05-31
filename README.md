@@ -7,7 +7,7 @@
 
 Catch secrets before they ship, and plant decoys to catch the ones that already did. This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI — when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens to detect future leaks. The agent invokes `ggshield` directly.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install instructions below.
 
 ## Installation
 
@@ -48,6 +48,27 @@ codex
 ```
 
 Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, select the GitGuardian marketplace, open `gitguardian`, and choose **Install plugin**. The skills auto-trigger the same way they do in Claude Code; the bundled Codex MCP config is picked up automatically.
+
+### VS Code (GitHub Copilot)
+
+GitHub Copilot in VS Code loads skills through its [agent plugins](https://code.visualstudio.com/docs/copilot/customization/agent-plugins) system — no VS Code extension to publish, just this Git repo as a plugin marketplace. VS Code auto-detects the plugin manifest from `.claude-plugin/plugin.json`, so the same repo that powers Claude Code works here unchanged.
+
+Add this repo to the `chat.plugins.marketplaces` setting in your user `settings.json`:
+
+```json
+"chat.plugins.marketplaces": [
+  "GitGuardian/agent-skills"
+]
+```
+
+Then install the `gitguardian` plugin:
+
+1. Open the Extensions view and search `@agentPlugins`, select **gitguardian**, and choose **Install** — or
+2. Run **Chat: Install Plugin From Source** from the Command Palette and enter `https://github.com/GitGuardian/agent-skills`.
+
+The skills appear in the **Configure Skills** menu alongside any local skills, and auto-trigger the same way they do in Claude Code. Commands are namespaced under the plugin: `/gitguardian:scan-secrets`, `/gitguardian:create-honeytokens`, `/gitguardian:scan-machine`, `/gitguardian:check-hmsl`. The bundled MCP config (`.mcp.json`) is picked up automatically.
+
+Agent plugins and the marketplace flow are in **Preview** as of early 2026: `chat.plugins.marketplaces` is a user-level setting only (no workspace-scoped config yet), and dev container support has known gaps.
 
 ### Cursor, Copilot, and 50+ other agents
 
