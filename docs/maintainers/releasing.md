@@ -4,7 +4,7 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ## Source of truth
 
-The plugin version lives in **ten files** that must move together:
+The plugin version lives in **eleven files** that must move together:
 
 - `package.json` → `version`
 - `.claude-plugin/plugin.json` → `version`
@@ -16,18 +16,34 @@ The plugin version lives in **ten files** that must move together:
 - `skills/create-honeytokens/SKILL.md` → `metadata.version` (same)
 - `skills/scan-machine/SKILL.md` → `metadata.version` (same)
 - `skills/check-hmsl/SKILL.md` → `metadata.version` (same)
+- `skills/install-git-hooks/SKILL.md` → `metadata.version` (same)
 
-All ten are registered in `release-please-config.json` (the manifests as `json` extra-files, the four SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+All eleven are registered in `release-please-config.json` (the manifests as `json` extra-files, the five SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
 ## When to bump
 
 | Bump | Trigger |
 |---|---|
 | **patch** (`0.1.0 → 0.1.1`) | Doc fixes, typo corrections, internal cleanup, dependency bumps, README rewrites, CI tweaks — anything with no user-visible behavior change. |
-| **minor** (`0.1.0 → 0.2.0`) | A new skill, a new slash command, a new MCP tool surfaced, a new manifest field that adds a capability. **While pre-1.0, also covers breaking changes** — renames, restructures, removed surfaces. Example: the `ggshield`-plugin → `gitguardian`-plugin rename was minor-bump material, not a major. |
+| **minor** (`0.1.0 → 0.2.0`) | A new skill, a new slash command, a new MCP tool surfaced, a new manifest field that adds a capability. **While pre-1.0, also covers breaking changes** — renames, restructures, removed surfaces. Example: the `ggshield`-plugin → `gitguardian`-plugin rename was minor-bump material, not a major. **Mechanism (pre-1.0): land it with a `feat!:` commit** (see [How a minor is actually triggered](#how-a-minor-is-actually-triggered-pre-10) below) — plain `feat:` only bumps patch before 1.0. |
 | **major** (`0.x → 1.0.0`, then `1.x → 2.0.0`, …) | Reserved. The first `1.0.0` lands once: Cursor marketplace listing is approved and live, the GitGuardian public API integration ships, and we have enough usage data to be confident the public surface is stable. After 1.0, every breaking change becomes a major bump. |
 
 The "while pre-1.0, breaking changes are minor" rule is explicit because SemVer leaves it ambiguous and reviewers will otherwise argue about it on each rename PR.
+
+### How a minor is actually triggered (pre-1.0)
+
+The bump table above describes *intent*; Release Please decides the *actual* bump from Conventional Commit prefixes, and pre-1.0 our config (`bump-patch-for-minor-pre-major: true`) maps a plain `feat:` to a **patch**, not a minor. Only `feat!:` / `BREAKING CHANGE:` maps to a minor before 1.0 (see the automation table under [Release flow](#release-flow-automated-via-release-please)).
+
+So the two tables agree only if you read them together: **the things the bump table calls "minor" (a new skill, command, MCP tool, or capability) are landed with a `feat!:` commit.** Pre-1.0, the `!` marker is this repo's lever for "this deserves a minor" — it does **not** assert source-incompatibility. A new skill is purely additive yet still ships as `feat!:`, exactly as the `ggshield → gitguardian` rename did. Plain `feat:` is for additive changes that are fine to release as a patch (e.g. expanding an existing skill's guidance).
+
+| You're shipping… | Commit | Pre-1.0 result |
+|---|---|---|
+| A new skill / slash command / MCP tool / capability | `feat!:` | minor (`0.1.x → 0.2.0`) |
+| A tweak to an existing skill or surface | `feat:` | patch (`0.1.6 → 0.1.7`) |
+| A `fix:` | `fix:` | patch |
+| Maintainer docs, CI, internal refactor | `docs:` / `ci:` / `refactor:` | no bump (still in changelog) |
+
+When you cross 1.0, flip `bump-patch-for-minor-pre-major` and `bump-minor-pre-major` to `false`; from then on plain `feat:` is the minor and `feat!:` is the major, and this section no longer applies.
 
 ## Release flow (automated via Release Please)
 
