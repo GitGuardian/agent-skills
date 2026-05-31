@@ -51,24 +51,13 @@ Requires Codex CLI v0.117.0 or later (plugin system). In the plugin browser, sel
 
 ### VS Code (GitHub Copilot)
 
-GitHub Copilot in VS Code loads skills through its [agent plugins](https://code.visualstudio.com/docs/copilot/customization/agent-plugins) system — no VS Code extension to publish, just this Git repo as a plugin marketplace. VS Code auto-detects the plugin manifest from `.claude-plugin/plugin.json`, so the same repo that powers Claude Code works here unchanged.
+Open the Command Palette, run **Chat: Install Plugin From Source**, and paste this repo's URL:
 
-Add this repo to the `chat.plugins.marketplaces` setting in your user `settings.json`:
-
-```json
-"chat.plugins.marketplaces": [
-  "GitGuardian/agent-skills"
-]
+```
+https://github.com/GitGuardian/agent-skills
 ```
 
-Then install the `gitguardian` plugin:
-
-1. Open the Extensions view and search `@agentPlugins`, select **gitguardian**, and choose **Install** — or
-2. Run **Chat: Install Plugin From Source** from the Command Palette and enter `https://github.com/GitGuardian/agent-skills`.
-
-The skills appear in the **Configure Skills** menu alongside any local skills, and auto-trigger the same way they do in Claude Code. Commands are namespaced under the plugin: `/gitguardian:scan-secrets`, `/gitguardian:create-honeytokens`, `/gitguardian:scan-machine`, `/gitguardian:check-hmsl`. The bundled MCP config (`.mcp.json`) is picked up automatically.
-
-Agent plugins and the marketplace flow are in **Preview** as of early 2026: `chat.plugins.marketplaces` is a user-level setting only (no workspace-scoped config yet), and dev container support has known gaps.
+Copilot installs the `gitguardian` plugin (it auto-detects the manifest at `.claude-plugin/plugin.json`). The skills then auto-trigger the same way they do in Claude Code, with commands namespaced under `/gitguardian:`, and the bundled MCP config is picked up automatically.
 
 ### Cursor, Copilot, and 50+ other agents
 
