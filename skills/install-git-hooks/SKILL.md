@@ -2,7 +2,7 @@
 name: install-git-hooks
 description: Install ggshield as a git pre-commit or pre-push hook so hardcoded secrets are blocked before they enter git history. Use when setting up secret prevention on a repo, when the user asks to block or stop secrets from being committed or pushed, when configuring pre-commit hooks, or after a secret was caught and they want to prevent a recurrence. Local for one repo or global for all repos.
 metadata:
-  version: "0.1.6" # x-release-please-version
+  version: "0.1.7" # x-release-please-version
 ---
 
 # ggshield — Install Git Hooks

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.7](https://github.com/GitGuardian/agent-skills/compare/v0.1.6...v0.1.7) (2026-05-31)
+
+
+### Features
+
+* add install-git-hooks skill ([#68](https://github.com/GitGuardian/agent-skills/issues/68)) ([a2e7654](https://github.com/GitGuardian/agent-skills/commit/a2e76542753fc17697d18623d6ae501a1f672203))
+
+
+### Bug Fixes
+
+* drop redundant security contact_link ([#67](https://github.com/GitGuardian/agent-skills/issues/67)) ([5d01521](https://github.com/GitGuardian/agent-skills/commit/5d015214c1515ba91a163ee1bec142ddb48606bc))
+* make blank issues public and surface security policy in chooser ([#66](https://github.com/GitGuardian/agent-skills/issues/66)) ([ba36ed1](https://github.com/GitGuardian/agent-skills/commit/ba36ed10623e2b383a7563542bc4e9c72c780cba))
+
+
+### Documentation
+
+* add VS Code (GitHub Copilot) install instructions ([#58](https://github.com/GitGuardian/agent-skills/issues/58)) ([f3642a6](https://github.com/GitGuardian/agent-skills/commit/f3642a628dc99328aaec1d48a3a7741a1d98e88b))
+* improve README layout ([#63](https://github.com/GitGuardian/agent-skills/issues/63)) ([19f9563](https://github.com/GitGuardian/agent-skills/commit/19f9563f05c71b72604397e302267117ede2ddc1))
+* **skills:** add docs.gitguardian.com/llms.txt fallback to every Troubleshooting section ([#48](https://github.com/GitGuardian/agent-skills/issues/48)) ([3c5fd31](https://github.com/GitGuardian/agent-skills/commit/3c5fd318d4188774dfd5b796a97cbb7e210d9156))
+
 ## [0.1.6](https://github.com/GitGuardian/agent-skills/compare/v0.1.5...v0.1.6) (2026-05-31)
 
 
