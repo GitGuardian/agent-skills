@@ -62,6 +62,19 @@ Check known credentials against HasMySecretLeaked without exposing plaintext to 
 
 </details>
 
+<details>
+<summary><strong>Install git hooks</strong> — <code>/gitguardian:install-git-hooks</code></summary>
+
+[`install-git-hooks`](skills/install-git-hooks/SKILL.md)
+
+Install ggshield as a git pre-commit or pre-push hook so secrets are blocked before they enter history.
+
+**Use when:** setting up secret prevention on a repo, asking to block or stop secrets from being committed or pushed, configuring pre-commit hooks, or hardening after a secret was caught.
+
+**Key rule:** prevention only — guards future commits/pushes. Existing code and history still need `scan-secrets`. Global mode modifies global git config; get explicit consent.
+
+</details>
+
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
@@ -240,7 +253,8 @@ agent-skills/
 |   |-- scan-secrets/       # secret detection and remediation
 |   |-- create-honeytokens/ # honeytoken generation and planting
 |   |-- scan-machine/       # endpoint-wide credential inventory
-|   `-- check-hmsl/         # user-run public leak checks for known credentials
+|   |-- check-hmsl/         # user-run public leak checks for known credentials
+|   `-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
 |-- kiro/                   # Kiro power and steering files
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
