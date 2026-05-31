@@ -43,6 +43,8 @@ So the two tables agree only if you read them together: **the things the bump ta
 | A `fix:` | `fix:` | patch |
 | Maintainer docs, CI, internal refactor | `docs:` / `ci:` / `refactor:` | no bump (still in changelog) |
 
+**The lever is the squash-merge PR title, not the branch commits.** We squash-merge PRs, so Release Please only ever sees *one* commit per PR on `main` — and its message is the **PR title**, not whatever the individual branch commits were named. A branch with a `feat!:` commit still lands as a patch if the PR title is plain `feat:`. So the `!` has to be on the **PR title** (e.g. `feat!: add triage-incidents skill`); rewording branch commits does nothing. This is exactly how `install-git-hooks` shipped as the 0.1.7 patch instead of a 0.2.0 minor — the branch was fine, the PR title wasn't.
+
 When you cross 1.0, flip `bump-patch-for-minor-pre-major` and `bump-minor-pre-major` to `false`; from then on plain `feat:` is the minor and `feat!:` is the major, and this section no longer applies.
 
 ## Release flow (automated via Release Please)
