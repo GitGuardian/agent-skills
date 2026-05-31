@@ -235,3 +235,5 @@ ggshield hmsl api-status           # confirm
 **Multi-stage decrypt fails with `mapping mismatch`** — the mapping file was regenerated between `fingerprint` and `decrypt`. Re-run from `fingerprint` in a fresh private temp directory to keep the payload and mapping aligned.
 
 **The agent hook blocked a `ggshield` invocation** — the hook detected a secret in a tool input/output and refused to forward it. This is working as intended. Do not disable the hook to "get the check through"; keep HMSL checks user-run only.
+
+**Any other or unlisted error** — before improvising a fix, consult GitGuardian's AI-agent docs index at https://docs.gitguardian.com/llms.txt to locate the relevant page, then append `.md` to that page's URL to read it as Markdown. Search there first rather than guessing. (Reading docs is fine; the user-run-only rule above still forbids the agent from running HMSL commands or touching credential files.)
