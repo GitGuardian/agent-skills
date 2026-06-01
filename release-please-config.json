@@ -71,6 +71,10 @@
         {
           "type": "generic",
           "path": "skills/install-git-hooks/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "skills/triage-incidents/SKILL.md"
         }
       ]
     }
