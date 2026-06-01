@@ -75,6 +75,19 @@ Install ggshield as a git pre-commit or pre-push hook so secrets are blocked bef
 
 </details>
 
+<details>
+<summary><strong>Triage incidents</strong> — <code>/gitguardian:triage-incidents</code></summary>
+
+[`triage-incidents`](skills/triage-incidents/SKILL.md)
+
+Read the secret incidents already detected in your GitGuardian dashboard, rank them by validity, severity, blast radius, and exposure, and drive remediation — rotation first, HMSL for unverifiable validity, history rewrite only when it earns its cost.
+
+**Use when:** triaging or reviewing GitGuardian incidents, asking what's leaking in the org or what to fix first, responding to a Public Monitoring alert, or assigning/tagging/resolving incidents.
+
+**Key rule:** the one MCP-first skill — it works through the GitGuardian Developer MCP server, not the `ggshield` CLI. Covers both internal and Public Monitoring incidents (non-interchangeable IDs). Never auto-resolves: writes are confirmation-gated and RESOLVED follows confirmed rotation.
+
+</details>
+
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
@@ -256,7 +269,8 @@ agent-skills/
 |   |-- create-honeytokens/ # honeytoken generation and planting
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
-|   `-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   |-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
 |-- kiro/                   # Kiro power and steering files
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
