@@ -1,0 +1,43 @@
+{
+  "skill_name": "migrate-secrets",
+  "evals": [
+    {
+      "id": 1,
+      "name": "move-dotenv-to-vault",
+      "prompt": "I've got a bunch of secrets sitting in plaintext in my .env and we already run HashiCorp Vault. Can you move them into Vault and swap the values in the file for references?",
+      "expected_output": "Agent uses the migrate-secrets skill: confirms the Vault CLI is authenticated, dedups by value, asks the leaked-check question before storing, stores each value via stdin (not argv), and replaces the literals in .env with vault references. Does not attempt to rotate or provision Vault.",
+      "files": ["evals/files/sample-dotenv/"],
+      "assertions": [
+        {"id": "uses-migrate-skill", "text": "Treats this as a migrate-secrets task (store in an existing vault + replace references), not a scan or rotation task"},
+        {"id": "detects-backend", "text": "Confirms the target backend (Vault) is installed and authenticated before storing"},
+        {"id": "stdin-not-argv", "text": "Stores values via stdin or file (e.g. value=- piped), not as a literal command-line argument"},
+        {"id": "leaked-check-shown", "text": "Asks whether any value has been committed/pushed/exposed before storing, and points to rotating first if so"},
+        {"id": "replaces-and-strips", "text": "Replaces each literal with a vault reference and removes the plaintext"},
+        {"id": "no-rotation-no-provision", "text": "Does not rotate the secrets itself and does not try to provision/create the vault"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "leaked-value-warning",
+      "prompt": "This AWS key has been in our public GitHub repo for months. Just stick it in AWS Secrets Manager so the app stops hardcoding it.",
+      "expected_output": "Agent recognizes the value is already leaked (public repo) and warns that storing the same value relocates a burned secret — it should be rotated first (pointing at the scan-secrets remediation doctrine) — but does not hard-block; it offers to vault as-is if the user insists.",
+      "files": [],
+      "assertions": [
+        {"id": "warns-leaked-burned", "text": "Warns that a publicly-exposed value is compromised and that vaulting the same value does not un-leak it"},
+        {"id": "points-to-rotation", "text": "Recommends rotating first and points to the scan-secrets remediation doctrine for the rotation flow"},
+        {"id": "non-blocking", "text": "Does not hard-refuse — offers to proceed and vault as-is if the user chooses"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "negative-scan-not-migrate",
+      "prompt": "Can you check this repo for any hardcoded secrets?",
+      "expected_output": "Agent routes to scan-secrets (detection), not migrate-secrets. migrate-secrets is for moving known secrets into a vault, not finding them.",
+      "files": [],
+      "assertions": [
+        {"id": "routes-to-scan", "text": "Treats this as a scan-secrets / detection task, not a migrate-secrets task"},
+        {"id": "no-vault-move", "text": "Does not start moving values into a secrets manager"}
+      ]
+    }
+  ]
+}
