@@ -75,6 +75,19 @@ Install ggshield as a git pre-commit or pre-push hook so secrets are blocked bef
 
 </details>
 
+<details>
+<summary><strong>Migrate secrets to a vault</strong> — <code>/gitguardian:migrate-secrets</code></summary>
+
+[`migrate-secrets`](skills/migrate-secrets/SKILL.md)
+
+Move plaintext secrets out of a `.env`, config, or source into an existing secrets manager — HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager, Azure Key Vault, Doppler, 1Password, or Infisical — then replace the hardcoded value with a reference.
+
+**Use when:** centralizing secrets from a `.env` or config into a vault your team already runs, or vaulting hardcoded credentials a scan surfaced.
+
+**Key rule:** mechanical move only. Values are passed via stdin/file, never argv. A leaked value is burned — rotate it first (`scan-secrets` remediation) then vault the new value; the skill warns loudly but never blocks. It does not provision a vault or wire runtime fetching.
+
+</details>
+
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
@@ -254,7 +267,8 @@ agent-skills/
 |   |-- create-honeytokens/ # honeytoken generation and planting
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
-|   `-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   |-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   `-- migrate-secrets/    # move plaintext secrets into an existing secrets manager
 |-- kiro/                   # Kiro power and steering files
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
