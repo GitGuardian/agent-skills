@@ -75,6 +75,17 @@ Install ggshield as a git pre-commit or pre-push hook so secrets are blocked bef
 
 </details>
 
+<details>
+<summary><strong>Vault secrets</strong> — <code>/gitguardian:vault-secrets</code></summary>
+
+[`vault-secrets`](skills/vault-secrets/SKILL.md) moves at-rest plaintext secrets — surfaced by `scan-machine` or sitting in `.env`/config files you know about — into **GNU `pass`**, then wires them back through **`direnv`** so the project keeps running. For un-leaked secrets at risk only because they're plaintext on a breachable machine. The agent reads keys and verifies with `ggshield`; the one value-touching step is user-run so the plaintext never enters the agent's context.
+
+**Use when:** getting `.env`/config secrets out of plaintext on a dev machine, or storing secrets in `pass`.
+
+**Key rule:** not for leaked secrets — rotate those first (`scan-secrets`/`check-hmsl`). Multiline/structured secrets (private keys, JSON) are not supported yet.
+
+</details>
+
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
@@ -254,7 +265,8 @@ agent-skills/
 |   |-- create-honeytokens/ # honeytoken generation and planting
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
-|   `-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   |-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   `-- vault-secrets/      # move at-rest plaintext secrets into GNU pass (via direnv)
 |-- kiro/                   # Kiro power and steering files
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
