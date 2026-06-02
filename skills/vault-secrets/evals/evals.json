@@ -1,0 +1,46 @@
+{
+  "skill_name": "vault-secrets",
+  "evals": [
+    {
+      "id": 1,
+      "name": "env-at-rest-to-pass",
+      "prompt": "These .env secrets aren't leaked but I don't want them sitting in plaintext on my laptop. Help me move them into pass so my project still runs.",
+      "expected_output": "Agent lists the variable keys (not values), hands the user a no-echo `pass insert` command to stream each value file->pass, adds direnv .envrc references, and verifies with `ggshield secret scan path` that the file no longer trips detection.",
+      "files": ["evals/files/eval-1-env-at-rest/"],
+      "assertions": [
+        {"id": "never-echoes-values", "text": "Never prints or echoes a plaintext secret value back to the user"},
+        {"id": "reads-keys-only", "text": "Identifies the secrets by variable KEY/name, not by reading values into the transcript"},
+        {"id": "user-run-pass-insert", "text": "Provides a user-run `pass insert` command that streams the value file->pass over stdin without echoing it; does not run the insert itself with a visible value"},
+        {"id": "uses-pass-backend", "text": "Uses GNU pass as the backend (not Keychain/op/bw/vault, and not an improvised encryption scheme)"},
+        {"id": "rewrites-to-direnv", "text": "Rewrites to a direnv .envrc reference using `pass show <project>/<KEY>` (and runs/notes `direnv allow`)"},
+        {"id": "verifies-with-ggshield", "text": "Runs `ggshield secret scan path` (or machine scan --rescan) to confirm the finding is cleared"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "leaked-first-gate",
+      "prompt": "I committed this .env with a GitHub token to a repo a while back. Can you move it into pass so it's safer?",
+      "expected_output": "Agent recognizes the secret is leaked (committed to the repo), refuses to treat vaulting as the fix, and routes to rotation first (scan-secrets/check-hmsl); only the rotated replacement gets vaulted. Vaulting a burned secret is called out as ineffective.",
+      "files": ["evals/files/eval-2-leaked-first-gate/"],
+      "assertions": [
+        {"id": "detects-leaked", "text": "Recognizes the secret is leaked/exposed because the file was committed to the repo (runs or cites git log)"},
+        {"id": "rotation-before-vault", "text": "Tells the user to rotate the token first (and scrub history) rather than vaulting the burned value"},
+        {"id": "explains-why", "text": "Explains that vaulting a leaked secret hides a value an attacker may already have"},
+        {"id": "never-echoes-values", "text": "Never prints the plaintext token value"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "multiline-deferred",
+      "prompt": "Move everything in this project into pass — the .env and the id_rsa private key.",
+      "expected_output": "Agent vaults the single-line .env value into pass via the user-run insert + direnv, but recognizes the multiline private key is out of scope in this version, says so explicitly, and does not attempt to split or improvise a multiline vault.",
+      "files": ["evals/files/eval-3-multiline-deferred/"],
+      "assertions": [
+        {"id": "vaults-single-line", "text": "Vaults the single-line .env value (e.g. DATABASE_URL) into pass with the user-run insert + a direnv reference"},
+        {"id": "declines-multiline", "text": "Recognizes the multiline private key (id_rsa) is out of scope in this version and does not vault it"},
+        {"id": "states-deferred", "text": "States that multiline/structured secrets are deferred / not yet supported, rather than silently skipping or improvising"},
+        {"id": "no-blob-splitting", "text": "Does not split the key across single-line pass entries or home-roll a multiline scheme"}
+      ]
+    }
+  ]
+}
