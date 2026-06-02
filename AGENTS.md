@@ -33,7 +33,7 @@ README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
 ```
 
-The five skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-git-hooks`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
+The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-git-hooks`, `vault-secrets`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
 
 ## Skills index
 
@@ -44,6 +44,7 @@ The five skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check
 | [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials across local git repositories, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees. **Requires endpoint scanning to be enabled on the GitGuardian workspace** (gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 | [`install-git-hooks`](skills/install-git-hooks/SKILL.md) | Install `ggshield` as a git pre-commit or pre-push hook (local or global) so secrets are blocked before they enter history. The prevention counterpart to `scan-secrets`. Auto-triggers when setting up a repo, when asked to block/stop secrets from being committed, or when hardening after a secret was caught. |
+| [`vault-secrets`](skills/vault-secrets/SKILL.md) | Move at-rest plaintext secrets (from `scan-machine` or known `.env`/config files) into GNU `pass`, then wire them back through `direnv` so the project keeps running. The at-rest remediation counterpart to `scan-machine`: secures un-leaked secrets so a machine breach doesn't expose plaintext. Partial command-handoff — the value-touching insert is user-run. |
 
 ## Slash commands
 
@@ -56,6 +57,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:scan-machine` | `skills/scan-machine/SKILL.md` |
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
 | `/gitguardian:install-git-hooks` | `skills/install-git-hooks/SKILL.md` |
+| `/gitguardian:vault-secrets` | `skills/vault-secrets/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
@@ -84,6 +86,8 @@ The repo's user-facing surface has three distinct layers, and the right name liv
 | **Tool / implementation** | What actually does the work | no — real product name | `ggshield` CLI, `ggmcp` (Developer MCP server), GitGuardian public API |
 
 Layer 3 is plumbing. It appears in each skill's `## Overview`, `## Commands`, and `## Troubleshooting` sections — because users need to know which tool runs and how to install it — but **never** in a skill folder name, command name, or plugin namespace.
+
+> **Verification-anchored exception.** `vault-secrets` is the first skill whose core action (storing a secret in a vault) is performed by an external tool, not `ggshield` — today that tool is GNU `pass`, the sole supported backend. It stays in-repo because `ggshield secret scan path` anchors verification: the finding must be *cleared*, not merely moved. New skills may follow this pattern only when a GitGuardian tool still verifies the outcome.
 
 Concretely:
 
