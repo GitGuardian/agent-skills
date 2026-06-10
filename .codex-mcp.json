@@ -1,11 +1,11 @@
 {
   "mcp_servers": {
-    "GitGuardianDeveloper": {
+    "GitGuardian": {
       "command": "uvx",
       "args": [
         "--from",
         "git+https://github.com/GitGuardian/ggmcp.git",
-        "developer-mcp-server"
+        "gg-mcp-server"
       ]
     }
   }
