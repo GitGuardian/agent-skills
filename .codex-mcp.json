@@ -1,12 +1,7 @@
 {
   "mcp_servers": {
-    "GitGuardianDeveloper": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/GitGuardian/ggmcp.git",
-        "developer-mcp-server"
-      ]
+    "GitGuardian": {
+      "url": "https://mcp.gitguardian.com/mcp"
     }
   }
 }
