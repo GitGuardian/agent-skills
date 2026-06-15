@@ -241,7 +241,7 @@ The plugin includes GitGuardian Developer MCP server configuration for supported
 
 The MCP server adds GitGuardian API-backed tools for incident triage and honeytoken management. Secret scanning stays CLI-first through `ggshield`, because the skills need local path, staged-change, history, Docker image, and package scanning.
 
-Claude Code and Cursor use the hosted server (`https://mcp.gitguardian.com/mcp`) with OAuth — no local install or token setup needed. Codex uses a local stdio server via `uvx`; it requires [`uvx`](https://docs.astral.sh/uv/) on your PATH. For EU SaaS, use `https://mcp.eu1.gitguardian.com/mcp` instead. For self-hosted GitGuardian or CI/CD, see the [local stdio (PAT) instructions](https://github.com/GitGuardian/ggmcp#local-stdio-mode-pat-only).
+All three clients use the hosted server (`https://mcp.gitguardian.com/mcp`) with OAuth — no local install or token setup needed. Claude Code and Cursor trigger the browser login automatically on first use; Codex needs a one-time `codex mcp login GitGuardian`. For EU SaaS, use `https://mcp.eu1.gitguardian.com/mcp` instead. For self-hosted GitGuardian or CI/CD, see the [local stdio (PAT) instructions](https://github.com/GitGuardian/ggmcp#local-stdio-mode-pat-only).
 
 ## Project Structure
 
