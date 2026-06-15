@@ -2,7 +2,7 @@
 name: scan-secrets
 description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
 metadata:
-  version: "0.1.7" # x-release-please-version
+  version: "0.2.0" # x-release-please-version
 ---
 
 # ggshield — GitGuardian Secret Scanner

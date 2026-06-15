@@ -3,7 +3,7 @@ name: check-hmsl
 description: Check whether a known credential has already leaked publicly via GitGuardian's HasMySecretLeaked (HMSL) hash-lookup service. Use when the user inherits credentials, suspects a specific token leaked, wants to vet a HashiCorp Vault inventory, or asks "has this secret leaked", "is this compromised", or "check against HMSL". Distinct from scan-secrets, which finds unknown secrets in code; this checks known secrets against the HMSL corpus. User-run only — this is a command-handoff skill, so the agent prepares the commands, the user runs them in their own terminal, and the agent only interprets the sanitized output the user pastes back.
 metadata:
   command-handoff: "true"
-  version: "0.1.7" # x-release-please-version
+  version: "0.2.0" # x-release-please-version
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)
