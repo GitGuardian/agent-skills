@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/GitGuardian/agent-skills/compare/v0.1.7...v0.2.0) (2026-06-15)
+
+
+### Features
+
+* switch all MCP configs to hosted server ([#73](https://github.com/GitGuardian/agent-skills/issues/73)) ([9ce7f0b](https://github.com/GitGuardian/agent-skills/commit/9ce7f0b091046b4d4eb6b187374171667188490b))
+
 ## [0.1.7](https://github.com/GitGuardian/agent-skills/compare/v0.1.6...v0.1.7) (2026-05-31)
 
 

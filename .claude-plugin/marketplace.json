@@ -9,7 +9,7 @@
   },
   "metadata": {
     "description": "Official GitGuardian plugin marketplace for AI coding agents — secret scanning, honeytoken creation, and incident triage.",
-    "version": "0.1.7"
+    "version": "0.2.0"
   },
   "plugins": [
     {
