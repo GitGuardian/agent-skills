@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/GitGuardian/agent-skills/compare/v0.2.0...v0.3.0) (2026-06-17)
+
+
+### Features
+
+* add triage-incidents skill ([#71](https://github.com/GitGuardian/agent-skills/issues/71)) ([780c404](https://github.com/GitGuardian/agent-skills/commit/780c40459fa26a51ed6c06a53475aab2b0a88093))
+
 ## [0.2.0](https://github.com/GitGuardian/agent-skills/compare/v0.1.7...v0.2.0) (2026-06-15)
 
 
