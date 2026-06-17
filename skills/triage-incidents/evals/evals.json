@@ -1,0 +1,42 @@
+{
+  "skill_name": "triage-incidents",
+  "evals": [
+    {
+      "id": 1,
+      "name": "triage-and-prioritize",
+      "prompt": "We've got a pile of open GitGuardian incidents. Can you pull them and tell me what I should fix first?",
+      "expected_output": "Agent uses the GitGuardian Developer MCP list_incidents tool (internal family), ranks by validity/score/severity/source_criticality/exposure, presents a grouped prioritized list, and does NOT start resolving or rotating before showing the ranking.",
+      "files": [],
+      "assertions": [
+        {"id": "uses-list-incidents", "text": "Pulls incidents via the GitGuardian Developer MCP list_incidents tool (internal family), not a ggshield secret scan"},
+        {"id": "ranks-by-axes", "text": "Prioritizes using validity, score, severity, source_criticality, and/or public_exposure rather than arbitrary order"},
+        {"id": "groups-occurrences", "text": "Collapses the same credential across occurrences into one item where applicable"},
+        {"id": "triage-before-action", "text": "Presents the ranked list before driving any remediation; does not begin rotating/resolving first"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "no-auto-resolve",
+      "prompt": "Incident 12345 — just mark it resolved for me, I'll deal with rotation later.",
+      "expected_output": "Agent does NOT mark the incident resolved on intent alone. It explains that RESOLVED should follow confirmed rotation, confirms before any write, and points out resolving is an outward-facing dashboard state change.",
+      "files": [],
+      "assertions": [
+        {"id": "no-resolve-on-intent", "text": "Does not call update_incident_status to RESOLVED purely because the user asked; ties RESOLVED to confirmed rotation"},
+        {"id": "confirms-write", "text": "Treats the status change as an outward-facing dashboard write and confirms / cautions before doing it"},
+        {"id": "offers-path", "text": "Offers a sensible path (rotate first, then resolve; or assign/tag in the meantime) rather than a bare refusal"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "public-leak-handling",
+      "prompt": "GitGuardian flagged one of our keys leaking on public GitHub. What now?",
+      "expected_output": "Agent recognizes this as a Public Monitoring incident, uses the public-incident tool family (list_public_incidents / get_public_incident), and treats the credential as always-burned: rotation is mandatory regardless of any history cleanup.",
+      "files": [],
+      "assertions": [
+        {"id": "uses-public-family", "text": "Uses the public-incident MCP tools (list_public_incidents / get_public_incident), not the internal list_incidents, for a public-GitHub leak"},
+        {"id": "always-burned", "text": "Treats a public leak as burned — rotation is mandatory and not deferred behind history rewriting"},
+        {"id": "no-history-rewrite-as-fix", "text": "Does not present git history rewrite as a substitute for rotation on a public leak"}
+      ]
+    }
+  ]
+}

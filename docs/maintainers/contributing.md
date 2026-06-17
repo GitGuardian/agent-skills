@@ -2,7 +2,7 @@
 
 ## Adding a new skill
 
-1. **Confirm the capability exists in `ggshield`.** Run `ggshield --help` and the relevant subcommand `--help`. If it's not in the CLI, this repo is not the right place — this repo wraps the CLI, not the dashboard.
+1. **Confirm the capability is reachable through a GitGuardian tool the agent can drive.** Most skills wrap the `ggshield` CLI — run `ggshield --help` and the relevant subcommand `--help` to confirm. Some capabilities are dashboard/platform features with no CLI surface (incident triage, assignment, resolution); those are reachable through the GitGuardian Developer MCP server (ggmcp) and belong here too — `triage-incidents` is the reference example. What does not belong: a capability with neither a CLI nor an MCP path the agent can actually invoke.
 2. **Pick a verb-noun name.** `scan-machine`, `check-hmsl`, `install-hooks`, etc. No `ggshield-` prefix.
 3. **Create `skills/<name>/SKILL.md`** with frontmatter:
    ```yaml
