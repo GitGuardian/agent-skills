@@ -1,8 +1,8 @@
 ---
 name: triage-incidents
-description: Use when triaging or reviewing GitGuardian secret incidents already detected in the dashboard, when asked what is leaking in the org or what to fix first, after a Public Monitoring alert, or to assign, tag, or resolve incidents. Operates through the GitGuardian Developer MCP server.
+description: Use when triaging or reviewing GitGuardian secret incidents already detected in the dashboard, when asked what is leaking in the org or what to fix first, when remediating or rotating a credential flagged in an incident, after a Public Monitoring alert, or to assign, tag, or resolve incidents. Operates through the GitGuardian Developer MCP server.
 metadata:
-  version: "0.1.7" # x-release-please-version
+  version: "0.2.0" # x-release-please-version
 ---
 
 # GitGuardian — Triage Incidents
@@ -62,7 +62,7 @@ HMSL handoff sub-step, which is user-run regardless.
 
 ### Setup
 
-- Verify connectivity with `get_current_token_info` / `get_authenticated_user_info`.
+- Verify connectivity and read scope with a cheap read such as `count_incidents` (or `list_sources`).
 - If the incident **write** tools are absent from the available toolset, the token lacks
   write scope. Degrade to **read-only triage** and hand the user the equivalent dashboard
   action instead of failing. See [`references/gitguardian-platform.md`](references/gitguardian-platform.md)

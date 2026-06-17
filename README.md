@@ -82,7 +82,7 @@ Install ggshield as a git pre-commit or pre-push hook so secrets are blocked bef
 
 Read the secret incidents already detected in your GitGuardian dashboard, rank them by validity, severity, blast radius, and exposure, and drive remediation — rotation first, HMSL for unverifiable validity, history rewrite only when it earns its cost.
 
-**Use when:** triaging or reviewing GitGuardian incidents, asking what's leaking in the org or what to fix first, responding to a Public Monitoring alert, or assigning/tagging/resolving incidents.
+**Use when:** triaging or reviewing GitGuardian incidents, asking what's leaking in the org or what to fix first, remediating or rotating a credential flagged in an incident, responding to a Public Monitoring alert, or assigning/tagging/resolving incidents.
 
 **Key rule:** the one MCP-first skill — it works through the GitGuardian Developer MCP server, not the `ggshield` CLI. Covers both internal and Public Monitoring incidents (non-interchangeable IDs). Never auto-resolves: writes are confirmation-gated and RESOLVED follows confirmed rotation.
 
