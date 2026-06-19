@@ -21,9 +21,11 @@ Start with:
 ggshield --version
 ```
 
-If it fails, detect what already exists on the user's machine. Prefer install paths that keep upgrades easy. Probe in this order and use the first suitable manager that responds to a `--version` check.
+If it fails, install `ggshield`. **Prefer a package manager and the standalone (compiled) build; avoid the Python installers (`pip`, `pipx`, `uv`).** `ggshield` is moving to a compiled, non-Python distribution, so installing it as a Python package is being phased out — the package-manager and standalone paths are the ones that keep working and the habit to build now. Probe in this order and use the first path that works.
 
-### 1. Platform-native package manager
+### 1. Platform-native package manager (preferred)
+
+These install the standalone build and keep upgrades easy. Detect what the user already has and use the first manager that responds to a `--version` check.
 
 | Platform | Probe | Install command |
 |---|---|---|
@@ -32,37 +34,31 @@ If it fails, detect what already exists on the user's machine. Prefer install pa
 | Linux Debian/Ubuntu | `apt --version` | Set up the Cloudsmith repo at https://cloudsmith.io/~gitguardian/repos/ggshield/setup/, then `apt install ggshield` |
 | Linux RHEL/Fedora | `dnf --version` | Set up the Cloudsmith repo at the same URL, rpm tab, then `dnf install ggshield` |
 
-### 2. Python-based managers
+### 2. Official install script (standalone build, no Python)
 
-| Probe | Install command | Notes |
-|---|---|---|
-| `uv --version` | `uv tool install ggshield` | Upgrade later with `uv tool upgrade ggshield` |
-| `pipx --version` | `pipx install ggshield` | Isolated environment |
-| `pip --version` | `pip install --user ggshield` | Last resort among existing Python tools. May fail on externally managed Python |
-
-### 3. Install uv if no existing manager works
-
-Use this before direct download when no existing package manager can install `ggshield`. `uv` is lightweight, cross-platform, and keeps future upgrades simple. Unlike package-manager installs, this fetches a shell script at runtime, so do not pipe it directly to `sh`. Download it first, let the user inspect it or verify it against the checksum published in the uv install docs, then execute only after they confirm:
+When no native package manager is configured, use GitGuardian's install script. It detects the OS and architecture and installs the standalone build — no Python required. It covers macOS (Intel and Apple Silicon) and glibc Linux on both x86_64 and ARM64 (`aarch64`); on Windows use the PowerShell variant. Like any remote installer, do not pipe it straight to a shell: download it first, let the user inspect it, then run it only after they confirm.
 
 ```bash
-# Step 1: download the installer without executing it
-curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
-
-# Step 2: ask the user to inspect /tmp/uv-install.sh or verify its checksum
-# against https://docs.astral.sh/uv/getting-started/installation/
-
-# Step 3: once the user confirms, execute and load uv onto PATH
-sh /tmp/uv-install.sh && . ~/.bashrc
-uv tool install ggshield
+# macOS / Linux — download, inspect, then run
+curl -sSfL https://raw.githubusercontent.com/GitGuardian/ggshield/main/scripts/install/install.sh -o /tmp/ggshield-install.sh
+# user inspects /tmp/ggshield-install.sh, then:
+bash /tmp/ggshield-install.sh
 ```
 
-Replace `~/.bashrc` with the user's shell file, such as `~/.zshrc`. If the user prefers not to run an unverified remote installer, skip to direct download only after explaining its manual-upgrade tradeoff.
+```powershell
+# Windows PowerShell — download, inspect, then run
+Invoke-WebRequest https://raw.githubusercontent.com/GitGuardian/ggshield/main/scripts/install/install.ps1 -OutFile $Env:TEMP\ggshield-install.ps1
+# user inspects the script, then:
+& $Env:TEMP\ggshield-install.ps1
+```
 
-### 4. Direct download from GitHub releases
+Re-running the script later upgrades to the current release.
 
-Use this only as the final fallback when package managers and Python-based managers are unavailable or fail.
+### 3. Direct download from GitHub releases (standalone binaries)
 
-Before using direct download, tell the user: this path installs a release artifact directly and does not register an upstream package repository or tool-manager environment. Future upgrades require manually rerunning the download and install steps, so this has more maintenance friction than `brew`, `choco`, `apt`/`dnf` with Cloudsmith, `uv`, `pipx`, or `pip`.
+Use this when no native package manager is available and the install script doesn't fit the platform, or when the user wants a specific pinned artifact. These are the same standalone builds, fetched by hand.
+
+Before using direct download, tell the user: this path installs a release artifact directly and does not register an upstream package repository. Future upgrades require manually rerunning the download and install steps, so it has more maintenance friction than a package manager or the install script above.
 
 Pick the artifact by detecting OS and architecture with `uname -s`, `uname -m`, `/etc/os-release`, or `$Env:PROCESSOR_ARCHITECTURE` on PowerShell:
 
@@ -70,10 +66,13 @@ Pick the artifact by detecting OS and architecture with `uname -s`, `uname -m`, 
 |---|---|---|
 | macOS Apple Silicon (`Darwin arm64`) | `ggshield-<v>-arm64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
 | macOS Intel (`Darwin x86_64`) | `ggshield-<v>-x86_64-apple-darwin.pkg` | `sudo installer -pkg <file>.pkg -target /` |
-| Debian/Ubuntu (`Linux x86_64`) | `ggshield_<v>-1_amd64.deb` | `sudo apt install ./<file>.deb` |
-| RHEL/Fedora (`Linux x86_64`) | `ggshield-<v>-1.x86_64.rpm` | `sudo dnf install <file>.rpm` |
+| Debian/Ubuntu x86_64 (`Linux x86_64`) | `ggshield_<v>-1_amd64.deb` | `sudo apt install ./<file>.deb` |
+| Debian/Ubuntu ARM64 (`Linux aarch64`) | `ggshield_<v>-1_arm64.deb` | `sudo apt install ./<file>.deb` |
+| RHEL/Fedora x86_64 (`Linux x86_64`) | `ggshield-<v>-1.x86_64.rpm` | `sudo dnf install <file>.rpm` |
+| RHEL/Fedora ARM64 (`Linux aarch64`) | `ggshield-<v>-1.aarch64.rpm` | `sudo dnf install <file>.rpm` |
 | Windows x86_64 | `ggshield-<v>-x86_64-pc-windows-msvc.msi` | `msiexec /i <file>.msi /quiet` or run interactively |
-| Other glibc-based Linux x86_64 (Arch, openSUSE, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` |
+| Other glibc Linux x86_64 (Arch, openSUSE, etc.) | `ggshield-<v>-x86_64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` |
+| Other glibc Linux ARM64 | `ggshield-<v>-aarch64-unknown-linux-gnu.tar.gz` | `tar -xzf <file>.tar.gz && mkdir -p ~/.local/bin && mv ggshield ~/.local/bin/` |
 
 Download with whatever HTTP tool is available:
 
@@ -113,7 +112,17 @@ gh attestation verify <downloaded-file> --repo GitGuardian/ggshield
 
 Tool managers such as mise (via the aqua backend) verify automatically at install time, so this manual step is only needed for the direct-download path.
 
-Not supported by direct download: Linux ARM, Windows ARM, and Alpine/musl Linux. If direct download is unsupported, stop and ask the user how they want to proceed.
+Standalone builds cover macOS (Intel and Apple Silicon), Windows x86_64, and glibc Linux on x86_64 and ARM64. Not covered: **Alpine/musl Linux** (the standalone build is glibc-only) and **Windows on ARM** (no native build) — see the Python fallback below for those two.
+
+### 4. Python package (pip / pipx / uv) — last resort, being phased out
+
+Use this only on the platforms no standalone build covers — **Alpine/musl Linux** and **Windows on ARM** — or when Python is already set up and the user declines every path above. On Alpine/musl, the GitGuardian Docker image is the cleaner option if the workflow can run a container. `pip`, `pipx`, and `uv` all install the Python (PyPI) package — the distribution the compiled build is replacing — so treat it as a temporary fallback and move the user onto a package manager or the standalone build when you can.
+
+| Probe | Install command | Notes |
+|---|---|---|
+| `pipx --version` | `pipx install ggshield` | Isolated environment; preferred over bare `pip` |
+| `uv --version` | `uv tool install ggshield` | Isolated; upgrade with `uv tool upgrade ggshield` |
+| `pip --version` | `pip install --user ggshield` | Bare last resort. May fail on externally managed Python |
 
 After any install path, confirm the binary is on the normal PATH:
 
@@ -186,7 +195,7 @@ Released 2026-05-26. The features relevant to these skills, and where they apply
 - **Browser-less login** — `ggshield auth login --method oob` for SSH sessions, containers, and headless servers. See [Headless and CI](#headless-and-ci).
 - **Codex agent hook** — `ggshield install -t codex`, backed by Codex support in `ggshield secret scan ai-hook`. See [Agent and git hooks](#agent-and-git-hooks).
 - **`vscode` hook alias** — `ggshield install -t vscode` now aliases `copilot`.
-- **Signed release binaries** — GitHub Releases assets ship with GitHub Artifact Attestations (SLSA provenance); verify with `gh attestation verify <file> --repo GitGuardian/ggshield`. See [Direct download from GitHub releases](#4-direct-download-from-github-releases).
+- **Signed release binaries** — GitHub Releases assets ship with GitHub Artifact Attestations (SLSA provenance); verify with `gh attestation verify <file> --repo GitGuardian/ggshield`. See [Direct download from GitHub releases](#3-direct-download-from-github-releases).
 - **Plugins served from your instance** — `ggshield plugin install` / `update` / `status` now discover and pull plugins from the GitGuardian instance you're authenticated against (via `/v1/endpoints/plugins/<reference>/{download,signature}`) instead of a hard-coded GitHub URL. Requires the matching backend feature. This is the install path for the `machine_scan` plugin used by the scan-machine skill.
 - **`api-status` reports the workspace ID** — text and `--json` output now include the workspace bound to the current token. See [Authenticate and verify](#authenticate-and-verify).
 - **MCP-server detection** — ggshield now detects MCP servers installed via Claude plugins / Claude.ai and via Cursor plugins / extensions, feeding the AI-hook secret scanning.
