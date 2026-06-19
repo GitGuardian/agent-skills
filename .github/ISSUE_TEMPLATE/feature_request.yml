@@ -15,7 +15,7 @@ body:
         - New skill
         - Not skill-specific
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: use-case
@@ -23,7 +23,7 @@ body:
       label: Use case
       description: What are you trying to do? What triggers this need?
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: proposal
@@ -31,7 +31,7 @@ body:
       label: What should the agent do differently, or what's missing?
       description: Describe the desired behavior.
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: workaround
