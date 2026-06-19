@@ -25,7 +25,7 @@ body:
         - check-hmsl
         - Not sure / not skill-specific
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: agent
@@ -38,7 +38,7 @@ body:
         - Codex
         - Other
     validations:
-      required: true
+      required: false
 
   - type: input
     id: model
@@ -47,7 +47,7 @@ body:
       description: Which model was driving the agent?
       placeholder: e.g. Claude Opus 4.8, GPT-4o, Gemini 2.5 Pro
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: what-happened
@@ -55,7 +55,7 @@ body:
       label: What happened
       description: Describe the actual behavior.
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: expected
@@ -63,7 +63,7 @@ body:
       label: What you expected
       description: Describe the expected behavior.
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: repro
@@ -75,7 +75,7 @@ body:
         2.
         3.
     validations:
-      required: true
+      required: false
 
   - type: input
     id: ggshield-version
