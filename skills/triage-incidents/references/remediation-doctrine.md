@@ -40,6 +40,8 @@ These claims are load-bearing. Every later section is downstream of one or more 
 
 6. **Friction is preferable to false confidence.** Three triage questions are more friction than one. The agent asks all three anyway, because the four deliverable shapes (§ 3) are materially different and using the wrong shape produces wrong advice. Friction is recoverable; wrong advice that the user follows is not.
 
+7. **Validity sets urgency, not the plan — it never lets you skip triage.** A `valid` finding (the credential is still live) raises priority, but it does **not** answer ownership or blast radius, and it does **not** license jumping past triage to a generic "rotate it" plan. The four axes (§ 2) still select the deliverable mode. If anything, validity cuts the other way: a *valid* credential wired into production-critical systems is the most dangerous thing to rotate blind — that is exactly the Coordination case (own + production blast, § 3), where rotation is a sequenced, dependency-mapped, supervised rollout that can take a live system down if rushed, not a click. Rotation is never the definitive answer on its own; *how* it is staged is decided by the triage answers. "Several incidents came back valid, so I'll skip to a rotation plan" is the canonical failure this principle exists to prevent.
+
 ---
 
 ## 2. The four triage axes
@@ -110,6 +112,10 @@ Take in the *complete* set of findings before selecting any mode — do not star
 ### One credential → one mode
 
 The four modes do not stack. Each distinct credential produces exactly one main deliverable (driver, coordination, escalation, or containment) plus, when public, the parallel takedown surfacing. The triage answers in § 2 select the mode; they do not combine into a richer hybrid.
+
+### Validity does not select a mode
+
+Mode selection runs on ownership × blast radius (plus exposure for the public worst case) — **never on validity.** A `valid` result does not collapse to "driver, just rotate"; it only raises how urgently the selected mode is worked. A valid + production-critical + owned credential is still Coordination, not a fast-tracked Driver rotation. Resist the shortcut "the incidents are valid, so the plan is obvious" — validity is settled, the plan is not, and skipping the ownership and blast-radius questions because a key is live produces exactly the wrong-shape deliverable § 2 exists to prevent.
 
 ---
 
