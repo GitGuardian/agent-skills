@@ -30,9 +30,11 @@ HMSL handoff sub-step, which is user-run regardless.
 - **Triage before action.** Rank the full set first; do not start remediating the first
   incident before the user has seen the prioritized list.
 - **Read the doctrine before composing remediation.** When you are ready to drive a fix,
-  read [`references/remediation-doctrine.md`](references/remediation-doctrine.md)
-  end-to-end. Rotation-first; history-rewrite only under narrow conditions; public
-  exposure is always burned.
+  read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) (the slim
+  core), then load only the relevant pieces it points to — the lifecycle track
+  ([`remediation-lifecycle-tracks.md`](references/remediation-lifecycle-tracks.md)) and, once
+  the secret type is known, the one relevant credential-family file. Rotation-first;
+  history-rewrite only under narrow conditions; public exposure is always burned.
 - **Never auto-resolve.** Marking an incident RESOLVED / IGNORED, assigning it, or
   tagging it is an outward-facing state change on the shared dashboard. Confirm with the
   user before any write, and only mark RESOLVED after rotation is actually confirmed —
