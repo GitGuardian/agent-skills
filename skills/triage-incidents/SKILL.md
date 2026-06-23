@@ -27,8 +27,13 @@ HMSL handoff sub-step, which is user-run regardless.
   IDs are not interchangeable; an internal write tool called with a public ID silently
   404s. Default to internal unless the user's intent is about leaks "on public GitHub /
   outside the org / on Docker Hub / found by Public Monitoring".
-- **Triage before action.** Rank the full set first; do not start remediating the first
-  incident before the user has seen the prioritized list.
+- **Triage before action — even for valid incidents.** Rank the full set first; do not
+  start remediating the first incident before the user has seen the prioritized list. A
+  `valid` result raises urgency but is **not** a triage axis: it never lets you skip the
+  ownership and blast-radius questions or jump to a generic rotation plan. The deliverable
+  mode is selected by ownership x blast radius, and a valid production-critical credential
+  is Coordination (supervised, sequenced rotation), not a fast "just rotate it" — rotating
+  it blind can take a live system down. See doctrine principle 7.
 - **Read the doctrine before composing remediation.** When you are ready to drive a fix,
   read [`references/remediation-doctrine.md`](references/remediation-doctrine.md)
   end-to-end. Rotation-first; history-rewrite only under narrow conditions; public

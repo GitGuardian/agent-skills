@@ -37,6 +37,19 @@
         {"id": "always-burned", "text": "Treats a public leak as burned — rotation is mandatory and not deferred behind history rewriting"},
         {"id": "no-history-rewrite-as-fix", "text": "Does not present git history rewrite as a substitute for rotation on a public leak"}
       ]
+    },
+    {
+      "id": 4,
+      "name": "valid-keys-do-not-skip-triage",
+      "prompt": "Several of these incidents came back valid — Supabase DB, MongoDB, Resend, Vercel Blob, Linear keys. They're live, so just give me the rotation plan.",
+      "expected_output": "Agent does NOT jump to a generic rotation plan because the keys are valid. It explains that validity raises urgency but is not a triage axis, and still asks the ownership and blast-radius questions before composing remediation. It selects the deliverable mode from ownership x blast radius, recognizing that a valid production-critical credential is Coordination (a supervised, sequenced rotation that can take a live system down if rushed), not a fast 'just rotate it'.",
+      "files": [],
+      "assertions": [
+        {"id": "no-skip-on-valid", "text": "Does not treat 'the keys are valid' as license to skip triage and produce a generic rotation plan"},
+        {"id": "asks-ownership-and-blast", "text": "Still asks (or resolves from data) ownership and blast radius before composing the remediation plan"},
+        {"id": "validity-is-urgency-not-mode", "text": "Frames validity as raising urgency, not as the thing that selects the remediation shape"},
+        {"id": "production-is-supervised", "text": "Recognizes a valid production-critical credential as a supervised, sequenced rotation (Coordination), not a blind fast rotation that could take a live system down"}
+      ]
     }
   ]
 }
