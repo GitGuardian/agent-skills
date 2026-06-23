@@ -97,7 +97,7 @@ If `ggshield --version` fails or returns < 1.45.0, follow the full **Onboarding 
 
 #### Step 2 — Authenticate
 
-If `ggshield api-status` errors, follow the full **Onboarding → Step 2 (Authenticate and verify)** section in the `scan-secrets` skill — run `ggshield auth login` (or `--method token` for headless). Return here once `ggshield api-status` reports OK.
+If `ggshield api-status` errors, follow the full **Onboarding → Step 2 (Authenticate and verify)** section in the `scan-secrets` skill — run `ggshield auth login` (or `--method oob` for headless, with `--method token` as the fallback). Return here once `ggshield api-status` reports OK.
 
 #### Step 3 — Install and enable the `machine_scan` plugin
 

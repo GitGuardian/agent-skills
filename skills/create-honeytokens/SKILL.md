@@ -115,7 +115,7 @@ Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / per
 
 **`403 Forbidden` / "Insufficient permissions"** — the current PAT lacks `honeytokens:write`, or the user is below **Manager** role.
 
-The fix is the standard scope-recovery flow: `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`. See [references/gitguardian-platform.md](references/gitguardian-platform.md) for the full procedure — both commands are runnable on the user's behalf, the OAuth flow handles scope upgrade without any manual PAT creation, and the same file covers the Manager-role caveat and headless `--method token` fallback.
+The fix is the standard scope-recovery flow: `ggshield auth logout` + `ggshield auth login --scopes honeytokens:write`. See [references/gitguardian-platform.md](references/gitguardian-platform.md) for the full procedure — both commands are runnable on the user's behalf, the OAuth flow handles scope upgrade without any manual PAT creation, and the same file covers the Manager-role caveat and headless login (`--method oob` first, with `--method token` as fallback).
 
 **`--type` is required** — pass `--type AWS`. No other types are supported yet (this will change).
 
