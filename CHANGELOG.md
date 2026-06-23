@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/GitGuardian/agent-skills/compare/v0.4.0...v0.4.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* lead with --method oob for headless auth across skills ([#88](https://github.com/GitGuardian/agent-skills/issues/88)) ([796848e](https://github.com/GitGuardian/agent-skills/commit/796848e078d0a9074e8bba26f5061288581d6706))
+* validity never short-circuits triage in remediation doctrine ([#90](https://github.com/GitGuardian/agent-skills/issues/90)) ([4c2b0b7](https://github.com/GitGuardian/agent-skills/commit/4c2b0b74200e9f0330720932c36fe09753706370))
+
 ## [0.4.0](https://github.com/GitGuardian/agent-skills/compare/v0.3.0...v0.4.0) (2026-06-23)
 
 

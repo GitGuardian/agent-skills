@@ -2,7 +2,7 @@
 name: install-hooks
 description: Install ggshield as a hook so secrets are caught before they leak. Covers git hooks (pre-commit and pre-push) that block secrets from entering git history, and AI-assistant hooks (claude-code, codex, copilot, cursor, vscode) that scan an AI coding tool's prompts, actions, and outputs in real time. Use when asked to install Claude Code, Cursor, Copilot, or git hooks, or to block secrets from being committed or pushed.
 metadata:
-  version: "0.4.0" # x-release-please-version
+  version: "0.4.1" # x-release-please-version
 ---
 
 # ggshield — Install Hooks
