@@ -27,7 +27,7 @@ stay accurate:
 - § 9 — Per-secret-type worked examples, split by credential family:
   - Cloud provider keys (§ 9.1 AWS, § 9.8 GCP, § 9.9 Azure): [`remediation-cloud-keys.md`](remediation-cloud-keys.md)
   - SaaS / API tokens (§ 9.2 GitHub, § 9.3 generic, § 9.6 Stripe, § 9.7 Slack, § 9.10 OAuth): [`remediation-saas-tokens.md`](remediation-saas-tokens.md)
-  - Database URLs & private keys (§ 9.4 DB URLs, § 9.5 private keys): [`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md)
+  - Database URLs, keys & passwords (§ 9.4 DB URLs, § 9.5 private keys, § 9.11 symmetric signing secrets, § 9.12 vendorless passwords): [`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md)
 
 The § 9.0 schema below is the template each family file fills in.
 
@@ -150,7 +150,7 @@ Reserved for implementations with richer context: SecOps integrations (RBAC from
 
 ## 9. Per-secret-type appendix
 
-This appendix is the only section that's mostly invariant across implementations — rotating an AWS key is the same job whether the in-app agent or the open-source skill drives it. The doctrine ships ten worked examples plus a schema for the long tail. The worked examples now live in three credential-family sibling files — cloud keys ([`remediation-cloud-keys.md`](remediation-cloud-keys.md)), SaaS/API tokens ([`remediation-saas-tokens.md`](remediation-saas-tokens.md)), DB URLs & private keys ([`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md)); the §9.0 schema below is the shared template.
+This appendix is the only section that's mostly invariant across implementations — rotating an AWS key is the same job whether the in-app agent or the open-source skill drives it. The doctrine ships twelve worked examples plus a schema for the long tail. The worked examples now live in three credential-family sibling files — cloud keys ([`remediation-cloud-keys.md`](remediation-cloud-keys.md)), SaaS/API tokens ([`remediation-saas-tokens.md`](remediation-saas-tokens.md)), DB URLs / keys / passwords ([`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md)); the §9.0 schema below is the shared template. The worked examples cover credential *archetypes*, not every detector — for any type not catalogued, fill the §9.0 schema from vendor docs.
 
 > **Vendor-link caveat.** Console navigation paths and admin URLs change. Every implementation that consumes this appendix should cross-check the vendor's current docs at use time. Where a worked example below cites a console path, the path is current as of this doctrine's date; if the vendor moved the page, follow the vendor's current breadcrumb. The conceptual flow (revoke → regenerate → update-callers → verify) is stable; the click-path is not.
 
@@ -166,6 +166,17 @@ Every per-type entry contains the same six fields, in the same order. The schema
 | **Common consumers** | Where this credential type is typically wired in: env vars, secrets-manager entries, CI configs, IaC files, dotfiles. Used by [Driver mode](#3-the-four-deliverable-modes). |
 | **Dependency mapping for this type** | Specialization of [§ 10 steps 2–3](#10-generic-coordination-framework) for this credential type. Concrete commands and reports for finding consumers and their owners. Used by [Coordination mode](#3-the-four-deliverable-modes). |
 | **Post-rotation verification** | How to confirm the old credential is dead and the new one works. Service-specific check + a generic re-scan. |
+
+### Self-expiring credentials — confirm expiry before rotating
+
+Before applying any entry below, check whether the credential *expires on its own*: AWS STS / session tokens, OIDC tokens (GitHub Actions, GitLab CI, Workload Identity Federation), short-lived OAuth *access* tokens (distinct from the refresh tokens in [§ 9.10](remediation-saas-tokens.md#910-oauth-refresh-tokens)), and Kubernetes ServiceAccount tokens with a bound TTL. For these the credential is frequently **already dead by the time the finding surfaces**, and rotation is moot. When the credential self-expires, the deliverable shifts:
+
+1. **Confirm it has expired** — or force-expire it where the issuer allows (revoke the STS session, delete the bound K8s token). A still-valid short-lived token is treated like any other live credential until expiry is confirmed.
+2. **Investigate the leak window** — for the interval the token was both valid *and* exposed, check the issuer's audit log for use from unexpected IPs. This is the containment-mode forensic check ([§ 12](#12-validation)), applied even when no rotation is needed.
+3. **Fix the issuance pattern** — a self-expiring credential found *at rest* in a repo, image, or config means something is persisting a credential designed to be transient. That pattern is itself the finding: replace the stored token with on-demand issuance (assume-role, OIDC federation, projected SA token) so the next one can't leak the same way.
+
+If the credential does not self-expire, ignore this note and proceed with the relevant entry.
+
 ---
 
 ## 10. Generic coordination framework

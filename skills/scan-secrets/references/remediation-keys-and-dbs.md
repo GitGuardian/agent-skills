@@ -1,9 +1,10 @@
-# Remediation: Database URLs & Private Keys
+# Remediation: Database URLs, Keys & Passwords
 
 > Sibling reference to [`remediation-doctrine.md`](remediation-doctrine.md), loaded on demand
-> for database-connection-string and private-key findings. Each entry fills the schema in
-> [§ 9.0](remediation-doctrine.md#90-schema). Carries § 9.4 (database connection URLs) and
-> § 9.5 (private keys: RSA / EC / SSH).
+> for database-connection-string, key, signing-secret, and password findings. Each entry fills
+> the schema in [§ 9.0](remediation-doctrine.md#90-schema). Carries § 9.4 (database connection
+> URLs), § 9.5 (private keys: RSA / EC / SSH), § 9.11 (symmetric signing / shared secrets), and
+> § 9.12 (vendorless passwords).
 
 ### 9.4 Database connection URLs
 
@@ -183,3 +184,116 @@ The dependency map for keys is usually *wider* than for passwords because the pu
 - If the key was published in a Certificate Revocation List, verify the CRL has propagated (`openssl crl -in <crl> -noout -text`) or check OCSP status (`openssl ocsp …`).
 - Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
 - For SSH keys, watch the `auth.log` (Linux) / `secure` (RHEL) / SSH audit logs on the previously-trusting servers for failed authentication attempts with the old key — surfaces consumers that were missed.
+
+### 9.11 Symmetric signing / shared secrets
+
+**What it is.** A single secret value used to *both* produce and verify a signature or MAC — there is no public half. Examples: an HS256 JWT signing secret, a webhook-signing secret (Stripe `whsec_`, GitHub webhook secret, Slack signing secret), an HMAC request-signing secret, and framework session/CSRF secrets that sign cookies (Rails `secret_key_base`, Django / Flask `SECRET_KEY`, ASP.NET Data Protection keys). Unlike an asymmetric key ([§ 9.5](#95-private-keys-rsa--ec--ssh)), every verifier holds the *same* secret the signer holds, so a leak compromises signing and verification at once.
+
+**The availability cliff.** Rotating a symmetric signing secret invalidates *every artifact ever signed with it, simultaneously* — all live sessions log out, all unexpired JWTs fail verification, all signed cookies are rejected, in-flight webhook deliveries fail their signature check. This is the defining difference from API-key rotation, where only future calls are affected. Plan for the cliff: either accept the mass-invalidation at a chosen low-traffic moment, or run a **dual-secret verification window** where the framework supports it (verify against {new, old}, sign only with new) for a soak period, then drop the old.
+
+**Revoke location.** Usually *no vendor console* — the secret is an application config value, so "revoking" means generating a new value and deploying it to the signer plus every verifier. The exception is webhook-signing secrets, whose value the provider's dashboard does hold (Stripe Dashboard → Developers → Webhooks → roll signing secret; GitHub repo/org → Settings → Webhooks → edit secret); roll there and update the receiver in lockstep.
+
+**Regenerate location.** Generate a new high-entropy value locally and place it in the secret store the app reads from — never back into the file that leaked:
+
+```bash
+openssl rand -base64 48        # generic signing secret
+# Rails:  bin/rails secret
+# Django: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+```
+
+If the framework supports a *keyring* (Rails `secret_key_base` rotations, ASP.NET key ring, a JWT verifier configured with a key set), add the new secret as primary while keeping the old as a still-accepted verifier — that is the overlap mechanism. Without it, rotation is a hard cut.
+
+**Common consumers.**
+
+- Env vars / secret-store entries read at boot by every replica of the signing service *and* every independent verifier (`JWT_SECRET`, `SECRET_KEY_BASE`, `SECRET_KEY`, `*_SIGNING_SECRET`)
+- Webhook *receivers* that verify provider signatures — each holds its own copy of the shared secret
+- Sibling services that independently verify the same JWTs (an API gateway plus several microservices all configured with one `JWT_SECRET`)
+- Mobile / SPA clients only if the secret was wrongly shipped client-side — if so, treat as burned and unrecoverable on already-distributed builds
+- CI/CD and test fixtures that sign tokens for integration tests
+
+**Dependency mapping for this type.**
+
+This is [§ 10](remediation-doctrine.md#10-generic-coordination-framework) steps 2–3, with the twist that *verifiers*, not just callers, are consumers:
+
+1. Grep the org's repos for the canonical config names and any inline value:
+
+   ```bash
+   git grep -nE 'JWT_SECRET|SECRET_KEY_BASE|SECRET_KEY|SIGNING_SECRET|whsec_|HMAC'
+   ```
+
+2. Enumerate every service configured with this secret — both signers and verifiers. A shared `JWT_SECRET` distributed to N services is N consumers that must cut over together.
+3. For webhook-signing secrets, identify the *provider* (who signs) and the *receiver* (who verifies); rotation is a two-party coordination, and the provider's roll UI usually drives the timing.
+4. Determine framework keyring support (does it accept a *set* of valid secrets?). This single answer decides hard-cut vs. overlap-window.
+5. Size the cliff: how many live sessions / unexpired tokens does invalidation drop? That decides maintenance-window vs. soak-window.
+
+**Post-rotation verification.**
+
+- Sign a test artifact with the *old* secret, present it to a verifier, and confirm rejection:
+
+  ```bash
+  # JWT HS256: forge a token with the old secret, call a protected endpoint — expect 401 / invalid signature
+  # Webhook: replay a payload signed with the old secret — expect signature-verification failure
+  ```
+
+- Confirm a *new*-secret-signed artifact verifies end-to-end across every verifier service.
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch auth-failure / signature-rejection logs through the soak window; a spike of *legitimate-user* signature failures means a verifier never picked up the new secret (or the old one was dropped before the window closed).
+
+### 9.12 Vendorless passwords
+
+**What it is.** A password or high-entropy credential with *no issuing vendor and no management console* — a Linux / service-account password, an LDAP / Active Directory bind password, an SMTP / IMAP password, a basic-auth credential in an `.htpasswd` or reverse-proxy config, a message-broker password (RabbitMQ, Kafka SASL), an internal admin-panel login. The distinguishing trait is the *absence of a control plane*: no "API keys" page, no per-key "last used" telemetry, often no programmatic revoke — which makes the [§ 10](remediation-doctrine.md#10-generic-coordination-framework) dependency-mapping step the hardest of any credential type.
+
+**Revoke location.** Wherever the password is *set*, which is system-specific:
+
+```bash
+# Local / service account on a host
+passwd <service-account>            # or: usermod / chpasswd
+# LDAP / Active Directory
+ldappasswd -x -D <admin-dn> -W -S "uid=<svc>,ou=...,dc=..."
+# .htpasswd (basic auth)
+htpasswd -B /etc/nginx/.htpasswd <user>
+# RabbitMQ
+rabbitmqctl change_password <user> <new-password>
+```
+
+There is rarely a "deactivate without changing" state — setting a new password *is* the revoke. If the account itself is disposable, disabling or deleting it is cleaner than rotating its password.
+
+**Regenerate location.** The same command sets the new value. Generate it with `openssl rand -base64 32` (or a password manager) and store it in the secret manager the consumers read from — never re-embed it in the file that leaked.
+
+**Common consumers.**
+
+- App config / env vars on every service that authenticates with the account (`SMTP_PASSWORD`, `BROKER_PASSWORD`, `LDAP_BIND_PASSWORD`)
+- Reverse-proxy / web-server configs (`.htpasswd`, nginx `auth_basic_user_file`)
+- Cron jobs, backup scripts, and systemd unit `Environment=` lines
+- `.netrc`, `.pgpass`, and similar operator dotfiles
+- Human users — a shared-account password may live in people's heads, password managers, or a wiki; these "consumers" cannot be enumerated by grep
+
+**Dependency mapping for this type.**
+
+The weakest-signal case. There is no usage telemetry to lean on, so lean on the systems that *do* log auth:
+
+1. Grep repos and config-management for the account name and canonical env-var names:
+
+   ```bash
+   git grep -nE '<account-name>|SMTP_PASSWORD|BIND_PASSWORD|BROKER_PASSWORD'
+   grep -rE '<account-name>' /etc /opt 2>/dev/null   # on the host(s)
+   ```
+
+2. Pull authentication logs from the system that owns the account to enumerate *who actually authenticates* — the only reliable consumer signal: `/var/log/auth.log` / `secure` (PAM), the LDAP/AD security event log, the mail server's SASL log, the broker's connection log. Source IPs map back to consuming services.
+3. Ask the owning team and check the shared-secret wiki / password-manager vault entry — for human-shared accounts this is the *primary* discovery path, not a fallback.
+4. Assume under-discovery. Plan a soak window before fully retiring the old credential where the account model lets old and new briefly coexist; many do not, in which case a maintenance window is required.
+
+**Post-rotation verification.**
+
+- Attempt authentication with the old password and expect failure:
+
+  ```bash
+  # SMTP
+  curl -v --url 'smtps://<host>:465' --mail-from ... --user '<svc>:<old-password>'
+  # expect: 535 Authentication failed
+  # SSH / PAM service account
+  sshpass -p '<old-password>' ssh <svc>@<host> true   # expect: Permission denied
+  ```
+
+- Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
+- Watch the owning system's auth-failure log for the old credential for 24–72h; a failure from a legitimate service IP surfaces a consumer that was missed.
