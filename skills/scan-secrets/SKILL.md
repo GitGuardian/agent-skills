@@ -165,7 +165,7 @@ The three triggers most often missed:
 
 **Recursive scan hangs** — `-r` was used without `-y`. The CLI is waiting on the `Confirm recursive scan.` prompt. Re-run with `-y`.
 
-**OAuth browser window does not open** — the environment is headless. Use `ggshield auth login --method token` instead — see **Onboarding → Headless / non-interactive environments** above.
+**OAuth browser window does not open** — the environment is headless. Lead with `ggshield auth login --method oob` (ggshield 1.51.0+): it prints a URL the user opens on any device, signs in, and pastes the code back — no manually-created token. Fall back to `--method token` only if `oob` is unsupported (older ggshield, or an instance that doesn't offer it). See **Headless and CI** in [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md).
 
 **Rate limiting** — free tier quota exceeded. Direct the user to check usage at https://dashboard.gitguardian.com.
 

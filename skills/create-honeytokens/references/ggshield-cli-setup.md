@@ -133,7 +133,7 @@ ggshield auth login --instance https://dashboard.eu1.gitguardian.com
 ggshield auth login --instance https://<their-instance-url>
 ```
 
-Tell the user it opens a browser to authorize the workstation. Once they confirm it succeeded, verify:
+Tell the user it opens a browser to authorize the workstation. Headless — SSH session, container, or devcontainer with no local browser? Don't lead with this; go to [Headless and CI](#headless-and-ci) and use `--method oob`. Once login succeeds, verify:
 
 ```bash
 ggshield api-status

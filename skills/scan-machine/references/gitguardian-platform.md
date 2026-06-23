@@ -39,13 +39,15 @@ The `Token scopes:` line should now list the new scope alongside `scan`.
 
 ## Headless environments (no browser)
 
-When the OAuth flow can't open a browser (remote SSH, sandboxed dev container, devcontainer image), use `--method token`:
+When the OAuth flow can't open a local browser (remote SSH, sandboxed dev container, devcontainer image), lead with out-of-band OAuth — don't reach for a manually-created token first:
 
-1. User creates a Personal Access Token at **https://dashboard.gitguardian.com/api/personal-access-tokens** (or the equivalent path on their instance) with the required scopes selected.
-2. User runs `ggshield auth login --method token` and pastes the token at the prompt.
+1. User runs `ggshield auth login --method oob` (ggshield 1.51.0+). `ggshield` prints an authorization URL. To add a scope, append `--scopes <scope>` (e.g. `honeytokens:write`).
+2. User opens the URL on any device with a browser, signs in, and pastes the code shown by the dashboard back at the prompt.
 3. Verify with `ggshield api-status`.
 
-`--method token` does not need a browser. It is the fallback when the OAuth flow can't run; the OAuth flow with `--scopes` is preferred when a browser is available because the agent can drive it end-to-end.
+If `oob` is unavailable (ggshield < 1.51.0, or an instance that doesn't support it), fall back to token auth: the user creates a Personal Access Token at **https://dashboard.gitguardian.com/api/personal-access-tokens** (or the equivalent path on their instance) with the required scopes selected, then runs `ggshield auth login --method token` and pastes the token at the prompt.
+
+Neither method needs a local browser. Prefer `oob` over a hand-created token: it carries no manual PAT step and reuses the OAuth flow end-to-end. When a local browser *is* available, plain `ggshield auth login` (optionally with `--scopes`) is preferred because the agent can drive it without the user leaving the terminal.
 
 ## GitGuardian Instances
 
