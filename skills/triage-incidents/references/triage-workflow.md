@@ -44,7 +44,8 @@ Collapse the same credential seen across multiple occurrences into a single row.
 
 ## 4. Drive the fix
 
-Read [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end, then produce the
+Read [`remediation-doctrine.md`](remediation-doctrine.md) (the slim core), then load the
+relevant lifecycle track and credential-family file it points to, and produce the
 deliverable mode it prescribes:
 
 - **Rotation first.** A rotated credential is dead; that is what stops the attack.

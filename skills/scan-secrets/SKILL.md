@@ -21,13 +21,13 @@ metadata:
 - **The `ggshield` CLI is mandatory for scanning — do not use the GitGuardian Developer MCP `scan_secrets` tool as a substitute.** If the MCP server is connected, its `scan_secrets` tool will be tempting as a no-install shortcut. It is the wrong tool for this skill: it scans a single in-memory payload you paste in, so it is slow for anything larger than a snippet and **cannot scan git history, commit ranges, staged changes, repositories, Docker images, or PyPI packages** — which is the core of what this skill does. The CLI streams files locally and audits full history in one pass; the MCP path cannot. So:
   - **Never** silently fall back to `scan_secrets` (MCP) because the CLI isn't installed yet.
   - If `ggshield` is not installed, **strongly recommend the user install it** before scanning — one command, under a minute, and it unlocks history/commit/Docker/PyPI scanning the MCP tool can't do. Run Onboarding (below) and make the case rather than reaching for the MCP shortcut. Only if the user explicitly declines to install should you note that MCP `scan_secrets` exists, and even then only for a single pasted snippet — never for history, a repo, or any command in **Scan commands**.
-- **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) before composing any user-facing remediation message** — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
+- **Do not improvise remediation advice.** No general-knowledge rotation walkthroughs, no improvised `git filter-repo` / BFG suggestions, no HMSL omissions. When `ggshield` returns one or more findings, **read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) (the slim core) before composing any user-facing remediation message**, then load the relevant track and credential-family siblings it points to — the doctrine differs from common defaults in important ways (rotation > history rewrite; HMSL is the prescribed follow-up for unverifiable validity).
 - **Always pass `--json`** in agent contexts — you need structured output to parse findings reliably.
 - **Always pair `-r` with `-y`** — `-r` triggers an interactive `Confirm recursive scan.` prompt that hangs on stdin without `-y`.
 - **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails or `ggshield api-status` errors, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) before attempting any scan, and strongly recommend the user install it — do not reach for the MCP `scan_secrets` tool as a workaround (see the CLI-is-mandatory rule above). Every scan command is useless until the CLI is installed and authenticated.
 - **Do not surface code containing a detected secret. Let the scan finish first.** Do not begin remediation on the first hit — `ggshield` reports the complete finding set in one run, and the same credential often appears across several files or commits. Only once the scan has completed:
   1. Stop. Enumerate **every** finding, then group them: collapse the same credential value seen across multiple files / commits / artifacts into a single item, and keep distinct credentials separate. Report the grouped set (file(s), line(s), secret type, **validity**).
-  2. **Read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) end-to-end** — do not skip this step. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
+  2. **Read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) (the slim core), then load only the relevant pieces** — do not skip this step. The core carries the triage axes, the four deliverable modes, coordination, takedown, and validation. From it, load the one relevant lifecycle track ([`references/remediation-lifecycle-tracks.md`](references/remediation-lifecycle-tracks.md)) and, once the secret type is known, the one relevant credential-family file. Common defaults on history rewriting, rotation triggers, and HMSL follow-up diverge from GitGuardian doctrine.
   3. Triage the complete, deduplicated set, then compose **one consolidated** remediation plan: rotation first, HMSL follow-up for unverifiable-validity findings, history-rewrite only under the narrow conditions listed in the reference. One credential is one rotation, even if it leaked in five places.
 
   Do not commit, do not show the code with the secret inline, do not "just continue and we'll fix it later," and do not start rotating one finding while others are still being scanned or triaged.
@@ -131,14 +131,14 @@ Exit codes: `0` = no secrets found, `1` = secrets detected, `128` = unexpected e
 
 ## When findings are present — quick reference
 
-Full doctrine in [`references/remediation-doctrine.md`](references/remediation-doctrine.md) — load it before composing any user-facing remediation message. Dispatch by which command produced the finding:
+Start from the slim core [`references/remediation-doctrine.md`](references/remediation-doctrine.md), then load the track below for the finding's detection context. Dispatch by which command produced the finding:
 
 | Detection context | Doctrine entry point |
 |---|---|
-| Agent file-edit hook fired (in-buffer / just-saved file) | [§ 5.1](references/remediation-doctrine.md#51-agent-file-edit-hook-fired) |
-| Pre-commit hook fired (staged change blocked) | [§ 5.2](references/remediation-doctrine.md#52-pre-commit-hook-fired) |
-| Pre-push hook fired (unpushed commits blocked) | [§ 5.3](references/remediation-doctrine.md#53-pre-push-hook-fired) |
-| Repo / commit / Docker image / PyPI package scan finding | Triage in [§ 6](references/remediation-doctrine.md#6-post-leak--public-facing-track) (public) or [§ 7](references/remediation-doctrine.md#7-post-leak--internal-private-track) (internal-private) per where the artifact lives |
+| Agent file-edit hook fired (in-buffer / just-saved file) | [§ 5.1](references/remediation-lifecycle-tracks.md#51-agent-file-edit-hook-fired) |
+| Pre-commit hook fired (staged change blocked) | [§ 5.2](references/remediation-lifecycle-tracks.md#52-pre-commit-hook-fired) |
+| Pre-push hook fired (unpushed commits blocked) | [§ 5.3](references/remediation-lifecycle-tracks.md#53-pre-push-hook-fired) |
+| Repo / commit / Docker image / PyPI package scan finding | Triage in [§ 6](references/remediation-lifecycle-tracks.md#6-post-leak--public-facing-track) (public) or [§ 7](references/remediation-lifecycle-tracks.md#7-post-leak--internal-private-track) (internal-private) per where the artifact lives |
 
 The three triggers most often missed:
 
