@@ -77,7 +77,7 @@ ggshield hmsl check -t env /path/to/.env --json -n none      # .env-formatted in
 
 Exit codes: `0` = no matches found (not known to be leaked publicly); `1` = at least one secret matched (leaked); non-zero = error.
 
-A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — the credential is public, so dispatch it to the post-leak / public-facing track in [`remediation-doctrine.md`](remediation-doctrine.md#6-post-leak--public-facing-track).
+A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — the credential is public, so dispatch it to the post-leak / public-facing track in [`remediation-lifecycle-tracks.md`](remediation-lifecycle-tracks.md#6-post-leak--public-facing-track).
 
 If the user has the `check-hmsl` skill installed locally, it covers additional flows (multi-stage `fingerprint`/`query`/`decrypt` for sensitive bulk audits, `check-secret-manager hashicorp-vault` for vault inventories, troubleshooting). The agent should load that skill for those flows. The rules above remain in force regardless.
 
