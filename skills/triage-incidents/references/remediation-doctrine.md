@@ -9,27 +9,45 @@ When a credential is found leaking, the agent's first job is not to act — it i
 
 ## Contents
 
-This core file carries the universal contract:
+This file is the router for the whole doctrine. Every section is listed below in order;
+links resolve in-file for the universal contract (§§ 1–4, 9.0, 10–12) and to a sibling
+reference file for the lifecycle tracks (§§ 5–8) and the per-secret-type worked examples
+(§ 9.1 onward). Section numbering is preserved across the split, so a `§ N` cross-reference
+anywhere in the doctrine points to the same place regardless of which file it lives in (and
+stays diffable against the `scan-secrets` sibling doctrine; the only divergence is § 5).
 
 1. [Principles](#1-principles)
 2. [The four triage axes](#2-the-four-triage-axes)
 3. [The four deliverable modes](#3-the-four-deliverable-modes)
 4. [Implementation profiles](#4-implementation-profiles)
-9. [Per-secret-type appendix](#9-per-secret-type-appendix) — schema only; worked examples moved (see below)
+5. [Pre-leak track — not applicable here](remediation-lifecycle-tracks.md#5-pre-leak-track--not-applicable-here)
+6. [Post-leak / public-facing track](remediation-lifecycle-tracks.md#6-post-leak--public-facing-track)
+7. [Post-leak / internal-private track](remediation-lifecycle-tracks.md#7-post-leak--internal-private-track)
+8. [Off-repo exposure track](remediation-lifecycle-tracks.md#8-off-repo-exposure-track)
+9. [Per-secret-type appendix](#9-per-secret-type-appendix)
+    - [9.0 Schema](#90-schema)
+    - [Self-expiring credentials — triage modifier](#self-expiring-credentials--confirm-expiry-before-rotating)
+    - [9.1 AWS access keys](remediation-cloud-keys.md#91-aws-access-keys)
+    - [9.2 GitHub personal access tokens](remediation-saas-tokens.md#92-github-personal-access-tokens)
+    - [9.3 Generic API key](remediation-saas-tokens.md#93-generic-api-key)
+    - [9.4 Database connection URLs](remediation-keys-and-dbs.md#94-database-connection-urls)
+    - [9.5 Private keys (RSA / EC / SSH)](remediation-keys-and-dbs.md#95-private-keys-rsa--ec--ssh)
+    - [9.6 Stripe API keys](remediation-saas-tokens.md#96-stripe-api-keys)
+    - [9.7 Slack incoming webhooks](remediation-saas-tokens.md#97-slack-incoming-webhooks)
+    - [9.8 GCP service account JSON](remediation-cloud-keys.md#98-gcp-service-account-json)
+    - [9.9 Azure connection strings](remediation-cloud-keys.md#99-azure-connection-strings)
+    - [9.10 OAuth refresh tokens](remediation-saas-tokens.md#910-oauth-refresh-tokens)
+    - [9.11 Symmetric signing / shared secrets](remediation-keys-and-dbs.md#911-symmetric-signing--shared-secrets)
+    - [9.12 Vendorless passwords](remediation-keys-and-dbs.md#912-vendorless-passwords)
 10. [Generic coordination framework](#10-generic-coordination-framework)
 11. [Public-leak takedown / reporting](#11-public-leak-takedown--reporting)
 12. [Validation](#12-validation)
 
-Sections 5–9's bodies live in flat sibling reference files, each linked one hop from the
-triage-incidents `SKILL.md`. Section numbering is preserved across the split so cross-references
-stay accurate (and stay diffable against the `scan-secrets` sibling doctrine):
-
-- §§ 5–8 — Lifecycle tracks (§ 5 pre-leak is a not-applicable stub here): [`remediation-lifecycle-tracks.md`](remediation-lifecycle-tracks.md)
-- § 9 — Per-secret-type worked examples, split by credential family:
-  - Cloud provider keys (§ 9.1 AWS, § 9.8 GCP, § 9.9 Azure): [`remediation-cloud-keys.md`](remediation-cloud-keys.md)
-  - SaaS / API tokens (§ 9.2 GitHub, § 9.3 generic, § 9.6 Stripe, § 9.7 Slack, § 9.10 OAuth): [`remediation-saas-tokens.md`](remediation-saas-tokens.md)
-  - Database URLs, keys & passwords (§ 9.4 DB URLs, § 9.5 private keys, § 9.11 symmetric signing secrets, § 9.12 vendorless passwords): [`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md)
-
+Sibling reference files, each one hop from the triage-incidents `SKILL.md`:
+[`remediation-lifecycle-tracks.md`](remediation-lifecycle-tracks.md) (§§ 5–8; § 5 pre-leak is a
+not-applicable stub here), [`remediation-cloud-keys.md`](remediation-cloud-keys.md),
+[`remediation-saas-tokens.md`](remediation-saas-tokens.md), and
+[`remediation-keys-and-dbs.md`](remediation-keys-and-dbs.md) (§ 9 worked examples).
 The § 9.0 schema below is the template each family file fills in.
 
 ---
