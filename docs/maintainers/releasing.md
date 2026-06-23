@@ -16,7 +16,7 @@ The plugin version lives in **eleven files** that must move together:
 - `skills/create-honeytokens/SKILL.md` → `metadata.version` (same)
 - `skills/scan-machine/SKILL.md` → `metadata.version` (same)
 - `skills/check-hmsl/SKILL.md` → `metadata.version` (same)
-- `skills/install-git-hooks/SKILL.md` → `metadata.version` (same)
+- `skills/install-hooks/SKILL.md` → `metadata.version` (same)
 
 All eleven are registered in `release-please-config.json` (the manifests as `json` extra-files, the five SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 

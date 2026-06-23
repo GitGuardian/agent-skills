@@ -63,15 +63,15 @@ Check known credentials against HasMySecretLeaked without exposing plaintext to 
 </details>
 
 <details>
-<summary><strong>Install git hooks</strong> — <code>/gitguardian:install-git-hooks</code></summary>
+<summary><strong>Install hooks</strong> — <code>/gitguardian:install-hooks</code></summary>
 
-[`install-git-hooks`](skills/install-git-hooks/SKILL.md)
+[`install-hooks`](skills/install-hooks/SKILL.md)
 
-Install ggshield as a git pre-commit or pre-push hook so secrets are blocked before they enter history.
+Install ggshield as a git hook (pre-commit / pre-push) so secrets are blocked before they enter history, or as an AI-assistant hook (Claude Code, Cursor, Copilot, Codex) so your AI coding tool scans its prompts and actions for secrets in real time.
 
-**Use when:** setting up secret prevention on a repo, asking to block or stop secrets from being committed or pushed, configuring pre-commit hooks, or hardening after a secret was caught.
+**Use when:** asking to install Claude/Cursor/Copilot hooks, setting up secret prevention on a repo, asking to block or stop secrets from being committed or pushed, configuring pre-commit hooks, or hardening after a secret was caught.
 
-**Key rule:** prevention only — guards future commits/pushes. Existing code and history still need `scan-secrets`. Global mode modifies global git config; get explicit consent.
+**Key rule:** route by family — name an AI tool, get an AI-assistant hook; a bare "install hooks" gets a which-family question. Prevention only; existing code and history still need `scan-secrets`. Global mode modifies user-level config; get explicit consent.
 
 </details>
 
@@ -269,7 +269,7 @@ agent-skills/
 |   |-- create-honeytokens/ # honeytoken generation and planting
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
-|   |-- install-git-hooks/  # install ggshield as a pre-commit/pre-push git hook
+|   |-- install-hooks/      # install ggshield as a git or AI-assistant hook
 |   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
 |-- kiro/                   # Kiro power and steering files
 |-- test/                   # install-flow sanity tests

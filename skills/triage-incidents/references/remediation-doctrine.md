@@ -144,7 +144,7 @@ Reserved for implementations with richer context: SecOps integrations (RBAC from
 
 A secret incident is, by definition, already detected and recorded by the GitGuardian platform — it has propagated past the point any pre-leak hook could intercept. The pre-leak track (file-edit / pre-commit / pre-push interception, where rotation is *not* required) therefore does not arise in incident triage, and its content is intentionally omitted from this tailored doctrine.
 
-If a finding genuinely has not propagated yet — caught while editing, staging, or pushing — it is not an incident, and the pre-leak flow lives in the `scan-secrets` and `install-git-hooks` skills. When in doubt about whether a secret has propagated, assume it has and dispatch to the post-leak tracks below.
+If a finding genuinely has not propagated yet — caught while editing, staging, or pushing — it is not an incident, and the pre-leak flow lives in the `scan-secrets` and `install-hooks` skills. When in doubt about whether a secret has propagated, assume it has and dispatch to the post-leak tracks below.
 
 (Section number retained so the post-leak / internal-private / off-repo / appendix anchors stay aligned with the `scan-secrets` sibling doctrine.)
 

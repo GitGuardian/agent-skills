@@ -1,15 +1,17 @@
-# install-git-hooks eval fixtures
+# install-hooks eval fixtures
 
-These are the throwaway git repos used by `skills/install-git-hooks/evals/evals.json`.
+These are the throwaway git repos used by `skills/install-hooks/evals/evals.json`.
 Each fixture is built at eval time by its `setup.sh` script — the committed
 content holds only the build recipe, not a usable repo.
 
 ## What these evals test
 
-`install-git-hooks` is the **prevention** skill: it installs `ggshield` as a git
-pre-commit or pre-push hook so secrets are blocked before they enter history.
-The evals grade whether the agent installs the hook correctly and with the right
-posture — not whether a secret is detected.
+`install-hooks` is the **prevention** skill: it installs `ggshield` as a git hook
+(pre-commit / pre-push) so secrets are blocked before they enter history, **or**
+as an AI-assistant hook (claude-code, codex, copilot, cursor, vscode) so an AI
+coding tool scans its prompts and actions for secrets in real time. The evals
+grade whether the agent routes to the right hook family and installs it correctly
+— not whether a secret is detected.
 
 - **`install-precommit-local`** — a clean repo. Grades that the agent treats the
   request as installing a hook (not scanning existing code), installs for *this*
@@ -22,6 +24,13 @@ posture — not whether a secret is detected.
 - **`already-has-hook`** (edge case) — the repo already has a custom pre-commit
   hook. Grades that the agent preserves it with `-a` / `--append` (or confirms
   before `-f` / `--force`) instead of silently clobbering it.
+- **`install-claude-code`** — a clean repo where the user says "install Claude
+  hooks". Grades that the agent routes to the AI-assistant family
+  (`ggshield install -t claude-code`), installs for this project (`-m local`),
+  surfaces the local-vs-global choice, and does NOT install a git pre-commit hook.
+- **`ambiguous-asks-family`** — a clean repo with a bare "install hooks" request
+  (no family keyword). Grades that the agent STOPS and asks which family (git vs
+  AI-assistant) rather than silently guessing a hook type.
 
 ## Why there is no `_shared/secrets.env`
 
@@ -45,16 +54,18 @@ files/
   install-precommit-local/setup.sh     # clean repo, one committed file
   global-needs-consent/setup.sh        # clean repo (global-install posture test)
   already-has-hook/setup.sh            # repo with a pre-existing pre-commit hook
+  install-claude-code/setup.sh         # clean repo (AI-assistant routing test)
+  ambiguous-asks-family/setup.sh       # clean repo (bare request, ask-which-family)
 ```
 
 ## Building a fixture
 
 ```bash
 # From the repo root, defaults to a sibling _built/ dir under the fixture:
-bash skills/install-git-hooks/evals/files/install-precommit-local/setup.sh
+bash skills/install-hooks/evals/files/install-precommit-local/setup.sh
 
 # Or pass an explicit target directory:
-bash skills/install-git-hooks/evals/files/install-precommit-local/setup.sh /tmp/eval-1
+bash skills/install-hooks/evals/files/install-precommit-local/setup.sh /tmp/eval-1
 ```
 
 The `_built/` output is a runtime artifact — never commit it.

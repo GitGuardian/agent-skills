@@ -1,14 +1,14 @@
 {
-  "skill_name": "install-git-hooks",
+  "skill_name": "install-hooks",
   "evals": [
     {
       "id": 1,
       "name": "install-precommit-local",
       "prompt": "This is a fresh repo and I keep worrying I'll paste an API key into a file and commit it by accident. Can you set things up so that can't happen on this repo?",
-      "expected_output": "Agent recognizes this as a prevention task and uses the install-git-hooks skill: it installs ggshield as a git hook for this repository (e.g. `ggshield install -m local -t pre-commit`), surfaces the local-vs-global and pre-commit-vs-pre-push choice rather than guessing silently, and verifies the install by checking the command exited 0 and the hook script exists at .git/hooks/. It does NOT treat this as a request to scan existing code (that would be scan-secrets), and does NOT claim the existing code is now clean.",
+      "expected_output": "Agent recognizes this as a prevention task and uses the install-hooks skill: it installs ggshield as a git hook for this repository (e.g. `ggshield install -m local -t pre-commit`), surfaces the local-vs-global and pre-commit-vs-pre-push choice rather than guessing silently, and verifies the install by checking the command exited 0 and the hook script exists at .git/hooks/. It does NOT treat this as a request to scan existing code (that would be scan-secrets), and does NOT claim the existing code is now clean.",
       "files": ["evals/files/install-precommit-local/"],
       "assertions": [
-        {"id": "uses-install-not-scan", "text": "Treats this as installing a git hook (install-git-hooks / `ggshield install`), not as a `ggshield secret scan` of existing code"},
+        {"id": "uses-install-not-scan", "text": "Treats this as installing a git hook (install-hooks / `ggshield install`), not as a `ggshield secret scan` of existing code"},
         {"id": "local-scope", "text": "Installs for this repository (`-m local` / `--mode local`), since the user asked about 'this repo' — does not silently install globally"},
         {"id": "runs-ggshield-install", "text": "Runs (or hands over) a `ggshield install` command with a hook type (`-t pre-commit` or `-t pre-push`), not some other mechanism"},
         {"id": "surfaces-the-choice", "text": "Presents or justifies the stage choice (pre-commit vs pre-push) rather than choosing silently with no rationale"},
@@ -41,6 +41,33 @@
         {"id": "appends-not-clobbers", "text": "Uses `-a` / `--append` to preserve the existing hook, OR explicitly confirms with the user before `-f` / `--force` overwrites it"},
         {"id": "no-silent-overwrite", "text": "Does NOT silently overwrite / destroy the existing pre-commit hook"},
         {"id": "runs-ggshield-install", "text": "Uses `ggshield install` (with a pre-commit hook type) as the mechanism"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "install-claude-code",
+      "prompt": "Install Claude hooks for this project so secrets get caught.",
+      "expected_output": "Agent recognizes 'Claude' names the AI-assistant hook family, not a git hook. It installs the Claude Code hook with `ggshield install -t claude-code` (mode local for 'this project'), presents the local-vs-global choice rather than guessing global, and verifies the install by exit code and the presence of a ggshield entry in .claude/settings.json. It does NOT install a git pre-commit or pre-push hook, and does NOT treat this as a request to scan existing code (that is scan-secrets).",
+      "files": ["evals/files/install-claude-code/"],
+      "assertions": [
+        {"id": "routes-to-ai-family", "text": "Recognizes 'Claude' as the AI-assistant hook family and installs an AI-assistant hook, NOT a git pre-commit/pre-push hook"},
+        {"id": "runs-claude-code-type", "text": "Runs (or hands over) `ggshield install -t claude-code`, not `-t pre-commit` or `-t pre-push`"},
+        {"id": "local-scope", "text": "Installs for this project (`-m local` / `--mode local`) since the user said 'this project'; does not silently install globally"},
+        {"id": "surfaces-scope-choice", "text": "Presents or justifies the local-vs-global scope choice rather than choosing global silently"},
+        {"id": "no-git-hook", "text": "Does NOT install or suggest a git pre-commit/pre-push hook as the primary action for this request"},
+        {"id": "no-scan-existing", "text": "Does NOT treat this as a `ggshield secret scan` of existing code"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ambiguous-asks-family",
+      "prompt": "Can you install hooks on this repo?",
+      "expected_output": "The request is bare — it names no hook family (no 'Claude'/'Cursor'/'pre-commit'/'git'). A correct agent STOPS and asks which family the user wants — git hooks (block secrets entering git history on commit/push) versus AI-assistant hooks (make an AI coding tool like Claude Code or Cursor scan its prompts and actions). It does NOT silently run a `ggshield install` with a guessed hook type.",
+      "files": ["evals/files/ambiguous-asks-family/"],
+      "assertions": [
+        {"id": "does-not-guess", "text": "Does NOT silently run `ggshield install` with a guessed `-t` type before clarifying"},
+        {"id": "asks-which-family", "text": "Asks the user which hook family they want before installing"},
+        {"id": "presents-both-families", "text": "Surfaces both options — git hooks (pre-commit/pre-push) and AI-assistant hooks (claude-code/cursor/etc.)"}
       ]
     }
   ]
