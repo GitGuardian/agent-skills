@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/GitGuardian/agent-skills/compare/v0.3.0...v0.4.0) (2026-06-23)
+
+
+### Features
+
+* cover AI-assistant hooks and add hook-family router in install-hooks ([#85](https://github.com/GitGuardian/agent-skills/issues/85)) ([14b7737](https://github.com/GitGuardian/agent-skills/commit/14b77378fa9ca4549f50cfb862dc450df9265ef6))
+
 ## [0.3.0](https://github.com/GitGuardian/agent-skills/compare/v0.2.0...v0.3.0) (2026-06-17)
 
 

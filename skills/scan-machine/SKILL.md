@@ -2,7 +2,7 @@
 name: scan-machine
 description: Scan a developer's entire machine for credentials across local git repositories, dotfiles, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, browser profile databases, shell history, AI agent caches, and abandoned project trees via ggshield machine scan. Use when preparing to wipe, sell, or hand off a laptop, when onboarding a new machine, when auditing what credentials live on a machine, or when the user explicitly asks to inventory secrets on the system itself. Requires endpoint scanning enabled on the GitGuardian workspace; not available on Free.
 metadata:
-  version: "0.3.0" # x-release-please-version
+  version: "0.4.0" # x-release-please-version
 ---
 
 # ggshield — Scan Machine

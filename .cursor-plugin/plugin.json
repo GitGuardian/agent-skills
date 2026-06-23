@@ -1,7 +1,7 @@
 {
   "name": "gitguardian",
   "displayName": "GitGuardian",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The official GitGuardian plugin for AI coding agents. Detect hardcoded secrets, plant honeytokens, and triage incidents using ggshield, the GitGuardian Developer MCP server, and the GitGuardian API.",
   "author": {
     "name": "GitGuardian",
