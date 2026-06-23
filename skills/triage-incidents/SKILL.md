@@ -2,7 +2,7 @@
 name: triage-incidents
 description: Use when triaging or reviewing GitGuardian secret incidents already detected in the dashboard, when asked what is leaking in the org or what to fix first, when remediating or rotating a credential flagged in an incident, after a Public Monitoring alert, or to assign, tag, or resolve incidents. Operates through the GitGuardian Developer MCP server.
 metadata:
-  version: "0.3.0" # x-release-please-version
+  version: "0.4.0" # x-release-please-version
 ---
 
 # GitGuardian — Triage Incidents

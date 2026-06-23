@@ -2,7 +2,7 @@
 name: create-honeytokens
 description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around .env.example, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
 metadata:
-  version: "0.3.0" # x-release-please-version
+  version: "0.4.0" # x-release-please-version
 ---
 
 # ggshield — Create Honeytokens
