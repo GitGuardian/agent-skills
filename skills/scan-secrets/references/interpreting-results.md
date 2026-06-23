@@ -52,7 +52,7 @@ Use `--minimum-severity` to filter noise in large repos:
 ggshield secret scan path -r -y . --minimum-severity high --json
 ```
 
-Whether a finding warrants rotation depends on exposure, not just severity. See [Remediation](#remediation) below for the doctrine that drives the rotation decision.
+Whether a finding warrants rotation depends on exposure, not just severity. See the [remediation doctrine](remediation-doctrine.md) for the triage that drives the rotation decision.
 
 ### HMSL follow-up for unverifiable findings
 
