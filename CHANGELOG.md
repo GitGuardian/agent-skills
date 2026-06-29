@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/GitGuardian/agent-skills/compare/v0.4.1...v0.5.0) (2026-06-29)
+
+
+### Features
+
+* bump eval target models to opus 4.8 and gpt-5.5 ([#92](https://github.com/GitGuardian/agent-skills/issues/92)) ([59349f3](https://github.com/GitGuardian/agent-skills/commit/59349f3f8d48493982320d636accf92c59193906)), closes [#91](https://github.com/GitGuardian/agent-skills/issues/91)
+
 ## [0.4.1](https://github.com/GitGuardian/agent-skills/compare/v0.4.0...v0.4.1) (2026-06-23)
 
 
