@@ -44,8 +44,20 @@ Collapse the same credential seen across multiple occurrences into a single row.
 
 ## 4. Drive the fix
 
-Read [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end, then produce the
-deliverable mode it prescribes:
+First, fetch the workspace's remediation workflow with `get_remediation_workflow`
+(read-only, `incidents:read`). Branch on the result:
+
+- **Custom workflow (`id` present):** the customer's ordered `steps[]` are the spine of
+  your deliverable. Render them as their own literal numbered list and nest the doctrine
+  detail under each step; the triage axes calibrate how much detail. Follow
+  [`remediation-doctrine.md` § 13](remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay)
+  end-to-end.
+- **Default workflow (no `id`) or tool absent:** the doctrine drives. Read
+  [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end and produce the
+  deliverable mode it prescribes.
+
+Either way, these fill-ins hold — map each under the relevant customer step when a custom
+workflow is present:
 
 - **Rotation first.** A rotated credential is dead; that is what stops the attack.
 - **HMSL for unverifiable validity.** `unknown` / `no_checker` / `not_checked` → hand the

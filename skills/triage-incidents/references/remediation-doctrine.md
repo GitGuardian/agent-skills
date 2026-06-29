@@ -3,7 +3,7 @@
 > **Status:** draft (pre-1.0)
 > **Audience:** the `triage-incidents` skill, and any GitGuardian agent or human building an incident-remediation flow — open-source agent skills, in-app agent, internal tooling, security teams.
 > **Scope:** what to do when a leaked credential is found. Agent-side companion to the customer-facing IR guidance on docs.gitguardian.com.
-> **Detection context:** post-leak only. Incidents reaching this skill are already detected by the GitGuardian platform; the pre-leak track does not apply and is intentionally omitted (see § 5). This is a tailored sibling of the `scan-secrets` doctrine — kept structurally diffable against it; the only divergence is the omitted pre-leak track.
+> **Detection context:** post-leak only. Incidents reaching this skill are already detected by the GitGuardian platform; the pre-leak track does not apply and is intentionally omitted (see § 5). This is a tailored sibling of the `scan-secrets` doctrine — kept structurally diffable against it; it diverges in two deliberate places — the omitted pre-leak track (§ 5) and the added custom-workflow overlay (§ 13), neither of which has a counterpart in local CLI scanning.
 
 When a credential is found leaking, the agent's first job is not to act — it is to know enough to act well. This doctrine prescribes what the agent must know before producing a deliverable, what shapes a deliverable can take, and how to dispatch across the lifecycle stages where a leaked credential can be discovered. The same logic drives every GitGuardian agent: the open-source skills shipped from this repo, the in-app agent inside the GitGuardian product, and future profiles (SecOps integrations, autonomous remediation).
 
@@ -21,6 +21,7 @@ When a credential is found leaking, the agent's first job is not to act — it i
 10. [Generic coordination framework](#10-generic-coordination-framework)
 11. [Public-leak takedown / reporting](#11-public-leak-takedown--reporting)
 12. [Validation](#12-validation)
+13. [Custom remediation workflows (the organizational overlay)](#13-custom-remediation-workflows-the-organizational-overlay)
 
 ---
 
@@ -121,7 +122,7 @@ Mode selection runs on ownership × blast radius (plus exposure for the public w
 
 ## 4. Implementation profiles
 
-The doctrine is the universal contract; profiles describe how each implementation honors it. A new implementation adds a column.
+The doctrine is the universal contract; profiles describe how each implementation honors it. A new implementation adds a column. When a workspace has a configured custom remediation workflow, it overlays every profile and becomes the spine of the deliverable — see [§ 13](#13-custom-remediation-workflows-the-organizational-overlay).
 
 | Axis | Open-source agent skill (this repo) | In-app agent (GitGuardian product) | Future profile |
 |---|---|---|---|
@@ -1075,3 +1076,63 @@ Every mode ends with verification. Without it, the agent does not know whether t
 ### When validation fails
 
 If the re-scan still finds the secret: the fix didn't propagate. Re-enter the relevant track (most often the original detection context's track) with the now-known consumer that wasn't updated. If a forensic check reveals replay activity: escalate per the org's IR process; this is no longer a remediation problem.
+
+---
+
+## 13. Custom remediation workflows (the organizational overlay)
+
+> **Triage-specific divergence.** This section has no counterpart in the `scan-secrets` sibling doctrine: local CLI scanning has no workspace to read a configured workflow from. It is the second deliberate divergence from the sibling (the first being the omitted pre-leak track, [§ 5](#5-pre-leak-track--not-applicable-here)).
+
+A GitGuardian workspace can configure a **custom remediation workflow**: a customer-authored, ordered list of remediation steps the security team wants followed for every secret incident. It is shown in the dashboard and fetchable over MCP. When one is configured, it — not the doctrine — is the spine of the deliverable.
+
+### How to fetch it, and when the overlay applies
+
+Call `get_remediation_workflow` (read-only, `incidents:read`) once when entering remediation (the "drive the fix" step). It returns:
+
+- `account_id`
+- `steps[]` — **ordered**; each step is `{ title (required), description?, link? }`, where `link` is `{ text, url }`
+- `id`, `created_at`, `updated_at` — **present only when a custom workflow is configured**
+
+Gating:
+
+- **`id` present → custom workflow → the overlay applies.** Render per this section.
+- **`id` absent → workspace is on GitGuardian's default → no overlay.** The doctrine drives end-to-end as in [§§ 6–12](#6-post-leak--public-facing-track).
+- **Tool absent** (older ggmcp, or the token lacks `incidents:read`) → degrade to doctrine-drives, the same graceful-degradation pattern as the absent write tools. Do not block remediation on it.
+
+### Precedence — customer workflow is the spine, doctrine fills the blanks
+
+The customer's ordered steps are authoritative. They are followed verbatim, in order, as the top-level structure of the deliverable. The doctrine demotes from "the plan" to two supporting roles:
+
+1. **The knowledge bank behind each step** — the per-secret-type mechanics ([§ 9](#9-per-secret-type-appendix)), dependency mapping ([§ 10](#10-generic-coordination-framework)), and verification ([§ 12](#12-validation)) that make a terse customer step concrete.
+2. **The gap-filler** — anything the customer left unsaid that the doctrine considers important.
+
+The doctrine never reorders, removes, or overrides a customer step.
+
+### Rendering — literal numbered steps
+
+Reproduce the customer's steps as their own numbered list, matching what they see in the dashboard (render each `link` as its `text` → `url`). Nest the operationalizing doctrine detail **under** the relevant step. Example: a workspace whose workflow is
+
+> 1. Notify #security-incidents in Slack
+> 2. Rotate the credential
+> 3. File a ServiceNow change ticket
+> 4. Confirm rotation with the platform team
+
+renders as those four literal steps, with the [§ 9](#9-per-secret-type-appendix) revoke → regenerate → update-callers mechanics, the [§ 10](#10-generic-coordination-framework) dependency map, and the [§ 12](#12-validation) verification nested under step 2, and the [§ 10](#10-generic-coordination-framework) step-6 change-ticket fields offered under step 3.
+
+### Triage still runs — to calibrate fill depth, not structure
+
+Assess the four axes ([§ 2](#2-the-four-triage-axes)) per credential exactly as before. They no longer select a top-level mode or track; instead they decide **how much** doctrine depth to pour under each customer step. A sandbox key under a "rotate" step gets a one-line revoke/regenerate; a valid production-critical credential pulls the full Coordination dependency-map and sequenced rollout ([§§ 3](#3-the-four-deliverable-modes), [10](#10-generic-coordination-framework)) — nested under that same "rotate" step. Validity still sets urgency, never the plan ([principle 7](#1-principles)).
+
+### Filling the blanks
+
+- **Terse step** → enrich it underneath with the relevant doctrine detail.
+- **Doctrine considers something important that no customer step covers** — most commonly post-rotation verification ([§ 12](#12-validation)), sometimes rotation itself — → the agent MAY add it as a clearly-labeled supplement ("Not in your workflow, but recommended: …"), at its discretion. It is *added*, never substituted for a customer step.
+
+### When a customer step looks risky
+
+Because the customer workflow wins, the agent still follows the step. It MAY attach a brief doctrine caveat as a fill-in. Example: a "scrub git history" step on a public leak → follow it, and note that mirrors, forks, caches, and search indexes retain copies ([§ 6](#6-post-leak--public-facing-track)) and that rotation is what actually stops the attack. Inform, do not override.
+
+### Profiles
+
+- **Open-source `triage-incidents` skill (this repo):** fetches via `get_remediation_workflow`; degrades to doctrine-drives when the tool or scope is absent.
+- **In-app agent:** has the configured workflow natively; applies the same spine-and-fill model.

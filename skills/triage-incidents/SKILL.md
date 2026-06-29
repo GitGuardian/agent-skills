@@ -38,6 +38,12 @@ HMSL handoff sub-step, which is user-run regardless.
   read [`references/remediation-doctrine.md`](references/remediation-doctrine.md)
   end-to-end. Rotation-first; history-rewrite only under narrow conditions; public
   exposure is always burned.
+- **A configured custom remediation workflow takes the lead.** Before composing the fix,
+  call `get_remediation_workflow`. If it returns an `id`, the workspace has a custom
+  workflow — follow it as the spine of the deliverable: render its steps verbatim and use
+  the doctrine to fill in the mechanics and verification under each step. The doctrine
+  drives end-to-end only when no custom workflow is configured (no `id`) or the tool is
+  unavailable. See doctrine § 13.
 - **Never auto-resolve.** Marking an incident RESOLVED / IGNORED, assigning it, or
   tagging it is an outward-facing state change on the shared dashboard. Confirm with the
   user before any write, and only mark RESOLVED after rotation is actually confirmed —
