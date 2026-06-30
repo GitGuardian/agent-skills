@@ -140,6 +140,8 @@ Full doctrine in [`references/remediation-doctrine.md`](references/remediation-d
 | Pre-push hook fired (unpushed commits blocked) | [§ 5.3](references/remediation-doctrine.md#53-pre-push-hook-fired) |
 | Repo / commit / Docker image / PyPI package scan finding | Triage in [§ 6](references/remediation-doctrine.md#6-post-leak--public-facing-track) (public) or [§ 7](references/remediation-doctrine.md#7-post-leak--internal-private-track) (internal-private) per where the artifact lives |
 
+**Custom remediation message takes the lead.** If the workspace has a configured remediation workflow, ggshield (≥ 1.30.0) prints the workspace's own message in its hook output. Surface that message verbatim as the primary guidance and fill in the doctrine mechanics around it — do not override it with generic advice. See [§ 13](references/remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay).
+
 The three triggers most often missed:
 
 - **Pushed to a remote → rotate.** History rewriting is generally discouraged once secrets are pushed; rotation is the actual remediation. Do not lead with `git filter-repo` / BFG.

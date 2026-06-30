@@ -3,7 +3,7 @@
 > **Status:** draft (pre-1.0)
 > **Audience:** the `triage-incidents` skill, and any GitGuardian agent or human building an incident-remediation flow — open-source agent skills, in-app agent, internal tooling, security teams.
 > **Scope:** what to do when a leaked credential is found. Agent-side companion to the customer-facing IR guidance on docs.gitguardian.com.
-> **Detection context:** post-leak only. Incidents reaching this skill are already detected by the GitGuardian platform; the pre-leak track does not apply and is intentionally omitted (see § 5). This is a tailored sibling of the `scan-secrets` doctrine — kept structurally diffable against it; it diverges in two deliberate places — the omitted pre-leak track (§ 5) and the added custom-workflow overlay (§ 13), neither of which has a counterpart in local CLI scanning.
+> **Detection context:** post-leak only. Incidents reaching this skill are already detected by the GitGuardian platform; the pre-leak track does not apply and is intentionally omitted (see § 5). This is a tailored sibling of the `scan-secrets` doctrine — kept structurally diffable against it; the only divergence is the omitted pre-leak track (§ 5). The custom-workflow overlay (§ 13) is parallel in both doctrines — here it covers the Incident-page touchpoint; in the `scan-secrets` sibling it covers the pre-leak touchpoints.
 
 When a credential is found leaking, the agent's first job is not to act — it is to know enough to act well. This doctrine prescribes what the agent must know before producing a deliverable, what shapes a deliverable can take, and how to dispatch across the lifecycle stages where a leaked credential can be discovered. The same logic drives every GitGuardian agent: the open-source skills shipped from this repo, the in-app agent inside the GitGuardian product, and future profiles (SecOps integrations, autonomous remediation).
 
@@ -1081,9 +1081,9 @@ If the re-scan still finds the secret: the fix didn't propagate. Re-enter the re
 
 ## 13. Custom remediation workflows (the organizational overlay)
 
-> **Triage-specific divergence.** This section has no counterpart in the `scan-secrets` sibling doctrine: local CLI scanning has no workspace to read a configured workflow from. It is the second deliberate divergence from the sibling (the first being the omitted pre-leak track, [§ 5](#5-pre-leak-track--not-applicable-here)).
+> **Which touchpoint this skill uses.** A custom remediation workflow is configured *per touchpoint* — Incident page, Pre-commit, Pre-push, Pre-receive (the four tabs under the dashboard's Remediation workflow settings). This skill operates post-leak on already-detected incidents, so it consumes the **Incident page** touchpoint, fetched via `get_remediation_workflow`. The Pre-commit / Pre-push / Pre-receive touchpoints are pre-leak and are surfaced by ggshield directly in its CLI output (ggshield ≥ 1.30.0); they belong to the pre-leak scanning surface (`scan-secrets` / `install-hooks`), whose doctrine carries the parallel §13 for that channel.
 
-A GitGuardian workspace can configure a **custom remediation workflow**: a customer-authored, ordered list of remediation steps the security team wants followed for every secret incident. It is shown in the dashboard and fetchable over MCP. When one is configured, it — not the doctrine — is the spine of the deliverable.
+A GitGuardian workspace can configure a **custom remediation workflow**: customer-authored, ordered remediation guidance the security team wants followed when a secret is detected. The Incident-page touchpoint is shown in the dashboard and fetchable over MCP as an ordered list of steps. When one is configured, it — not the doctrine — is the spine of the deliverable.
 
 ### How to fetch it, and when the overlay applies
 
