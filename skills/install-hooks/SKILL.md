@@ -190,6 +190,13 @@ remote — this is the easiest case to remediate, the *pre-leak* track:
 
 **No rotation is required** — the secret never left your perimeter, so it has not leaked.
 
+**If the workspace has a custom remediation workflow**, ggshield (≥ 1.30.0) prints the
+organization's own remediation message in the block output (configured per touchpoint under
+GitGuardian → Remediation workflow → Pre-commit / Pre-push / Pre-receive). That message is the
+customer's security team's process and **takes the lead** — surface it to the user verbatim as
+the primary guidance, then follow the remove-and-recommit steps above to fill in around it. Do
+not replace it with generic advice.
+
 If, instead, you discover a secret that is **already in git history** (committed before the hook
 existed, or already pushed), that is a different, harder situation: the secret is exposed and must
 be treated as compromised. Use the `scan-secrets` skill, which carries the full remediation
