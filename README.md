@@ -99,6 +99,9 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 
 ```text
 /plugin marketplace add GitGuardian/agent-skills
+```
+
+```text
 /plugin install gitguardian
 ```
 
