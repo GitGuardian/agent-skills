@@ -45,16 +45,23 @@ Collapse the same credential seen across multiple occurrences into a single row.
 ## 4. Drive the fix
 
 First, fetch the workspace's remediation workflow with `get_remediation_workflow`
-(read-only, `incidents:read`). Branch on the result:
+(read-only, `incidents:read`). The response is wrapped under a `workflow` key. **Gate on
+the presence of `workflow.id`, never on the existence of `steps`** — the default workflow
+also ships a full `steps[]`, so steps prove nothing; only `id` marks a configured custom
+workflow. **Announce which branch you took** before composing the deliverable:
 
-- **Custom workflow (`id` present):** the customer's ordered `steps[]` are the spine of
-  your deliverable. Render them as their own literal numbered list and nest the doctrine
-  detail under each step; the triage axes calibrate how much detail. Follow
+- **Custom workflow (`workflow.id` present):** say so (e.g. *"returned `id: <n>` → custom
+  workflow"*). The customer's ordered `steps[]` are the spine of your deliverable — render
+  them as their own literal numbered list and nest the doctrine detail under each step; the
+  triage axes calibrate how much detail. Follow
   [`remediation-doctrine.md` § 13](remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay)
   end-to-end.
-- **Default workflow (no `id`) or tool absent:** the doctrine drives. Read
+- **Default workflow (no `workflow.id`) or tool absent:** say so (e.g. *"no `id` →
+  GitGuardian default workflow"*), and do **not** call it "custom" or "configured by your
+  workspace." Render the returned steps as scaffolding, but the doctrine drives — read
   [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end and produce the
-  deliverable mode it prescribes.
+  deliverable mode it prescribes. Note that this fetch reads only the Incident-page
+  touchpoint; custom Pre-commit/Pre-push/Pre-receive messages surface via ggshield, not here.
 
 Either way, these fill-ins hold — map each under the relevant customer step when a custom
 workflow is present:

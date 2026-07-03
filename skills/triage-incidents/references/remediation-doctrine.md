@@ -1087,17 +1087,32 @@ A GitGuardian workspace can configure a **custom remediation workflow**: custome
 
 ### How to fetch it, and when the overlay applies
 
-Call `get_remediation_workflow` (read-only, `incidents:read`) once when entering remediation (the "drive the fix" step). It returns:
+Call `get_remediation_workflow` (read-only, `incidents:read`) once when entering remediation (the "drive the fix" step). The tool wraps the API response under a top-level `workflow` key — the fields below live at `workflow.*` (e.g. `workflow.id`, `workflow.steps`):
 
 - `account_id`
-- `steps[]` — **ordered**; each step is `{ title (required), description?, link? }`, where `link` is `{ text, url }`
-- `id`, `created_at`, `updated_at` — **present only when a custom workflow is configured**
+- `steps[]` — **ordered**; each step is `{ title (required), description?, link? }`, where `link` is `{ text, url }`. **`steps` is always present — the default workflow has steps too.**
+- `id`, `created_at`, `updated_at` — **present only when a custom workflow is configured; omitted for the default workflow.**
 
-Gating:
+#### The gate: `id` presence, and nothing else
 
-- **`id` present → custom workflow → the overlay applies.** Render per this section.
-- **`id` absent → workspace is on GitGuardian's default → no overlay.** The doctrine drives end-to-end as in [§§ 6–12](#6-post-leak--public-facing-track).
+**Gate custom-vs-default on the presence of `workflow.id`. Never infer "custom" from the existence, count, wording, or richness of `steps`.** The default workflow ships a full, plausible-looking `steps[]` (it may even read like bespoke security guidance) — steps prove nothing. Only `id` (with `created_at` / `updated_at`) marks a workspace-configured custom workflow.
+
+- **`workflow.id` present → custom workflow → the overlay applies.** Render the steps verbatim as the spine (this section).
+- **`workflow.id` absent → GitGuardian default workflow → no overlay.** Still render the returned steps as useful scaffolding, but the doctrine leads and fills them out; drive end-to-end as in [§§ 6–12](#6-post-leak--public-facing-track).
 - **Tool absent** (older ggmcp, or the token lacks `incidents:read`) → degrade to doctrine-drives, the same graceful-degradation pattern as the absent write tools. Do not block remediation on it.
+
+**Never** describe a no-`id` result as "custom", "configured by your workspace", or "your organization's remediation workflow". That is the default, and mislabeling it misleads the user into thinking their security team authored guidance they did not.
+
+#### Announce the branch you took
+
+State the gate decision explicitly before composing the deliverable, so the user (and any tester) can see which path was chosen:
+
+- custom: *"`get_remediation_workflow` returned `id: <n>` → custom workflow → I'll follow your workspace's steps as the spine."*
+- default: *"`get_remediation_workflow` returned no `id` → GitGuardian's default workflow → the doctrine drives; I'll use the default steps as scaffolding."*
+
+#### Touchpoint caveat when returning the default
+
+`get_remediation_workflow` returns **only the Incident-page touchpoint**. A workspace can have custom steps saved on the Pre-commit / Pre-push / Pre-receive tabs while the Incident-page tab is still the default — those pre-leak messages do **not** appear here (they surface via the ggshield CLI). So when you announce the default, add: *"note this reads only the Incident-page workflow; any custom Pre-commit/Pre-push/Pre-receive messages your workspace configured surface through ggshield, not here."* This stops a tester who configured a different tab from concluding the fetch is broken.
 
 ### Precedence — customer workflow is the spine, doctrine fills the blanks
 
