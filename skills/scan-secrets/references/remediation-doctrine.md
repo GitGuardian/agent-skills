@@ -20,6 +20,7 @@ When a credential is found leaking, the agent's first job is not to act — it i
 10. [Generic coordination framework](#10-generic-coordination-framework)
 11. [Public-leak takedown / reporting](#11-public-leak-takedown--reporting)
 12. [Validation](#12-validation)
+13. [Custom remediation workflows (the organizational overlay)](#13-custom-remediation-workflows-the-organizational-overlay)
 
 ---
 
@@ -180,6 +181,10 @@ The credential is in one or more local commits about to leave the machine. This 
 ### Why no triage axes here
 
 The credential has not been exposed. Ownership and blast radius are moot — rotation is not on the table. Detection context alone determines the deliverable. If the agent or the user is *unsure whether the secret has already been pushed* (e.g., the user can't remember, or this finding came from a routine repo scan rather than a hook), dispatch to the post-leak track instead. When in doubt, assume the secret has propagated.
+
+### Custom remediation message in hook output
+
+When the finding came from a GitGuardian-configured git hook (pre-commit / pre-push / pre-receive) and the workspace has a custom remediation workflow, ggshield (≥ 1.30.0) prints the workspace's configured message in its own output. That message is the customer's process and takes the lead — surface it verbatim and fill in the §§ 5.1–5.3 mechanics around it. See [§ 13](#13-custom-remediation-workflows-the-organizational-overlay).
 
 ---
 
@@ -1102,3 +1107,44 @@ Every mode ends with verification. Without it, the agent does not know whether t
 ### When validation fails
 
 If the re-scan still finds the secret: the fix didn't propagate. Re-enter the relevant track (most often the original detection context's track) with the now-known consumer that wasn't updated. If a forensic check reveals replay activity: escalate per the org's IR process; this is no longer a remediation problem.
+
+---
+
+## 13. Custom remediation workflows (the organizational overlay)
+
+A GitGuardian workspace can configure a **custom remediation workflow**: customer-authored remediation guidance the security team wants followed when a secret is detected. It is configured *per touchpoint* — Incident page, Pre-commit, Pre-push, Pre-receive (the four tabs under the dashboard's Remediation workflow settings). When one is configured for the touchpoint in play, it — not the doctrine — is the spine of the deliverable.
+
+### Two delivery channels — which one this skill sees
+
+- **Pre-commit / Pre-push / Pre-receive (pre-leak).** When a GitGuardian-configured git hook blocks a secret, **ggshield prints the workspace's configured message in its own CLI output** (ggshield ≥ 1.30.0). This is the channel this skill sees most often — there is no separate fetch; the message arrives inline in the hook/scan output. Maps to the pre-leak track ([§ 5](#5-pre-leak-track)).
+- **Incident page (post-leak).** Fetched via the `get_remediation_workflow` MCP tool as an ordered list of steps (`{ title, description?, link? }`), when the agent has the GitGuardian Developer MCP connected. This is the channel the incident-triage surface uses; it maps to the post-leak tracks ([§§ 6–8](#6-post-leak--public-facing-track)).
+
+If neither channel yields a custom workflow (default workspace config, ggshield < 1.30.0, or no MCP), the doctrine drives end-to-end as in [§§ 5–12](#5-pre-leak-track).
+
+### Precedence — customer workflow is the spine, doctrine fills the blanks
+
+The customer's message/steps are authoritative. They are followed verbatim, in order, as the top-level structure of the deliverable. The doctrine demotes from "the plan" to two supporting roles:
+
+1. **The knowledge bank behind each step** — the pre-leak hook mechanics ([§ 5](#5-pre-leak-track)) and, for post-leak findings, the per-secret-type mechanics ([§ 9](#9-per-secret-type-appendix)), dependency mapping ([§ 10](#10-generic-coordination-framework)), and verification ([§ 12](#12-validation)).
+2. **The gap-filler** — anything the customer left unsaid that the doctrine considers important.
+
+The doctrine never reorders, removes, or overrides a customer step.
+
+### Rendering
+
+- **Pre-leak (ggshield output):** the configured message is free text. Surface it **verbatim** as the lead guidance, then nest the §§ 5.1–5.3 mechanics (remove-don't-rotate, unstage / amend / rebase, re-scan) underneath to make it actionable.
+- **Incident page (MCP steps):** reproduce the customer's steps as their own literal numbered list (render each `link` as its `text` → `url`); nest the operationalizing doctrine detail under the relevant step.
+
+### Filling the blanks
+
+- **Terse step / message** → enrich it underneath with the relevant doctrine detail.
+- **Doctrine considers something important that no customer step covers** — most commonly the re-scan that confirms the fix ([§ 12](#12-validation)), or, in the post-leak tracks, rotation itself — → the agent MAY add it as a clearly-labeled supplement ("Not in your workflow, but recommended: …"), at its discretion. It is *added*, never substituted for a customer step.
+
+### When a customer step looks risky
+
+Because the customer workflow wins, the agent still follows the step. It MAY attach a brief doctrine caveat as a fill-in. Example: a post-leak step that implies scrubbing public git history → follow it, and note that mirrors, forks, caches, and search indexes retain copies ([§ 6](#6-post-leak--public-facing-track)) and that rotation is what actually stops the attack. Inform, do not override.
+
+### Profiles
+
+- **Open-source agent skills (this repo):** `scan-secrets` / `install-hooks` read the pre-leak message from ggshield output; an agent that also has the GitGuardian Developer MCP can fetch the Incident-page workflow via `get_remediation_workflow`. Degrade to doctrine-drives when neither is available.
+- **In-app agent:** has the configured workflow natively; applies the same spine-and-fill model.

@@ -83,6 +83,12 @@ If the user has the `check-hmsl` skill installed locally, it covers additional f
 
 ---
 
+## Custom remediation message in ggshield output
+
+If the user's GitGuardian workspace has a **custom remediation workflow** configured, ggshield (≥ 1.30.0) prints the workspace's own remediation message in its output when a hook blocks a secret (pre-commit / pre-push / pre-receive). It is the customer's security team's process and **takes the lead** — surface it to the user verbatim as the primary guidance, then fill in the mechanics around it from the doctrine. Do not replace it with generic advice. See [`remediation-doctrine.md` § 13](remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay).
+
+---
+
 ## Ignoring False Positives
 
 If ggshield flags something that is not a real secret (e.g., a test fixture, a placeholder value, or a public key):
