@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/GitGuardian/agent-skills/compare/v0.4.1...v0.5.0) (2026-07-06)
+
+
+### Features
+
+* bump eval target models to opus 4.8 and gpt-5.5 ([#92](https://github.com/GitGuardian/agent-skills/issues/92)) ([59349f3](https://github.com/GitGuardian/agent-skills/commit/59349f3f8d48493982320d636accf92c59193906)), closes [#91](https://github.com/GitGuardian/agent-skills/issues/91)
+* overlay customer custom remediation workflow onto the doctrine ([#93](https://github.com/GitGuardian/agent-skills/issues/93)) ([b7c2ba8](https://github.com/GitGuardian/agent-skills/commit/b7c2ba839d8fdeb4b27d18689a76945ca64e433d))
+
+
+### Documentation
+
+* split Claude Code plugin install commands into separate blocks ([#95](https://github.com/GitGuardian/agent-skills/issues/95)) ([1c9017e](https://github.com/GitGuardian/agent-skills/commit/1c9017eef869d1b8a1e594699c4ad922ff9d72ee))
+
 ## [0.4.1](https://github.com/GitGuardian/agent-skills/compare/v0.4.0...v0.4.1) (2026-06-23)
 
 
