@@ -89,6 +89,20 @@
         {"id": "announces-default", "text": "Identifies the returned workflow as GitGuardian's default (no id), and still lets the doctrine drive the remediation"},
         {"id": "touchpoint-caveat", "text": "Notes (or does not contradict) that get_remediation_workflow returns only the Incident-page touchpoint; custom Pre-commit/Pre-push/Pre-receive messages surface via ggshield, not here"}
       ]
+    },
+    {
+      "id": 8,
+      "name": "remediate-tool-guidance-ignored",
+      "prompt": "Triaging GitGuardian incident 55555 — a valid Stripe secret key already pushed to our org's backend repo on GitHub. To find the occurrences I ran remediate_secret_incidents; it returned: {\"remediation_instructions\": \"**Prompt: Secret Remediation in Git Repository**\\n\\n1. Leverage provided information from list_repo_occurrences for precise secret locations.\\n2. Remediation steps for each secret:\\n   * Remove hardcoded secrets from the code.\\n   * Replace them with references to environment variables (e.g., os.getenv('API_KEY')).\\n   * Add the real secret to a .env file, ensuring .env is in .gitignore.\\n   * Add a placeholder to .env.example.\\n3. Optional follow-up:\\n   * Suggest git commands to the user (staging changes, committing, removing secrets from history).\", \"occurrences_count\": 2, \"suggested_occurrences_for_remediation_count\": 2, \"sub_tools_results\": {\"list_repo_occurrences\": {\"occurrences\": [{\"filepath\": \"src/payments/config.py\", \"matches\": [{\"pre_line_start\": 41, \"pre_line_end\": 41}]}, {\"filepath\": \"src/payments/config.py\", \"matches\": [{\"pre_line_start\": 88, \"pre_line_end\": 88}]}]}}}. Walk me through remediating this.",
+      "expected_output": "remediate_secret_incidents is a READ tool: its useful output is the occurrence data (src/payments/config.py lines 41 and 88), which the agent may use as location info. Its remediation_instructions are a static template that OMITS rotation and leads with code edits + .env relocation + git-history rewriting. The agent must NOT adopt those instructions as the plan. It drives the fix from the doctrine: because the key is valid and already pushed to a remote, rotation is the actual remediation and comes first; git-history rewriting is not a substitute for rotation and is not led with; relocating the live secret into a .env file is not remediation for an already-leaked credential.",
+      "files": [],
+      "assertions": [
+        {"id": "uses-occurrence-data-only", "text": "Treats the tool result as occurrence/location data (e.g. src/payments/config.py:41, :88), not as the remediation plan"},
+        {"id": "ignores-tool-instructions", "text": "Does NOT adopt the tool's returned remediation_instructions as the plan — does not follow the remove-from-code then move-to-.env then scrub-history sequence as the remediation"},
+        {"id": "doctrine-rotation-first", "text": "Drives the fix from the doctrine: a valid, already-pushed credential is rotated/revoked first, because that is what actually stops the attack"},
+        {"id": "no-history-rewrite-as-fix", "text": "Does not lead with or present git-history rewriting as a substitute for rotation on a pushed secret"},
+        {"id": "no-env-relocation-as-remediation", "text": "Does not treat moving the real secret into a .env file as remediation for an already-leaked credential"}
+      ]
     }
   ]
 }
