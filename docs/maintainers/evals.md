@@ -74,8 +74,8 @@ skills/<skill>/evals/
 ```json
 // targets.json
 {
-  "claude": ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
-  "codex":  ["gpt-5"]
+  "claude": ["claude-opus-4-8", "claude-sonnet-4-6"],
+  "codex":  ["gpt-5.5"]
 }
 ```
 
