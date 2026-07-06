@@ -41,9 +41,9 @@ HMSL handoff sub-step, which is user-run regardless.
 - **A configured custom remediation workflow takes the lead.** Before composing the fix,
   call `get_remediation_workflow`. If it returns an `id`, the workspace has a custom
   workflow — follow it as the spine of the deliverable: render its steps verbatim and use
-  the doctrine to fill in the mechanics and verification under each step. The doctrine
-  drives end-to-end only when no custom workflow is configured (no `id`) or the tool is
-  unavailable. See doctrine § 13.
+  the doctrine to fill in the mechanics and verification under each step. If there is no
+  `id` (GitGuardian's default workflow) or the tool is unavailable, set the returned steps
+  aside — do not render them — and let the doctrine drive end-to-end. See doctrine § 13.
 - **Never auto-resolve.** Marking an incident RESOLVED / IGNORED, assigning it, or
   tagging it is an outward-facing state change on the shared dashboard. Confirm with the
   user before any write, and only mark RESOLVED after rotation is actually confirmed —

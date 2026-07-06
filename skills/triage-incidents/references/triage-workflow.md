@@ -58,10 +58,12 @@ workflow. **Announce which branch you took** before composing the deliverable:
   end-to-end.
 - **Default workflow (no `workflow.id`) or tool absent:** say so (e.g. *"no `id` →
   GitGuardian default workflow"*), and do **not** call it "custom" or "configured by your
-  workspace." Render the returned steps as scaffolding, but the doctrine drives — read
+  workspace." **Set the returned default steps aside — do not render, quote, or use them as
+  scaffolding** — and drive the remediation entirely from the doctrine: read
   [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end and produce the
-  deliverable mode it prescribes. Note that this fetch reads only the Incident-page
-  touchpoint; custom Pre-commit/Pre-push/Pre-receive messages surface via ggshield, not here.
+  deliverable mode it prescribes, exactly as if the tool had returned nothing. Note that this
+  fetch reads only the Incident-page touchpoint; custom Pre-commit/Pre-push/Pre-receive
+  messages surface via ggshield, not here.
 
 Either way, these fill-ins hold — map each under the relevant customer step when a custom
 workflow is present:

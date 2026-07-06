@@ -1098,8 +1098,8 @@ Call `get_remediation_workflow` (read-only, `incidents:read`) once when entering
 **Gate custom-vs-default on the presence of `workflow.id`. Never infer "custom" from the existence, count, wording, or richness of `steps`.** The default workflow ships a full, plausible-looking `steps[]` (it may even read like bespoke security guidance) — steps prove nothing. Only `id` (with `created_at` / `updated_at`) marks a workspace-configured custom workflow.
 
 - **`workflow.id` present → custom workflow → the overlay applies.** Render the steps verbatim as the spine (this section).
-- **`workflow.id` absent → GitGuardian default workflow → no overlay.** Still render the returned steps as useful scaffolding, but the doctrine leads and fills them out; drive end-to-end as in [§§ 6–12](#6-post-leak--public-facing-track).
-- **Tool absent** (older ggmcp, or the token lacks `incidents:read`) → degrade to doctrine-drives, the same graceful-degradation pattern as the absent write tools. Do not block remediation on it.
+- **`workflow.id` absent → GitGuardian default workflow → no overlay, and the default steps are discarded.** Do **not** render, quote, or use them as scaffolding. Drive end-to-end from the doctrine as in [§§ 6–12](#6-post-leak--public-facing-track), exactly as if the tool had returned nothing. The default `steps[]` are GitGuardian's generic placeholder, not workspace-authored guidance — they add nothing the doctrine does not already cover more completely, so the doctrine is the deliverable in full.
+- **Tool absent** (older ggmcp, or the token lacks `incidents:read`) → same as the default case: doctrine drives end-to-end, the same graceful-degradation pattern as the absent write tools. Do not block remediation on it.
 
 **Never** describe a no-`id` result as "custom", "configured by your workspace", or "your organization's remediation workflow". That is the default, and mislabeling it misleads the user into thinking their security team authored guidance they did not.
 
@@ -1108,7 +1108,7 @@ Call `get_remediation_workflow` (read-only, `incidents:read`) once when entering
 State the gate decision explicitly before composing the deliverable, so the user (and any tester) can see which path was chosen:
 
 - custom: *"`get_remediation_workflow` returned `id: <n>` → custom workflow → I'll follow your workspace's steps as the spine."*
-- default: *"`get_remediation_workflow` returned no `id` → GitGuardian's default workflow → the doctrine drives; I'll use the default steps as scaffolding."*
+- default: *"`get_remediation_workflow` returned no `id` → GitGuardian's default workflow → I'll set it aside and drive the remediation from the doctrine."*
 
 #### Touchpoint caveat when returning the default
 

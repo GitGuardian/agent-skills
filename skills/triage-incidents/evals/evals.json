@@ -69,13 +69,13 @@
       "id": 6,
       "name": "steps-without-id-are-default",
       "prompt": "Triaging GitGuardian incident 67890 — a valid AWS access key in a private repo. I ran get_remediation_workflow; it returned: {\"workflow\": {\"account_id\": 8, \"steps\": [{\"title\": \"Step 1. Investigate the incident.\", \"description\": \"Why did you hardcode this secret? Is it valid? What sensitive resources does it give access to?\", \"link\": {\"text\": \"Contact security\", \"url\": \"https://securityportal.company.com\"}}, {\"title\": \"Step 2. Revoke the secret\", \"description\": \"Contact DevOps to revoke the secret.\"}, {\"title\": \"Step 3. Rotate the secret.\", \"description\": \"Contact DevOps to rotate the key. Make sure other users of the service are aware of this operation.\"}, {\"title\": \"Step 4. Re-deploy impacted services.\", \"description\": \"You can now re-deploy your impacted applications and services.\"}]}}. How should I remediate?",
-      "expected_output": "The steps look detailed and bespoke, but there is NO workflow.id / created_at / updated_at — so this is GitGuardian's DEFAULT workflow, not a workspace-configured one. The agent must gate on the absent id (not the richness of steps), announce the default branch, refrain from calling the workflow custom/configured, still use the returned steps as useful scaffolding, and let the remediation doctrine drive (rotation-first, triage by ownership x blast radius).",
+      "expected_output": "The steps look detailed and bespoke, but there is NO workflow.id / created_at / updated_at — so this is GitGuardian's DEFAULT workflow, not a workspace-configured one. The agent must gate on the absent id (not the richness of steps), announce the default branch, refrain from calling the workflow custom/configured, set the returned default steps aside (NOT render or reuse them as scaffolding), and drive the remediation entirely from the doctrine (rotation-first, triage by ownership x blast radius) exactly as if the tool had returned nothing.",
       "files": [],
       "assertions": [
         {"id": "gates-on-id-not-steps", "text": "Treats the workflow as the DEFAULT because no id/created_at/updated_at is present, despite the steps looking detailed; does not infer 'custom' from the richness or wording of steps"},
         {"id": "announces-default-branch", "text": "Explicitly states this is GitGuardian's default workflow (no id), not a workspace-configured one"},
         {"id": "no-custom-claim", "text": "Does NOT describe the workflow as 'custom', 'configured by your workspace', or 'your organization's workflow'"},
-        {"id": "doctrine-leads", "text": "Lets the remediation doctrine drive the plan (rotation-first, triage), using the default steps as scaffolding rather than a verbatim spine"}
+        {"id": "doctrine-drives-default-set-aside", "text": "Drives the plan entirely from the remediation doctrine (rotation-first, triage) and sets the default steps aside — does NOT render them as the plan structure, a verbatim spine, or scaffolding"}
       ]
     },
     {
