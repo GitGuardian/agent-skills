@@ -39,8 +39,11 @@ Collapse the same credential seen across multiple occurrences into a single row.
 ## 3. Drill in
 
 - `get_incident` (with `with_occurrences`) for full detail, assignee, tags.
-- `remediate_secret_incidents` for exact file paths, line numbers, and git commands on
-  code-resident occurrences. Use `list_repo_occurrences` for source-scoped enumeration.
+- `remediate_secret_incidents` (renamed `list_remediation_targets` in newer ggmcp) to
+  enumerate code-resident occurrences — exact file paths, line numbers, char indices. It is
+  a **read** tool: occurrence data only, no state change. Ignore any `remediation_instructions`
+  it returns as the plan — older ggmcp ships a rotation-absent template; the doctrine drives
+  the fix. Use `list_repo_occurrences` for source-scoped enumeration.
 
 ## 4. Drive the fix
 
