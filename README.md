@@ -4,7 +4,7 @@
 
 Find exposed credentials before attackers abuse them, block new leaks before they ship, and plant honeytokens to detect future misuse. This repo ships skill files that teach AI coding agents how to use GitGuardian through the GitGuardian CLI ([`ggshield`](https://github.com/GitGuardian/ggshield)), the Developer MCP server, and API-backed workflows where appropriate - when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens.
 
-Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install instructions below.
+Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install into your agents with `curl -fsSL agents.gitguardian.com | sh` - details below.
 
 ## Skills and Commands
 
@@ -91,6 +91,16 @@ Read the secret incidents already detected in your GitGuardian dashboard, rank t
 Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
 
 ## Quick Start
+
+```bash
+curl -fsSL agents.gitguardian.com | sh
+```
+
+Detects the agent CLIs on your machine, asks which ones to configure, and installs the skills plus the bundled Developer MCP server into each. It takes options (non-interactive install, EU SaaS), and it is a plain shell script you can read before piping it to a shell - for either, ask your agent: "read agents.gitguardian.com and explain how it works".
+
+### Manual install
+
+Or run the host's own commands. VS Code Copilot and Kiro are manual-only; the script does not cover them.
 
 <details>
 <summary><strong>Claude Code</strong></summary>
