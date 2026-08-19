@@ -95,12 +95,7 @@ Skills also auto-trigger from context. Editing `.env` files, CI configs, credent
 ```bash
 curl -fsSL agents.gitguardian.com | sh
 ```
-
-Detects the agent CLIs on your machine, asks which ones to configure, and installs the skills plus the bundled Developer MCP server into each. It takes options (non-interactive install, EU SaaS), and it is a plain shell script you can read before piping it to a shell - for either, ask your agent: "read agents.gitguardian.com and explain how it works".
-
-### Manual install
-
-Or run the host's own commands. VS Code Copilot and Kiro are manual-only; the script does not cover them.
+Detects the agent CLIs on your machine, asks which ones to configure, and installs the skills along with the bundled Developer MCP server for each. To explore all available options, ask your agent: "read agents.gitguardian.com and explain how it works."
 
 <details>
 <summary><strong>Claude Code</strong></summary>
