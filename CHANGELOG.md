@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/GitGuardian/agent-skills/compare/v0.5.0...v0.5.1) (2026-08-20)
+
+
+### Documentation
+
+* document the agents.gitguardian.com curl installer ([#96](https://github.com/GitGuardian/agent-skills/issues/96)) ([61bfd4e](https://github.com/GitGuardian/agent-skills/commit/61bfd4e005479effc96af2b69040f96989d198f7))
+* label the skills distribution beta until the GA gates close ([#103](https://github.com/GitGuardian/agent-skills/issues/103)) ([815a70d](https://github.com/GitGuardian/agent-skills/commit/815a70d042cfdb35d9451d7fb164ef786a7c01c0))
+
 ## [0.5.0](https://github.com/GitGuardian/agent-skills/compare/v0.4.1...v0.5.0) (2026-07-06)
 
 
