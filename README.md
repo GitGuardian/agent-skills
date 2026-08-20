@@ -2,6 +2,8 @@
 
 # GitGuardian Agent Skills
 
+> **Beta** — this distribution is pre-1.0. The skills work today, but they may change shape between releases: no stability guarantee yet on skill names, slash commands, or file layout.
+
 Find exposed credentials before attackers abuse them, block new leaks before they ship, and plant honeytokens to detect future misuse. This repo ships skill files that teach AI coding agents how to use GitGuardian through the GitGuardian CLI ([`ggshield`](https://github.com/GitGuardian/ggshield)), the Developer MCP server, and API-backed workflows where appropriate - when to scan, which flags to use, how to interpret findings, how to walk the user through removal and rotation, and when and where to plant honeytokens.
 
 Supported agents: [Claude Code](https://claude.ai/code), [Codex](https://openai.com/codex/), [Cursor](https://cursor.com), [VS Code (GitHub Copilot)](https://code.visualstudio.com/docs/copilot/overview), [Kiro](https://kiro.dev). Install into your agents with `curl -fsSL agents.gitguardian.com | sh` - details below.
