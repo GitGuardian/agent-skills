@@ -99,6 +99,23 @@ curl -fsSL agents.gitguardian.com | sh
 ```
 Detects the agent CLIs on your machine, asks which ones to configure, and installs the skills along with the bundled Developer MCP server for each. To explore all available options, ask your agent: "read agents.gitguardian.com and explain how it works."
 
+The installer resolves the latest published release and installs that git tag rather than `main`, printing the tag it resolved. To pin a specific release yourself:
+
+```bash
+curl -fsSL agents.gitguardian.com | sh -s -- --version v0.5.1
+```
+
+To check the script before running it, a SHA-256 is published beside it and regenerated on every deploy:
+
+```bash
+curl -fsSL agents.gitguardian.com/install.sh -o install.sh
+curl -fsSL agents.gitguardian.com/install.sh.sha256 -o install.sh.sha256
+sha256sum -c install.sh.sha256   # macOS: shasum -a 256 -c
+sh install.sh
+```
+
+Script and digest share an origin, so that check catches a corrupted transfer rather than a compromised origin. The load-bearing guarantee is the immutable, publicly diffable release tag the installer resolves to; the script's own header documents the full trust chain.
+
 <details>
 <summary><strong>Claude Code</strong></summary>
 
