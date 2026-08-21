@@ -63,8 +63,10 @@ workflow. **Announce which branch you took** before composing the deliverable:
   GitGuardian default workflow"*), and do **not** call it "custom" or "configured by your
   workspace." **Set the returned default steps aside — do not render, quote, or use them as
   scaffolding** — and drive the remediation entirely from the doctrine: read
-  [`remediation-doctrine.md`](remediation-doctrine.md) end-to-end and produce the
-  deliverable mode it prescribes, exactly as if the tool had returned nothing. Note that this
+  [`remediation-doctrine.md`](remediation-doctrine.md) (the slim core), load the relevant
+  lifecycle track ([`remediation-lifecycle-tracks.md`](remediation-lifecycle-tracks.md)) and
+  the credential-family file it points to, and produce the deliverable mode it prescribes,
+  exactly as if the tool had returned nothing. Note that this
   fetch reads only the Incident-page touchpoint; custom Pre-commit/Pre-push/Pre-receive
   messages surface via ggshield, not here.
 
