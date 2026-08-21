@@ -1,6 +1,8 @@
 ---
 name: scan-secrets
 description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
+license: MIT
+compatibility: Requires the ggshield CLI, version 1.49.0 or later, installed and authenticated against a GitGuardian account. Needs network access to the GitGuardian API.
 metadata:
   version: "0.5.1" # x-release-please-version
 ---
