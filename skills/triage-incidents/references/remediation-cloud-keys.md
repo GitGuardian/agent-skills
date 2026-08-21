@@ -88,7 +88,6 @@ Map consumers from steps 1–6 to owning teams. Each owner gets a wave in the ro
 
 Canonical AWS reference: <https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html>.
 
-
 ### 9.8 GCP service account JSON
 
 **What it is.** A JSON key file containing a service account's private key, downloaded once from the GCP console at creation time. Authenticates against GCP APIs as the service account; carries whatever IAM bindings that account has been granted. Format: a JSON object with `type: "service_account"`, `project_id`, `private_key_id`, `private_key`, `client_email`, and friends.
@@ -174,7 +173,6 @@ The 10-keys-per-SA limit supports overlap: create new key → distribute → con
 
 Canonical GCP reference: <https://cloud.google.com/iam/docs/keys-create-delete>.
 
-
 ### 9.9 Azure connection strings
 
 **What it is.** A connection string for an Azure resource with credentials embedded. Most common: a Storage account connection string of the form `DefaultEndpointsProtocol=https;AccountName=<acct>;AccountKey=<key>;EndpointSuffix=core.windows.net`. The same pattern recurs with variations for Service Bus, Event Hubs, Cosmos DB, Cache for Redis, and App Configuration — each uses its own resource-specific connection string format but shares the "two named keys for overlap" pattern that makes rotation tractable.
@@ -259,4 +257,3 @@ The dual-key overlap pattern is the standard rollout: rotate `key1` first (the l
 - **Cache for Redis** — *Access keys* in the portal; primary/secondary.
 
 The doctrine flow is identical across these resources; substitute the resource type when applying. Canonical Azure Storage reference: <https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage>.
-

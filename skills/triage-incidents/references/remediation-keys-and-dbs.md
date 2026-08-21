@@ -104,7 +104,6 @@ Map consumers to teams. Sequence the rollout per [§ 10](remediation-doctrine.md
 - Watch the DB's auth-failure log for the leaked role for 24–72h; surfaces consumers that were missed in the dependency map.
 - If you took the *new-role* overlap path, drop or revoke the old role only after the auth-failure log is silent and `pg_stat_activity` shows no connections.
 
-
 ### 9.5 Private keys (RSA / EC / SSH)
 
 **What it is.** An asymmetric key whose *private* half has leaked. Three common subtypes share most of the playbook but differ in where the public half is registered:
@@ -185,7 +184,6 @@ The dependency map for keys is usually *wider* than for passwords because the pu
 - If the key was published in a Certificate Revocation List, verify the CRL has propagated (`openssl crl -in <crl> -noout -text`) or check OCSP status (`openssl ocsp …`).
 - Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
 - For SSH keys, watch the `auth.log` (Linux) / `secure` (RHEL) / SSH audit logs on the previously-trusting servers for failed authentication attempts with the old key — surfaces consumers that were missed.
-
 
 ### 9.11 Symmetric signing / shared secrets
 

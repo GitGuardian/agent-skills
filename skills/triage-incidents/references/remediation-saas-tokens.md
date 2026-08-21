@@ -78,7 +78,6 @@ Map consumers to teams. Fine-grained PATs support multiple active tokens per use
 
 Canonical GitHub reference: <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens>.
 
-
 ### 9.3 Generic API key
 
 **What it is.** The schema applied without service-specific hooks — the long-tail template for any vendor not given a dedicated entry below. Covers most SaaS API keys (vendor X issues `xxx_live_…` style tokens via a dashboard, you paste them into env vars). Use this entry as a thinking template when the specific vendor isn't catalogued.
@@ -114,7 +113,6 @@ If the vendor supports per-key scoping, the new key should be more narrowly scop
   - Vendor-specific JSON with `code: "invalid_api_key"` or similar.
 - Re-scan affected artifacts: `ggshield secret scan path <files> --json`.
 - Watch the vendor's dashboard (request volume, error rate) and the consuming services' logs for `Unauthorized` over the next 24h.
-
 
 ### 9.6 Stripe API keys
 
@@ -165,7 +163,6 @@ Stripe's *Roll key* with an expiry window is the canonical overlap mechanism. Ro
 - Watch Stripe Dashboard's API request logs for failures attributed to the old key; surfaces consumers that didn't pick up the new value before the rollover expired.
 
 Canonical Stripe reference: <https://docs.stripe.com/keys>.
-
 
 ### 9.7 Slack incoming webhooks
 
@@ -218,7 +215,6 @@ No overlap mechanism. Both URLs work until you delete the old; coordinate consum
 - Watch the destination Slack channel for missing messages (alert silence is a *symptom*, not a great verification — pair with the explicit probe above).
 
 Canonical Slack reference: <https://api.slack.com/messaging/webhooks>.
-
 
 ### 9.10 OAuth refresh tokens
 
@@ -282,4 +278,3 @@ Owners are not other teams — they're *end users*. The coordination framework s
 - Watch your application's auth-failure logs for users hitting re-authorization flows over the next 7–30 days; this is the natural signal that affected users are reconnecting (or churning silently if you don't have the comms in place — plan the user-facing comms before the revocation).
 
 **Special case: token-leak detected by an audit, user not yet aware.** Revoking forces a visible re-auth prompt. Coordinate with product / support before revoking en masse so the comms reach affected users at the same time as the prompt does.
-
