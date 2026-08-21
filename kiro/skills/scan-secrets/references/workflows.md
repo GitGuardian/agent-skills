@@ -1,9 +1,6 @@
----
-name: scan-workflows
-description: CLI command variants for ggshield secret scanning — scanning the working tree, full git history, a specific commit or commit range, staged changes, Docker images, PyPI packages — plus required flags (`--json`, `-r -y`), exit-code handling, and CI integration. Load when running a `ggshield secret scan` command, deciding which scan variant fits the situation, building a CI gate, or installing pre-commit / pre-push hooks.
----
+# ggshield scanning workflows
 
-# GGShield Scanning Workflows
+Heavy reference loaded on demand from `SKILL.md`. Covers each scan command variant, expected JSON output, and CI integration.
 
 > **Recursive scans need `-y`.** Every `ggshield secret scan path -r ...` command triggers an interactive `Confirm recursive scan.` prompt. Agents cannot respond to it, so always pair `-r` with `-y` (auto-confirm). All recursive examples below include `-y`.
 
@@ -24,11 +21,13 @@ ggshield secret scan repo . --json
 **What it does:** Scans every commit in the repository's git history, not just the current working tree. This catches secrets that were committed and later deleted.
 
 **Expected output (no findings):**
+
 ```json
 {"id": "...", "extra_info": null, "results": [], "scan_duration": 1.23, "too_many_documents": false}
 ```
 
 **Expected output (findings):**
+
 ```json
 {
   "results": [
@@ -92,6 +91,7 @@ ggshield secret scan pre-commit --json
 ```
 
 **Exit codes:**
+
 - `0` — No secrets found, safe to commit
 - `1` — Secrets detected, commit should be blocked
 
@@ -182,7 +182,7 @@ Requires `docker` to be installed and running.
 - **Git hooks** (pre-commit / pre-push) — fire on `git commit` / `git push`. Block secrets at version-control time regardless of which agent (or human) wrote the code.
 - **AI agent hooks** (Claude Code, Cursor, Copilot) — fire *inside* the agent. Scan the user's prompt before it goes to the model, scan commands / file reads / MCP calls before the agent runs them, and scan tool outputs after execution. Catches secrets the agent is about to write or about to read into context. Requires ggshield 1.49.0+.
 
-When recommending hooks to a user, default to suggesting both: git hooks for the repo, plus the agent hook matching the tool they're using.
+When recommending hooks to a user, default to suggesting both: git hooks for the repo, plus the agent hook matching the tool they're using right now.
 
 ### Git hooks
 
@@ -220,7 +220,7 @@ ggshield install -t copilot -m local
 
 ggshield merges its entries into any existing config without touching other hooks. Pass `--force` to overwrite previously-installed ggshield entries that the user has customized.
 
-> Kiro is not on the supported tool list yet. If the user is *also* running Claude Code, Cursor, or Copilot alongside Kiro, recommend installing the matching agent hook there. See https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools for the up-to-date list.
+> See https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools for the up-to-date list of supported tools.
 
 ### Uninstall
 
@@ -244,6 +244,8 @@ For AI agent hooks, remove the `ggshield` entries from the tool's config file ma
 |---|---|
 | Full repo audit (git history) | `ggshield secret scan repo . --json` |
 | Scan current files | `ggshield secret scan path -r -y . --json` |
+| Install git pre-commit hook | `ggshield install --mode local` |
+| Install Claude Code agent hook | `ggshield install -t claude-code -m global` |
 | Scan a single file | `ggshield secret scan path <file> --json` |
 | Scan staged changes | `ggshield secret scan pre-commit --json` |
 | Scan a commit range | `ggshield secret scan commit-range HEAD~5..HEAD --json` |
@@ -254,7 +256,5 @@ For AI agent hooks, remove the `ggshield` entries from the tool's config file ma
 | Only report high+ severity | `ggshield secret scan path -r -y . --minimum-severity high` |
 | Skip already-known incidents | `ggshield secret scan path -r -y . --ignore-known-secrets` |
 | Write results to file | `ggshield secret scan path -r -y . --json --output results.json` |
-| Install git pre-commit hook | `ggshield install --mode local` |
-| Install Claude Code agent hook | `ggshield install -t claude-code -m global` |
 | Check auth status | `ggshield api-status` |
 | See all scan options | `ggshield secret scan --help` |

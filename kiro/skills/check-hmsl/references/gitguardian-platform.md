@@ -1,11 +1,6 @@
----
-name: gitguardian-platform
-description: Shared cross-power reference for any GitGuardian / ggshield work — the public docs URL pattern (llms.txt + appending .md to HTML pages for Markdown), auth recovery when an action fails with 403 Forbidden / Insufficient permissions (logout + login --scopes), the headless --method token fallback, instance URLs (SaaS US / EU / self-hosted), CI patterns with GITGUARDIAN_API_KEY, and the role/scope matrix for ggshield commands. Load whenever a ggshield action errors with permission or scope problems, when the user shares a docs.gitguardian.com URL, when first-time configuring against a non-US instance, or when consulting GitGuardian's public documentation.
----
-
 # GitGuardian Platform Reference
 
-Cross-cutting platform info for any `ggshield` workflow. Load this whenever an action hits an auth/scope problem, when the user shares a `docs.gitguardian.com` URL, or when first-time configuring against a non-US GitGuardian instance.
+Shared, cross-skill reference for any skill in this repo that interacts with GitGuardian or `ggshield`. SKILL.md files point here so platform-level guidance (public docs URL pattern, auth/scope recovery, instance URLs, headless setup) lives in one place.
 
 ## Public Documentation
 
@@ -17,7 +12,7 @@ GitGuardian's public docs are at **https://docs.gitguardian.com**. The AI-agent 
 https://docs.gitguardian.com/internal-repositories-monitoring/dashboard.md
 ```
 
-Use this instead of fetching the HTML page — it saves tokens, avoids HTML parsing, and returns the canonical content. Applies to every page on `docs.gitguardian.com`.
+Use this instead of `WebFetch` against the HTML page — it saves tokens, avoids HTML parsing, and returns the canonical content. Applies to every page on `docs.gitguardian.com`.
 
 ## Auth: Adding a missing scope (403 Forbidden / Insufficient permissions)
 
@@ -44,13 +39,15 @@ The `Token scopes:` line should now list the new scope alongside `scan`.
 
 ## Headless environments (no browser)
 
-When the OAuth flow can't open a browser (remote SSH, sandboxed dev container, devcontainer image), use `--method token`:
+When the OAuth flow can't open a local browser (remote SSH, sandboxed dev container, devcontainer image), lead with out-of-band OAuth — don't reach for a manually-created token first:
 
-1. User creates a Personal Access Token at **https://dashboard.gitguardian.com/api/personal-access-tokens** (or the equivalent path on their instance) with the required scopes selected.
-2. User runs `ggshield auth login --method token` and pastes the token at the prompt.
+1. User runs `ggshield auth login --method oob` (ggshield 1.51.0+). `ggshield` prints an authorization URL. To add a scope, append `--scopes <scope>` (e.g. `honeytokens:write`).
+2. User opens the URL on any device with a browser, signs in, and pastes the code shown by the dashboard back at the prompt.
 3. Verify with `ggshield api-status`.
 
-`--method token` does not need a browser. It is the fallback when the OAuth flow can't run; the OAuth flow with `--scopes` is preferred when a browser is available because the agent can drive it end-to-end.
+If `oob` is unavailable (ggshield < 1.51.0, or an instance that doesn't support it), fall back to token auth: the user creates a Personal Access Token at **https://dashboard.gitguardian.com/api/personal-access-tokens** (or the equivalent path on their instance) with the required scopes selected, then runs `ggshield auth login --method token` and pastes the token at the prompt.
+
+Neither method needs a local browser. Prefer `oob` over a hand-created token: it carries no manual PAT step and reuses the OAuth flow end-to-end. When a local browser *is* available, plain `ggshield auth login` (optionally with `--scopes`) is preferred because the agent can drive it without the user leaving the terminal.
 
 ## GitGuardian Instances
 

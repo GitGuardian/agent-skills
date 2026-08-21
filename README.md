@@ -281,7 +281,7 @@ agent-skills/
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
 |   |-- install-hooks/      # install ggshield as a git or AI-assistant hook
 |   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
-|-- kiro/                   # Kiro power and steering files
+|-- kiro/                   # Kiro power (Agent Plugins format: plugin.json + skills/ + mcp.json)
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
 ```
