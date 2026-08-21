@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/GitGuardian/agent-skills/compare/v0.5.1...v0.6.0) (2026-08-21)
+
+
+### Features
+
+* declare license and compatibility on every skill ([#105](https://github.com/GitGuardian/agent-skills/issues/105)) ([b02fb41](https://github.com/GitGuardian/agent-skills/commit/b02fb414f3b421e1e91c8132b21dc9dda455c0f2))
+* prioritize package managers and standalone build over pip/pipx ([#82](https://github.com/GitGuardian/agent-skills/issues/82)) ([3e3664f](https://github.com/GitGuardian/agent-skills/commit/3e3664fa78bf374d80a7f0863b2d1c333086a90c))
+
+
+### Bug Fixes
+
+* **kiro:** migrate power to the Agent Plugins format with a skills mirror ([#107](https://github.com/GitGuardian/agent-skills/issues/107)) ([373bffe](https://github.com/GitGuardian/agent-skills/commit/373bffe4a9d105fb5333ea8b4881bce655260c3d))
+
 ## [0.5.1](https://github.com/GitGuardian/agent-skills/compare/v0.5.0...v0.5.1) (2026-08-20)
 
 
