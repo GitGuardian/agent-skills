@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "gitguardian",
+  "version": "0.5.1",
+  "description": "Find hardcoded secrets (API keys, tokens, database URLs, and 700+ other types) across files, git history, commits, Docker images, and PyPI packages with the ggshield CLI. Also plants honeytokens, installs git and AI-assistant hooks, checks known secrets against public-leak data, inventories credentials across a whole machine, and triages secret incidents in the dashboard. Triggers proactively when writing code that handles credentials or preparing to publish.",
+  "author": {
+    "name": "GitGuardian",
+    "email": "support@gitguardian.com",
+    "url": "https://www.gitguardian.com"
+  },
+  "homepage": "https://github.com/GitGuardian/agent-skills",
+  "repository": "https://github.com/GitGuardian/agent-skills",
+  "license": "MIT",
+  "keywords": ["ggshield", "gitguardian", "secrets", "credentials", "honeytoken", "dotenv", "secret-scanning"]
+}

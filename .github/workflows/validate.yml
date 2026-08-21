@@ -125,15 +125,45 @@ jobs:
             skills-ref validate "$d"
           done
 
-      - name: Check Kiro POWER.md has frontmatter
+      - name: Check Kiro power manifests and skills mirror the skills/ tree
         run: |
           set -e
-          F=kiro/POWER.md
-          test -f "$F" || { echo "missing $F"; exit 1; }
-          head -1 "$F" | grep -q '^---$' || { echo "missing frontmatter in $F"; exit 1; }
-          for k in name displayName description keywords; do
-            grep -q "^$k:" "$F" || { echo "missing '$k:' in $F"; exit 1; }
+          # plugin.json manifest is the Agent Plugins entry point
+          test -f kiro/plugin.json || { echo "missing kiro/plugin.json"; exit 1; }
+          python3 - <<'PY'
+          import json
+          p = json.load(open('kiro/plugin.json'))
+          for k in ("$schema", "name", "description"):
+              assert p.get(k), f"missing {k} in kiro/plugin.json"
+          assert p["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", "wrong $schema"
+          print("kiro plugin.json OK")
+          PY
+          # mcp.json points at the hosted server (same as the other client configs)
+          test -f kiro/mcp.json || { echo "missing kiro/mcp.json"; exit 1; }
+          python3 - <<'PY'
+          import json
+          m = json.load(open('kiro/mcp.json'))
+          assert "GitGuardian" in m.get("mcpServers", {}), "GitGuardian server missing from kiro/mcp.json"
+          print("kiro mcp.json OK")
+          PY
+          # Every skill in skills/ must have a mirror under kiro/skills/ with identical
+          # SKILL.md + references/ (except the release-please version line, which only
+          # the skills/ originals carry).
+          for s in skills/*/; do
+            name=$(basename "$s")
+            test -f "kiro/skills/$name/SKILL.md" || { echo "kiro/skills/$name/SKILL.md missing"; exit 1; }
+            diff <(sed 's/ # x-release-please-version//' "$s/SKILL.md") "kiro/skills/$name/SKILL.md" \
+              || { echo "kiro/skills/$name/SKILL.md drifted from skills/$name/SKILL.md"; exit 1; }
+            if [ -d "$s/references" ]; then
+              for r in "$s"/references/*.md; do
+                b=$(basename "$r")
+                test -f "kiro/skills/$name/references/$b" || { echo "kiro/skills/$name/references/$b missing"; exit 1; }
+                diff "$r" "kiro/skills/$name/references/$b" \
+                  || { echo "kiro/skills/$name/references/$b drifted"; exit 1; }
+              done
+            fi
           done
+          echo "kiro skills mirror OK"
 
       - name: Run claude plugin validate
         # Runs the same validator Anthropic's community-marketplace

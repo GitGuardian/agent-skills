@@ -28,6 +28,7 @@ skills/<name>/         # one folder per skill (folder name = SKILL.md frontmatte
   SKILL.md             #   what the agent reads first
   references/<topic>.md #  long-form, loaded on demand; shared refs duplicated per skill
   evals/               #   evals.json + targets.json + files/ fixtures (scan-secrets, check-hmsl)
+kiro/                  #   Kiro power (Agent Plugins format): plugin.json + skills/ mirror + mcp.json
 docs/maintainers/      # task-gated reference for working ON this repo (see bottom of this file)
 README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
