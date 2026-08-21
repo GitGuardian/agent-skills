@@ -1,6 +1,8 @@
 ---
 name: create-honeytokens
 description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around .env.example, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
+license: MIT
+compatibility: Requires the ggshield CLI authenticated against a GitGuardian workspace, a Manager access level or higher, and a token carrying the honeytokens:write scope. Not available on the Free plan.
 metadata:
   version: "0.5.1" # x-release-please-version
 ---
