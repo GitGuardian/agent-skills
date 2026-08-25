@@ -5,11 +5,21 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege. Every step here is a read-only validation; nothing
+# writes back to the repo. This matters more than usual because two steps
+# below install code from outside this repo (the agent-skills spec
+# validator and the Claude Code CLI) — with a read-only token, a takeover
+# of either upstream cannot push to this repository.
+permissions:
+  contents: read
+
 jobs:
   manifests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Actions are pinned to a commit SHA, not a moving tag. Dependabot
+      # bumps these (see dependabot.yml).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Validate JSON syntax
         run: |
@@ -110,13 +120,17 @@ jobs:
       # checks above miss — e.g., unquoted colons in description fields,
       # uppercase letters in the name, consecutive hyphens, etc.
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
       - name: Install agent-skills spec validator
+        # Pinned to a commit, not to the default branch: this is a
+        # third-party repo and an unpinned install would run whatever HEAD
+        # happens to be at the time CI runs. Bump deliberately when the
+        # spec moves.
         run: |
-          pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+          pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref"
 
       - name: Validate every skill against the agent-skills spec
         run: |
@@ -173,7 +187,11 @@ jobs:
         # submission pipeline uses. Local file-system check only — no
         # auth or network access required.
         # See: https://code.claude.com/docs/en/plugins#submit-your-plugin-to-the-community-marketplace
+        #
+        # Pinned rather than `@latest` — `@latest` means an npm-side
+        # compromise lands in CI on the next run with no diff to review.
+        # Bump this when you want a newer validator.
         run: |
           set -e
-          npm install -g @anthropic-ai/claude-code@latest
+          npm install -g @anthropic-ai/claude-code@2.1.245
           claude plugin validate .
