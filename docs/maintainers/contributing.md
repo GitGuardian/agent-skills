@@ -42,7 +42,7 @@ for f in skills/*/references/gitguardian-platform.md; do shasum "$f"; done
 
 All copies of a given file should share the same checksum after your edit. If you need a *new* duplicated reference (some content that genuinely applies to two or more skills), copy it into each consuming skill the same way.
 
-`kiro/skills/` is a **mirror** of `skills/` for the Kiro distribution channel (Agent Plugins format). It is a build-free copy — SKILL.md and `references/` are duplicated verbatim, except the release-please `# x-release-please-version` annotation, which the mirror strips. CI enforces parity in `validate.yml` (`Check Kiro power manifests and skills mirror the skills/ tree`): when you edit a skill, either re-copy the changed files into `kiro/skills/` or rely on CI to fail the PR with the exact diff.
+`kiro/skills/` is a **mirror** of `skills/` for the Kiro distribution channel (Agent Plugins format). It is a build-free copy — SKILL.md and `references/` are duplicated verbatim, annotation included, so Release Please bumps `metadata.version` in both trees (the parity check strips the `# x-release-please-version` comment from both sides before diffing, so only the version *value* has to match). CI enforces parity in `validate.yml` (`Check Kiro power manifests and skills mirror the skills/ tree`): when you edit a skill, either re-copy the changed files into `kiro/skills/` or rely on CI to fail the PR with the exact diff.
 
 ## Future scaling
 

@@ -53,6 +53,11 @@
           "jsonpath": "$.version"
         },
         {
+          "type": "json",
+          "path": "kiro/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
           "type": "generic",
           "path": "skills/scan-secrets/SKILL.md"
         },
@@ -75,6 +80,30 @@
         {
           "type": "generic",
           "path": "skills/triage-incidents/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/scan-secrets/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/create-honeytokens/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/scan-machine/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/check-hmsl/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/install-hooks/SKILL.md"
+        },
+        {
+          "type": "generic",
+          "path": "kiro/skills/triage-incidents/SKILL.md"
         }
       ]
     }

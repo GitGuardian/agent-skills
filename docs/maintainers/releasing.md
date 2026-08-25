@@ -4,21 +4,19 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ## Source of truth
 
-The plugin version lives in **eleven files** that must move together:
+The plugin version lives in **nineteen files** that must move together:
 
-- `package.json` → `version`
-- `.claude-plugin/plugin.json` → `version`
-- `.claude-plugin/marketplace.json` → `metadata.version`
-- `.cursor-plugin/plugin.json` → `version`
-- `.cursor-plugin/marketplace.json` → `metadata.version`
-- `.codex-plugin/plugin.json` → `version`
-- `skills/scan-secrets/SKILL.md` → `metadata.version` (via `# x-release-please-version` annotation)
-- `skills/create-honeytokens/SKILL.md` → `metadata.version` (same)
-- `skills/scan-machine/SKILL.md` → `metadata.version` (same)
-- `skills/check-hmsl/SKILL.md` → `metadata.version` (same)
-- `skills/install-hooks/SKILL.md` → `metadata.version` (same)
+| File(s) | Field |
+|---|---|
+| `package.json` | `version` |
+| `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.codex-plugin/plugin.json`, `kiro/plugin.json` | `version` |
+| `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json` | `metadata.version` |
+| `skills/<name>/SKILL.md` — all six skills | `metadata.version`, via the `# x-release-please-version` annotation |
+| `kiro/skills/<name>/SKILL.md` — all six, the Kiro mirror | same |
 
-All eleven are registered in `release-please-config.json` (the manifests as `json` extra-files, the five SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+All nineteen are registered in `release-please-config.json` (the seven manifests as `json` extra-files, the twelve SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+
+The Kiro tree is a hand-maintained mirror of `skills/`, so it has to be registered too — `validate.yml` diffs the two trees on every PR and fails on any mismatch, version line included. Forgetting to register a new mirror file turns every future release PR red.
 
 ## When to bump
 
