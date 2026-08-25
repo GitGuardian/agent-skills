@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/GitGuardian/agent-skills/compare/v0.6.0...v0.6.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **kiro:** register the Kiro mirror with Release Please ([#109](https://github.com/GitGuardian/agent-skills/issues/109)) ([c6eb1b6](https://github.com/GitGuardian/agent-skills/commit/c6eb1b617014e767c7f2b50e18ba85b599fc14fd))
+
 ## [0.6.0](https://github.com/GitGuardian/agent-skills/compare/v0.5.1...v0.6.0) (2026-08-21)
 
 
