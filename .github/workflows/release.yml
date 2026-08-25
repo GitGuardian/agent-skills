@@ -34,8 +34,6 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      # Pinned to a commit SHA, not a moving tag — this job holds a
-      # write-scoped token. Dependabot bumps it (see dependabot.yml).
       - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
         id: release
         with:

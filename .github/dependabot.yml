@@ -1,9 +1,9 @@
-# Keeps the pinned action SHAs and the npm dev dependencies moving.
+# Why the workflows pin actions to a commit SHA: a tag can be force-moved
+# by whoever owns the action's repo. The cost is that pins go stale, so
+# Dependabot owns the bumps and each one lands as a reviewable PR.
 #
-# Pinning actions to a commit SHA (see the workflow files) is what stops a
-# force-moved upstream tag from silently changing what runs in CI. The cost
-# is that pins go stale, so Dependabot owns the bumps and each one arrives
-# as a reviewable PR.
+# This does not reach the pins inside `run:` blocks (validate.yml installs
+# the spec validator and the Claude Code CLI). Those are bumped by hand.
 version: 2
 updates:
   - package-ecosystem: github-actions

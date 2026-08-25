@@ -4,8 +4,8 @@ on:
   push:
   pull_request:
 
-# Least privilege. This job only reads the tree and talks to the
-# GitGuardian API; it never writes back to the repo.
+# Least privilege: reads the tree, talks to the GitGuardian API, never
+# writes back.
 permissions:
   contents: read
 
@@ -13,9 +13,6 @@ jobs:
   secret-scan:
     runs-on: ubuntu-latest
     steps:
-      # Actions are pinned to a commit SHA, not a moving tag: a tag can be
-      # force-moved by whoever controls the action's repo, and this job runs
-      # with a repo-scoped token. Dependabot bumps these (see dependabot.yml).
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
