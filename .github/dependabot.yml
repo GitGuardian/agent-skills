@@ -1,0 +1,25 @@
+# Why the workflows pin actions to a commit SHA: a tag can be force-moved
+# by whoever owns the action's repo. The cost is that pins go stale, so
+# Dependabot owns the bumps and each one lands as a reviewable PR.
+#
+# This does not reach the pins inside `run:` blocks (validate.yml installs
+# the spec validator and the Claude Code CLI). Those are bumped by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore"
+    labels:
+      - dependencies
