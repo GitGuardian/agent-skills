@@ -14,7 +14,7 @@ The plugin version lives in **nineteen files** that must move together:
 | `skills/<name>/SKILL.md` — all six skills | `metadata.version`, via the `# x-release-please-version` annotation |
 | `kiro/skills/<name>/SKILL.md` — all six, the Kiro mirror | same |
 
-All nineteen are registered in `release-please-config.json` (the seven manifests as `json` extra-files, the twelve SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`) and a GitHub Release. Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
+All nineteen are registered in `release-please-config.json` (the seven manifests as `json` extra-files, the twelve SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`), a GitHub Release, and the rolling `stable` tag ([below](#the-rolling-stable-tag)). Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
 The Kiro tree is a hand-maintained mirror of `skills/`, so it has to be registered too — `validate.yml` diffs the two trees on every PR and fails on any mismatch, version line included. Forgetting to register a new mirror file turns every future release PR red.
 
@@ -80,6 +80,26 @@ git commit --allow-empty -m "chore: trigger CI" && git push
 ```
 
 …or run the relevant workflow manually from the Actions tab. If release cadence grows, swap the workflow to use a GitHub App or PAT (replace `${{ secrets.GITHUB_TOKEN }}` with the app/PAT token).
+
+## The rolling `stable` tag
+
+Alongside the immutable `vX.Y.Z` tags, the release workflow maintains one mutable tag: `stable`, force-moved onto every published release.
+
+It exists because downstream catalogs need a fixed string to write into their own config. GitHub's "Latest" is a flag on the Release object — resolvable through the API (`GET /repos/GitGuardian/agent-skills/releases/latest`) or the `/releases/latest` redirect — but there is no git ref called `latest` to point a clone at. Without a rolling tag, anyone who lists the plugin has to hard-code `v0.6.0` and edit it by hand on every release. Neovim solves this the same way with its own `stable` tag, as does GitHub with the major-version tags on its Actions.
+
+Two consequences to keep in mind:
+
+- **`stable` is mutable by design.** What sits behind it changes without the consumer touching anything. That is the whole point, and it means anyone pointing at `stable` is trusting whatever we publish next.
+- **Pinning still works.** The `vX.Y.Z` tags are never moved or deleted. `stable` is additive.
+
+We do not publish rolling major tags (`v0`, later `v1`). Pre-1.0 a minor bump can break things, so `v0` would carry a compatibility promise we cannot keep. `stable` promises only "the most recent release", which we can.
+
+To create the tag for the first time, or to repair it after a bad release:
+
+```bash
+git tag -f stable v0.6.0
+git push -f origin refs/tags/stable
+```
 
 ## What does NOT need a version bump
 

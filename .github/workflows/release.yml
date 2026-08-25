@@ -11,7 +11,8 @@ name: release
 #
 # Reviewing and merging that release PR triggers this workflow again;
 # this second run sees the just-merged version bump, creates a `vX.Y.Z`
-# git tag, and publishes a GitHub Release with the changelog as notes.
+# git tag, and publishes a GitHub Release with the changelog as notes,
+# then force-moves the rolling `stable` tag onto it.
 #
 # Auth note: we use the default `GITHUB_TOKEN`. The release PR will be
 # authored by `github-actions[bot]`, which means CI does not run on it
@@ -39,3 +40,30 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Rolling `stable` tag.
+      #
+      # Release Please only ever creates immutable `vX.Y.Z` tags. Downstream
+      # catalogs that need a *fixed string* to point at (the Claude plugin
+      # marketplace, for one) cannot use GitHub's "Latest" badge — that is a
+      # flag on the Release object, resolvable through the API, but it is not
+      # a git ref. So we maintain one: `stable` is force-moved onto every
+      # published release, the same way Neovim moves its `stable` tag and
+      # GitHub moves the major-version tags on its own Actions.
+      #
+      # Consumers who want to pin still can — the `vX.Y.Z` tags stay
+      # immutable. `stable` is additive.
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          fetch-depth: 0
+
+      - name: Move the `stable` tag onto the new release
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f stable "$TAG"
+          git push -f origin refs/tags/stable
