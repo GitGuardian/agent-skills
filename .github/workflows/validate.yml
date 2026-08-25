@@ -92,6 +92,7 @@ jobs:
           test "$(jq -r '.version' .cursor-plugin/plugin.json)" = "$VERSION"
           test "$(jq -r '.metadata.version' .cursor-plugin/marketplace.json)" = "$VERSION"
           test "$(jq -r '.version' .codex-plugin/plugin.json)" = "$VERSION"
+          test "$(jq -r '.version' kiro/plugin.json)" = "$VERSION"
 
       - name: Check each skill has SKILL.md with frontmatter
         run: |
@@ -147,12 +148,14 @@ jobs:
           print("kiro mcp.json OK")
           PY
           # Every skill in skills/ must have a mirror under kiro/skills/ with identical
-          # SKILL.md + references/ (except the release-please version line, which only
-          # the skills/ originals carry).
+          # SKILL.md + references/. The `# x-release-please-version` annotation is
+          # stripped from both sides before diffing, so the comment itself may differ
+          # but the version value must match — Release Please bumps both trees.
           for s in skills/*/; do
             name=$(basename "$s")
             test -f "kiro/skills/$name/SKILL.md" || { echo "kiro/skills/$name/SKILL.md missing"; exit 1; }
-            diff <(sed 's/ # x-release-please-version//' "$s/SKILL.md") "kiro/skills/$name/SKILL.md" \
+            diff <(sed 's/ # x-release-please-version//' "$s/SKILL.md") \
+                 <(sed 's/ # x-release-please-version//' "kiro/skills/$name/SKILL.md") \
               || { echo "kiro/skills/$name/SKILL.md drifted from skills/$name/SKILL.md"; exit 1; }
             if [ -d "$s/references" ]; then
               for r in "$s"/references/*.md; do
