@@ -4,6 +4,17 @@
 #
 # This does not reach the pins inside `run:` blocks (validate.yml installs
 # the spec validator and the Claude Code CLI). Those are bumped by hand.
+#
+# Noise budget: minor and patch bumps are ignored, and whatever is left
+# arrives as one grouped PR per ecosystem rather than one per dependency.
+# The trade-off is deliberate — a SHA pin now sits on its release for the
+# whole life of a major, and npm here is dev tooling only (vitest and
+# friends, no runtime deps), so a missed patch reaches CI and nothing we
+# ship. Majors are the bumps that need a human to read a changelog anyway.
+#
+# `groups` covers security-update PRs too, via `applies-to`, so a batch of
+# advisories lands as one PR. The alerts themselves are not configured
+# here — nothing in this file changes what appears in the Security tab.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -14,6 +25,20 @@ updates:
       prefix: "ci"
     labels:
       - dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   - package-ecosystem: npm
     directory: "/"
@@ -23,3 +48,17 @@ updates:
       prefix: "chore"
     labels:
       - dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    groups:
+      dev-tooling:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      dev-tooling-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

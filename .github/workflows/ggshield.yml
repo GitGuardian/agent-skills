@@ -11,6 +11,13 @@ permissions:
 
 jobs:
   secret-scan:
+    # Runs triggered by Dependabot read secrets from the repository's
+    # Dependabot store, not the Actions store, so `GITGUARDIAN_API_KEY`
+    # arrives empty and ggshield fails to authenticate. Skip instead of
+    # copying the key into a second store: these branches only touch
+    # dependency manifests and workflow pins, and the push scan on `main`
+    # covers the content once the bump merges.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
