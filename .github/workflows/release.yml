@@ -12,7 +12,8 @@ name: release
 # Reviewing and merging that release PR triggers this workflow again;
 # this second run sees the just-merged version bump, creates a `vX.Y.Z`
 # git tag, and publishes a GitHub Release with the changelog as notes,
-# then force-moves the rolling `stable` tag onto it.
+# then force-moves the rolling `stable` tag onto it and asserts the
+# remote agrees before the run goes green.
 #
 # Auth note: we use the default `GITHUB_TOKEN`. The release PR will be
 # authored by `github-actions[bot]`, which means CI does not run on it
@@ -44,12 +45,14 @@ jobs:
       # Rolling `stable` tag.
       #
       # Release Please only ever creates immutable `vX.Y.Z` tags. Downstream
-      # catalogs that need a *fixed string* to point at (the Claude plugin
-      # marketplace, for one) cannot use GitHub's "Latest" badge — that is a
-      # flag on the Release object, resolvable through the API, but it is not
-      # a git ref. So we maintain one: `stable` is force-moved onto every
-      # published release, the same way Neovim moves its `stable` tag and
-      # GitHub moves the major-version tags on its own Actions.
+      # consumers that need a *fixed git ref* to point at — first among them
+      # the install script at agents.gitguardian.com, which fetches this repo
+      # at `stable`, plus catalogs like the Claude plugin marketplace — cannot
+      # use GitHub's "Latest" badge: that is a flag on the Release object,
+      # resolvable through the API, but it is not a git ref. So we maintain
+      # one: `stable` is force-moved onto every published release, the same
+      # way Neovim moves its `stable` tag and GitHub moves the major-version
+      # tags on its own Actions.
       #
       # Consumers who want to pin still can — the `vX.Y.Z` tags stay
       # immutable. `stable` is additive.
@@ -67,3 +70,38 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f stable "$TAG"
           git push -f origin refs/tags/stable
+
+      # Assertion, not a re-run of the move: re-read the *remote* and fail
+      # the workflow unless `stable` resolves to the same commit as the
+      # newest vX.Y.Z tag. Catches a force-push silently blocked by a tag
+      # protection rule, a stray hand-made version tag that outranks the one
+      # just published, or any other drift the install script would
+      # otherwise serve to users as "stable".
+      - name: Assert `stable` matches the newest release tag
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          git fetch origin --tags --force
+
+          newest=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ "$newest" != "$TAG" ]; then
+            echo "::error::Published tag $TAG is not the newest release tag on the remote ($newest is)."
+            exit 1
+          fi
+
+          release_sha=$(git rev-parse "$TAG^{commit}")
+          # Prefer the peeled entry (annotated tag); fall back to the plain
+          # ref (lightweight tag, which is what the move step creates).
+          stable_sha=$(git ls-remote --tags origin \
+            | awk '$2 == "refs/tags/stable^{}" { peeled = $1 } $2 == "refs/tags/stable" { plain = $1 } END { print (peeled != "" ? peeled : plain) }')
+
+          if [ -z "$stable_sha" ]; then
+            echo "::error::No refs/tags/stable on the remote after the move step."
+            exit 1
+          fi
+          if [ "$stable_sha" != "$release_sha" ]; then
+            echo "::error::refs/tags/stable points at $stable_sha but $TAG is $release_sha."
+            exit 1
+          fi
+          echo "stable == $TAG ($release_sha)"
