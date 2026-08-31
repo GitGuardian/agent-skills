@@ -1,0 +1,87 @@
+# Advisory skill-aware security scan (NVIDIA SkillSpector, Apache-2.0).
+#
+# Advisory ONLY, never a gate: OWASP's research on skill scanners shows
+# static analysis is bypassable, so a passing scan proves nothing and a
+# failing one still needs a human read. On top of that, these skills
+# *teach* secret handling — credential paths, shell commands, and
+# deliberately fake secrets in eval fixtures are their subject matter —
+# so pattern-based findings here are largely expected. The job therefore
+# always succeeds; per-skill scores land in the run summary, the full
+# report in an artifact, and a warning annotation flags runs with
+# findings. A human decides what, if anything, to act on.
+name: skillspector
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: the install step below pulls code from outside this
+# repo, so a read-only token means a takeover of upstream still cannot
+# push back.
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: SkillSpector scan (advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install SkillSpector
+        # Pinned to the commit tagged v2.11.0: unpinned, this runs
+        # whatever HEAD is at the time CI fires. Dependabot cannot see
+        # inside `run:`, so bump this by hand when upstream releases.
+        run: |
+          pip install "skillspector @ git+https://github.com/NVIDIA/skillspector.git@b7241089d7ec15d8b30df980dacbb428214732b9"
+
+      - name: Scan skills (static analysis, advisory)
+        # --no-llm: static checks only — no API key in CI, deterministic.
+        # --recursive: each skills/<name>/ with a SKILL.md scans as its
+        # own skill. kiro/skills/ is skipped: validate.yml enforces it is
+        # a byte-identical mirror of skills/, so scanning it twice adds
+        # nothing. Exit 1 means a skill scored above the risk threshold,
+        # exit 2 a scanner error — both are reported, neither fails the
+        # job (see the header comment for why).
+        run: |
+          mkdir -p skillspector-out
+          scan_exit=0
+          skillspector scan skills/ --recursive --no-llm \
+            --format json --output skillspector-out/report.json || scan_exit=$?
+
+          {
+            echo "## SkillSpector scan (advisory)"
+            echo ""
+            if [ -f skillspector-out/report.json ]; then
+              echo "| Skill | Risk score | Severity | Findings | Recommendation |"
+              echo "|---|---|---|---|---|"
+              jq -r '.skills[] | "| \(.name) | \(.risk_score)/100 | \(.risk_severity) | \(.finding_count) | \(.risk_assessment.recommendation) |"' \
+                skillspector-out/report.json
+              echo ""
+              echo "Full report: see the \`skillspector-report\` artifact on this run."
+            else
+              echo "Scanner produced no report (exit $scan_exit) — check the step log."
+            fi
+            echo ""
+            echo "Advisory only. Static scanners are bypassable, and these skills"
+            echo "legitimately discuss credentials and shell commands, so findings"
+            echo "need a human read — this job never gates a merge."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$scan_exit" -ne 0 ]; then
+            echo "::warning::SkillSpector exited $scan_exit (findings above threshold, or scanner error). Advisory only — see the run summary and the skillspector-report artifact."
+          fi
+
+      - name: Upload full report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: skillspector-report
+          path: skillspector-out/report.json
+          if-no-files-found: warn
+          retention-days: 30
