@@ -23,5 +23,5 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
 
-      - name: Run install-flow sanity tests
-        run: npm run test:sanity
+      - name: Run test suite (install-flow sanity + skill-markdown policy)
+        run: npm test

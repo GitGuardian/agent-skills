@@ -38,18 +38,18 @@ If the user already runs the **mise** tool manager (`mise --version`), that is a
 
 ### 2. Official install script (standalone build, no Python)
 
-When no native package manager is configured, use GitGuardian's install script. It detects the OS and architecture and installs the standalone build — no Python required. It covers macOS (Intel and Apple Silicon) and glibc Linux on both x86_64 and ARM64 (`aarch64`); on Windows use the PowerShell variant. Like any remote installer, do not pipe it straight to a shell: download it first, let the user inspect it, then run it only after they confirm.
+When no native package manager is configured, use GitGuardian's install script. It detects the OS and architecture and installs the standalone build — no Python required. It covers macOS (Intel and Apple Silicon) and glibc Linux on both x86_64 and ARM64 (`aarch64`); on Windows use the PowerShell variant. Like any remote installer, do not pipe it straight to a shell: download it first, let the user inspect it, then run it only after they confirm. The URLs pin the script to a ggshield release tag rather than `main`, so the version the user inspects is immutable; the script itself always installs the latest ggshield release.
 
 ```bash
 # macOS / Linux — download, inspect, then run
-curl -sSfL https://raw.githubusercontent.com/GitGuardian/ggshield/main/scripts/install/install.sh -o /tmp/ggshield-install.sh
+curl -sSfL https://raw.githubusercontent.com/GitGuardian/ggshield/v1.54.0/scripts/install/install.sh -o /tmp/ggshield-install.sh
 # user inspects /tmp/ggshield-install.sh, then:
 bash /tmp/ggshield-install.sh
 ```
 
 ```powershell
 # Windows PowerShell — download, inspect, then run
-Invoke-WebRequest https://raw.githubusercontent.com/GitGuardian/ggshield/main/scripts/install/install.ps1 -OutFile $Env:TEMP\ggshield-install.ps1
+Invoke-WebRequest https://raw.githubusercontent.com/GitGuardian/ggshield/v1.54.0/scripts/install/install.ps1 -OutFile $Env:TEMP\ggshield-install.ps1
 # user inspects the script, then:
 & $Env:TEMP\ggshield-install.ps1
 ```
