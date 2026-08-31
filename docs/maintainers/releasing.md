@@ -71,7 +71,7 @@ The semver bump is driven by Conventional Commit prefixes, following the SemVer 
 
 - Re-validate locally if you want: `claude plugin validate .` and `npm run test:sanity` against the release PR branch.
 - Edit `CHANGELOG.md` in the release PR if the auto-generated wording needs polishing.
-- Merging the release PR triggers the workflow again; this run sees the merged version bump, creates the `vX.Y.Z` git tag, and publishes the GitHub Release with the changelog as release notes.
+- Merging the release PR triggers the workflow again; this run sees the merged version bump, creates the `vX.Y.Z` git tag, publishes the GitHub Release with the changelog as release notes, then force-moves the rolling `stable` tag onto the new release and asserts the remote agrees ([below](#the-rolling-stable-tag)).
 
 **Auth caveat.** The default `GITHUB_TOKEN` is used. GitHub does not run workflows on PRs created by `github-actions[bot]` (safety against workflow loops), so CI does not auto-run on the release PR. To trigger CI on a release PR, either push an empty commit:
 
@@ -83,9 +83,11 @@ git commit --allow-empty -m "chore: trigger CI" && git push
 
 ## The rolling `stable` tag
 
-Alongside the immutable `vX.Y.Z` tags, the release workflow maintains one mutable tag: `stable`, force-moved onto every published release.
+Alongside the immutable `vX.Y.Z` tags, the release workflow maintains one mutable tag: `stable`, force-moved onto every published release and then verified against the remote.
 
-It exists because downstream catalogs need a fixed string to write into their own config. GitHub's "Latest" is a flag on the Release object — resolvable through the API (`GET /repos/GitGuardian/agent-skills/releases/latest`) or the `/releases/latest` redirect — but there is no git ref called `latest` to point a clone at. Without a rolling tag, anyone who lists the plugin has to hard-code `v0.6.0` and edit it by hand on every release. Neovim solves this the same way with its own `stable` tag, as does GitHub with the major-version tags on its Actions.
+It exists because downstream consumers need a fixed git ref to fetch. The primary one is the install script at [agents.gitguardian.com](https://agents.gitguardian.com), which installs this repo at `stable` — it does **not** resolve the newest release through the GitHub API. (GitHub's "Latest" is a flag on the Release object, reachable via `GET /repos/GitGuardian/agent-skills/releases/latest` or the `/releases/latest` redirect, but there is no git ref called `latest` to point a clone at, and an API lookup would cost every install a network round-trip plus an unauthenticated rate-limit budget.) Catalogs that list the plugin get the same benefit: write `stable` once instead of hard-coding `v0.6.0` and editing it by hand on every release. Neovim solves this the same way with its own `stable` tag, as does GitHub with the major-version tags on its Actions.
+
+**The release job asserts the contract after every publish.** After moving the tag, `.github/workflows/release.yml` re-reads the remote and fails the run unless `refs/tags/stable` resolves to the same commit as the newest `vX.Y.Z` tag. A red `release` run right after merging a release PR means the install script may be serving a stale `stable` — repair by hand (commands below) and re-run the workflow to confirm green.
 
 Two consequences to keep in mind:
 
