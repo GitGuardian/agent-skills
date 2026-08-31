@@ -35,9 +35,11 @@ HMSL handoff sub-step, which is user-run regardless.
   is Coordination (supervised, sequenced rotation), not a fast "just rotate it" — rotating
   it blind can take a live system down. See doctrine principle 7.
 - **Read the doctrine before composing remediation.** When you are ready to drive a fix,
-  read [`references/remediation-doctrine.md`](references/remediation-doctrine.md)
-  end-to-end. Rotation-first; history-rewrite only under narrow conditions; public
-  exposure is always burned.
+  read [`references/remediation-doctrine.md`](references/remediation-doctrine.md) (the slim
+  core), then load only the relevant pieces it points to — the lifecycle track
+  ([`remediation-lifecycle-tracks.md`](references/remediation-lifecycle-tracks.md)) and, once
+  the secret type is known, the one relevant credential-family file. Rotation-first;
+  history-rewrite only under narrow conditions; public exposure is always burned.
 - **A configured custom remediation workflow takes the lead.** Before composing the fix,
   call `get_remediation_workflow`. If it returns an `id`, the workspace has a custom
   workflow — follow it as the spine of the deliverable: render its steps verbatim and use
