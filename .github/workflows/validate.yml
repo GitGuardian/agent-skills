@@ -114,47 +114,11 @@ jobs:
       # reviewer cannot see are an attack surface: zero-width and bidi
       # characters hide instructions inside an innocent-looking diff, and
       # long base64 runs smuggle payloads past review (OWASP Agentic
-      # Skills Top 10, AST04 "Insecure Metadata"). Reject all of them —
-      # nothing in legitimate skill content needs any of these.
+      # Skills Top 10, AST04 "Insecure Metadata"). The policy lives in
+      # scripts/check-skill-markdown.mjs with table-driven regression
+      # tests in test/skill-markdown.test.ts (run by the sanity workflow).
       - name: Check skill markdown for characters invisible to reviewers
-        run: |
-          python3 - <<'PY'
-          import pathlib, re, sys
-
-          # Zero-width spaces/joiners, bidi controls, word joiners, BOM,
-          # soft hyphen: all render as nothing (or flip text direction).
-          INVISIBLE = re.compile(
-              "[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u00ad]"
-          )
-          # Raw control characters other than tab and newline.
-          CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f]")
-          # A base64 run this long has no business in skill prose.
-          BASE64 = re.compile("[A-Za-z0-9+/]{120,}={0,2}")
-
-          bad = 0
-          for path in sorted(pathlib.Path(".").glob("skills/**/*.md")) + sorted(
-              pathlib.Path(".").glob("kiro/skills/**/*.md")
-          ):
-              try:
-                  text = path.read_text(encoding="utf-8", errors="strict")
-              except UnicodeDecodeError as e:
-                  print(f"::error file={path}::not valid UTF-8 ({e})")
-                  bad += 1
-                  continue
-              for lineno, line in enumerate(text.splitlines(), 1):
-                  for pattern, label in (
-                      (INVISIBLE, "invisible/bidi character"),
-                      (CONTROL, "raw control character"),
-                      (BASE64, "long base64 run"),
-                  ):
-                      m = pattern.search(line)
-                      if m:
-                          print(f"::error file={path},line={lineno}::{label}: {m.group()[:40]!r}")
-                          bad += 1
-          if bad:
-              sys.exit(f"{bad} finding(s) - see annotations above")
-          print("skill markdown is clean")
-          PY
+        run: node scripts/check-skill-markdown.mjs
 
       # Canonical cross-vendor validator for the agent-skills spec
       # (https://agentskills.io/specification). Catches strict-YAML
