@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/GitGuardian/agent-skills/compare/v0.6.1...v0.6.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* pin installer URLs and reject invisible characters in skill prose ([1f2bb73](https://github.com/GitGuardian/agent-skills/commit/1f2bb734efc7dd21cf0e9c3af325085cfce427dd))
+* pin the ggshield install-script URLs to a release tag ([62b9a7f](https://github.com/GitGuardian/agent-skills/commit/62b9a7faddece4c00aad990a34459f2f6a08c5db))
+
 ## [0.6.1](https://github.com/GitGuardian/agent-skills/compare/v0.6.0...v0.6.1) (2026-08-25)
 
 
