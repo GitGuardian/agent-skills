@@ -20,7 +20,7 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 .codex-plugin/         # Codex plugin metadata (plugin.json only)
 .agents/plugins/       # Codex repo-scoped marketplace (marketplace.json)
 .codex-mcp.json        # Codex MCP server config (Claude: .mcp.json, Cursor: mcp.json)
-.github/workflows/     # CI: JSON + frontmatter validation, install-flow sanity, release automation
+.github/workflows/     # CI: JSON + frontmatter validation, install-flow sanity, advisory SkillSpector scan, release automation
 test/sanity.test.ts    # install-flow sanity tests (vitest)
 package.json           # tooling-only (vitest); no runtime deps
 release-please-*.{json} # Release Please config + released-version manifest
