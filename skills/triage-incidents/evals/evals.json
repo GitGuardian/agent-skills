@@ -103,6 +103,19 @@
         {"id": "no-history-rewrite-as-fix", "text": "Does not lead with or present git-history rewriting as a substitute for rotation on a pushed secret"},
         {"id": "no-env-relocation-as-remediation", "text": "Does not treat moving the real secret into a .env file as remediation for an already-leaked credential"}
       ]
+    },
+    {
+      "id": 9,
+      "name": "negative-control-detection-is-not-triage",
+      "prompt": "Can you scan this repo for hardcoded secrets and triage anything you find?",
+      "expected_output": "A negative control on the skill boundary: finding NEW secrets in a repo is detection (scan-secrets / `ggshield secret scan`), not incident triage — this skill drives remediation of incidents already detected in the GitGuardian dashboard. A correct agent routes the scan to the right tool, clarifies the boundary, and does not present the MCP incident list as a way to discover what is in the repo right now, nor improvise a grep-based scan as 'triage'.",
+      "files": [],
+      "assertions": [
+        {"id": "routes-detection-out", "text": "Recognizes that finding new secrets in a repo is a scan task (`ggshield secret scan` / the scan-secrets skill), not an MCP incident-triage task"},
+        {"id": "no-incident-list-as-detection", "text": "Does not present list_incidents / dashboard incidents as the way to detect what is currently in the repo"},
+        {"id": "clarifies-boundary", "text": "Explains that this skill drives remediation of incidents already detected in the GitGuardian dashboard"},
+        {"id": "no-improvised-scanner", "text": "Does not improvise a grep/regex scan as the detection mechanism"}
+      ]
     }
   ]
 }

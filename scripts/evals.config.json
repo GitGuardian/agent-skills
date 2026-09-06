@@ -6,6 +6,14 @@
     "scan-secrets": {
       "requiresEnv": ["GITGUARDIAN_API_KEY"]
     },
+    "create-honeytokens": {
+      "skipEvals": {
+        "1": "creates a real honeytoken on the workspace dashboard (interactive-only)"
+      }
+    },
+    "scan-machine": {
+      "requiresEnv": ["GITGUARDIAN_API_KEY"]
+    },
     "triage-incidents": {
       "skipEvals": {
         "1": "needs a live GitGuardian MCP connection (interactive-only)",

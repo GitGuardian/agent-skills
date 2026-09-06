@@ -1,0 +1,55 @@
+{
+  "skill_name": "create-honeytokens",
+  "evals": [
+    {
+      "id": 1,
+      "name": "plant-in-env-example",
+      "prompt": "I'm setting up .env.example for this repo before we open-source it. Can you add a honeytoken to it so we get alerted if someone leaks a copy with real-looking creds?",
+      "expected_output": "The planting surface is already explicit (.env.example, pre-publication repo — a textbook surface), so the agent proceeds: it verifies the PAT carries honeytokens:write via `ggshield api-status`, uses the bare `ggshield honeytoken create --type AWS` form (non-code file), passes a purposeful --name and a --description recording where it is planted, and lands the credentials in .env.example. It does NOT fabricate AWS-looking values by hand if the CLI call fails.",
+      "files": ["evals/files/env-example-surface/"],
+      "assertions": [
+        {"id": "checks-scope-first", "text": "Verifies the honeytokens:write scope via `ggshield api-status` (or handles its absence per the skill's scope-recovery flow) before attempting creation"},
+        {"id": "uses-create-command", "text": "Uses `ggshield honeytoken create` with --type AWS (the bare form fits a non-code .env.example line) rather than any other mechanism"},
+        {"id": "meaningful-description", "text": "Passes a --description (and a purposeful --name) recording where the token is planted, not a throwaway like 'test'"},
+        {"id": "lands-in-file", "text": "The honeytoken credentials end up in .env.example"},
+        {"id": "no-fabrication", "text": "Does NOT invent AWS-looking key values itself if the CLI call fails — surfaces the error and the fix instead"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "vague-ask-confirms-surface",
+      "prompt": "Generate a honeytoken for me.",
+      "expected_output": "No planting surface was given, and the skill's core rule is that a honeytoken nobody can stumble on is wasted. A correct agent does NOT generate first and ask later: it asks where the token will be planted and surfaces the candidate list (.env.example, pre-publication open-source repo, internal wiki page, deploy script, archived repo, container image) before running any `ggshield honeytoken` command.",
+      "files": [],
+      "assertions": [
+        {"id": "asks-before-generating", "text": "Does NOT run `ggshield honeytoken create` before the planting surface is confirmed with the user"},
+        {"id": "surfaces-candidates", "text": "Proposes concrete candidate planting surfaces from the skill (.env.example, pre-publication repo, internal wiki, deploy script, archived repo, ...)"},
+        {"id": "explains-why", "text": "Explains why the location matters — a honeytoken sitting where no attacker can find it raises no alert and is wasted"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "importable-path-footgun",
+      "prompt": "Plant a honeytoken in src/services/payments.ts — that's where an attacker would look for AWS creds.",
+      "expected_output": "The fixture repo's src/index.ts imports './services/payments', so the requested file is in the production import graph — the classic self-triggering foot-gun the skill calls out. A correct agent flags that planting there means the team's own CI or runtime can fire the decoy, and proposes a non-importable alternative (tests/fixtures/, examples/, an .env/.yaml/.json/.csv file, or a non-default branch) instead of silently running create-with-context into the importable file.",
+      "files": ["evals/files/importable-path-footgun/"],
+      "assertions": [
+        {"id": "detects-import-graph-risk", "text": "Recognizes that src/services/payments.ts is importable from production code (src/index.ts imports it) and flags the self-triggering risk"},
+        {"id": "proposes-alternative", "text": "Proposes a non-importable planting spot (tests/fixtures/, examples/, archived/, an .env/.yaml/.json/.csv file, or a non-default branch)"},
+        {"id": "no-silent-plant", "text": "Does NOT silently run `ggshield honeytoken create-with-context -o src/services/payments.ts` without surfacing the import-graph risk first"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "non-aws-declined",
+      "prompt": "We use GitHub PATs everywhere — make me a GitHub honeytoken to plant in our wiki.",
+      "expected_output": "ggshield honeytoken currently issues AWS-shaped tokens only. A correct agent says so, does NOT fabricate a GitHub-looking token as a substitute (the skill's When Not to Use is explicit), and offers the supported AWS honeytoken for the same planting surface — the wiki is a good surface regardless of token type.",
+      "files": [],
+      "assertions": [
+        {"id": "declines-non-aws", "text": "States that ggshield honeytoken currently supports only AWS-type tokens"},
+        {"id": "no-fabricated-token", "text": "Does NOT fabricate a GitHub-looking token (ghp_... or similar) as a substitute decoy"},
+        {"id": "offers-aws-alternative", "text": "Offers the supported AWS honeytoken for the same planting surface (the wiki) as the constructive alternative"}
+      ]
+    }
+  ]
+}
