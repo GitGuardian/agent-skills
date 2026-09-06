@@ -7,7 +7,9 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:sanity": "vitest run test/sanity.test.ts"
+    "test:sanity": "vitest run test/sanity.test.ts",
+    "evals": "node scripts/run-evals.mjs",
+    "evals:dry": "node scripts/run-evals.mjs --dry-run"
   },
   "devDependencies": {
     "@types/node": "26.2.0",
