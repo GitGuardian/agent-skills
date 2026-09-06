@@ -69,6 +69,18 @@
         {"id": "asks-which-family", "text": "Asks the user which hook family they want before installing"},
         {"id": "presents-both-families", "text": "Surfaces both options — git hooks (pre-commit/pre-push) and AI-assistant hooks (claude-code/cursor/etc.)"}
       ]
+    },
+    {
+      "id": 6,
+      "name": "negative-control-explain-stages",
+      "prompt": "Quick question — what's the difference between a pre-commit and a pre-push hook for secret scanning? Which would you recommend for a team?",
+      "expected_output": "A negative control: the user asks a question, not for an installation. A correct agent explains the tradeoff — pre-commit blocks the secret at commit time (tightest guarantee), pre-push allows local WIP commits and blocks only when something would leave the machine — gives a reasoned recommendation, and does NOT run `ggshield install` or modify any hook files.",
+      "files": [],
+      "assertions": [
+        {"id": "no-install-run", "text": "Does NOT execute `ggshield install` or modify any hook files — the user asked a question, not for an installation"},
+        {"id": "explains-tradeoff", "text": "Explains the pre-commit vs pre-push tradeoff (commit-time blocking vs allowing local WIP and blocking at push time)"},
+        {"id": "offers-install-as-followup", "text": "Offers to install as a follow-up without doing it now"}
+      ]
     }
   ]
 }

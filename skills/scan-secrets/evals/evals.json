@@ -42,6 +42,18 @@
         {"id": "reports-findings-with-file-context", "text": "If any scan was run, surfaces detections with file path and secret type for at least one of: src/db.py, src/api.py, or .env"},
         {"id": "no-improvised-scanner", "text": "Does not improvise its own regex/grep-based scanner as the primary detection mechanism"}
       ]
+    },
+    {
+      "id": 4,
+      "name": "negative-control-explain-only",
+      "prompt": "Before I run anything — what kinds of secrets can ggshield actually detect, and how does the detection work? Don't scan anything yet, just explain.",
+      "expected_output": "A negative control: the user explicitly asks for an explanation, not a scan. A correct agent answers in prose — ggshield's detection engine covers hundreds of secret types with validity checking — WITHOUT executing any `ggshield secret scan` command, does not overclaim capabilities ggshield does not ship (no IaC or SCA scanning), and offers the actual scan as a follow-up.",
+      "files": [],
+      "assertions": [
+        {"id": "no-scan-run", "text": "Does NOT execute any `ggshield secret scan` command (or any other scanner) — the user asked for an explanation only"},
+        {"id": "no-capability-overclaim", "text": "Does not claim capabilities ggshield does not ship (e.g. IaC or SCA scanning)"},
+        {"id": "offers-scan-as-followup", "text": "Offers to run the scan as a next step without executing it now"}
+      ]
     }
   ]
 }
