@@ -50,3 +50,7 @@ When the skill library crosses ~5 skills:
 
 - **Adopt a router-pattern + `SKILL_TREE.md` at repo root.** Three router skills always visible in agent metadata; everything else hidden via a `disable-model-invocation: true` frontmatter flag and loaded on demand when a router points to it. Keeps startup metadata at a few hundred tokens instead of growing linearly with the catalog.
 - **Add a CI validation step** that regenerates `SKILL_TREE.md` from frontmatter and validates cross-references between skills, the README layout block, and per-skill `references/` pointers.
+
+## Remediation guidance
+
+The two remediation skills have credential-agnostic decision frameworks tailored to their detection contexts. Review common framework changes in both. See [`remediation-doctrine.md`](remediation-doctrine.md) for the editing contract.

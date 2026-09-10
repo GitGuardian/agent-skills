@@ -20,45 +20,13 @@ HMSL handoff sub-step, which is user-run regardless.
 
 ## Start Here — Read This Before Doing Anything
 
-- **Two non-interchangeable incident categories.** Internal incidents (integrated
-  sources: private/org repos, Slack, Jira, registries) use `list_incidents` /
-  `get_incident`. Public incidents (Public Monitoring on the worldwide perimeter:
-  public GitHub, gists, Docker Hub) use `list_public_incidents` / `get_public_incident`.
-  IDs are not interchangeable; an internal write tool called with a public ID silently
-  404s. Default to internal unless the user's intent is about leaks "on public GitHub /
-  outside the org / on Docker Hub / found by Public Monitoring".
-- **Triage before action — even for valid incidents.** Rank the full set first; do not
-  start remediating the first incident before the user has seen the prioritized list. A
-  `valid` result raises urgency but is **not** a triage axis: it never lets you skip the
-  ownership and blast-radius questions or jump to a generic rotation plan. The deliverable
-  mode is selected by ownership x blast radius, and a valid production-critical credential
-  is Coordination (supervised, sequenced rotation), not a fast "just rotate it" — rotating
-  it blind can take a live system down. See doctrine principle 7.
-- **Read the doctrine before composing remediation.** When you are ready to drive a fix,
-  read [`references/remediation-doctrine.md`](references/remediation-doctrine.md)
-  end-to-end. Rotation-first; history-rewrite only under narrow conditions; public
-  exposure is always burned.
-- **A configured custom remediation workflow takes the lead.** Before composing the fix,
-  call `get_remediation_workflow`. If it returns an `id`, the workspace has a custom
-  workflow — follow it as the spine of the deliverable: render its steps verbatim and use
-  the doctrine to fill in the mechanics and verification under each step. If there is no
-  `id` (GitGuardian's default workflow) or the tool is unavailable, set the returned steps
-  aside — do not render them — and let the doctrine drive end-to-end. See doctrine § 13.
-- **`remediate_secret_incidents` is a read tool — not the remediation plan.** Despite the
-  name, it changes no state: it returns occurrence data for the current repo — file paths,
-  line numbers, char indices — and nothing more. Ignore the `remediation_instructions` it
-  returns: do **not** take its remediation guidance into account. Treat this tool's output
-  as occurrence data only and drive the fix from the doctrine (rotation-first). Calling it
-  is not "remediating."
-- **Never auto-resolve.** Marking an incident RESOLVED / IGNORED, assigning it, or
-  tagging it is an outward-facing state change on the shared dashboard. Confirm with the
-  user before any write, and only mark RESOLVED after rotation is actually confirmed —
-  never on intent.
-- **HMSL stays user-run.** When a finding's validity is `unknown` / `no_checker` /
-  `not_checked`, the follow-up is HasMySecretLeaked. Do not run `ggshield hmsl` yourself
-  and do not read the credential into context — print the command for the user
-  (`-n none --json`). If the `check-hmsl` skill is installed, load it for the full
-  protocol.
+- **Use the incident's tool family.** Internal IDs use `list_incidents` / `get_incident`; Public Monitoring IDs use `list_public_incidents` / `get_public_incident`. IDs are not interchangeable. Public exposure does not change an internal ID's category. Default discovery to internal unless the user asks for Public Monitoring; clarify ambiguous IDs.
+- **Triage the complete set first.** Group occurrences by credential and present priorities. Confirm exposure, ownership/authority and impact. If any is missing, return grouped questions only and wait; do not give a provisional plan or guessed ordering. Validity supplies none of those answers.
+- **Read the entire [remediation framework](references/remediation-doctrine.md) before advice.** Headings alone are insufficient; retry missing body text or stop the plan. It supplies the four triage axes, four deliverable modes, implementation profiles, exposure tracks, coordination and completion checks.
+- **Fetch `get_remediation_workflow`.** Only `workflow.id` marks a custom workflow. Announce custom/default; preserve custom steps verbatim, in order, with their named actors and approvals. Without an ID, set the default steps aside and use the policy. If unavailable, say so and use the policy.
+- **Treat `remediate_secret_incidents` as occurrence data only.** It is read-only; ignore its `remediation_instructions`. Calling it does not fix an incident.
+- **Confirm dashboard writes.** Ask before assignment, tagging or status changes. Resolve only after verified invalidation/expiry, exposure cleanup and investigation of the leak window and derived access. Intent, TTL alone or an unchecked validity label is insufficient.
+- **HMSL stays user-run.** For unverifiable validity (`unknown`, `no_checker`, `not_checked`), prepare a `ggshield hmsl check ... -n none --json` command for the user; do not run HMSL or read the credential. Load `check-hmsl` if installed for the full protocol.
 
 ## When to Use
 
@@ -91,10 +59,14 @@ Follow [`references/triage-workflow.md`](references/triage-workflow.md) — it c
 five steps (scope → rank → drill in → drive the fix → close the loop), the
 axis→filter mapping, the internal/public tool split, and scope-degradation handling.
 
+## When driving remediation — quick reference
+
+Read [the remediation framework](references/remediation-doctrine.md). Every incident is an exposure. Any public occurrence takes precedence, including a public artifact attached to an internal incident; keep using the ID's original tool family. Confirmed private exposure allows coordinated handling without reducing the credential's actual impact.
+
 ## Best Practices
 
-- Rank validity-first (valid > unknown > invalid-suppressed), then by `score`,
-  `severity`, `source_criticality`, `public_exposure`.
+- Use validity, score, severity and exposure to guide investigation. Set remediation
+  priority from confirmed exposure, authority and blast radius; explain the ordering.
 - Group the same credential across occurrences into one row; one credential is one
   rotation even if it appears many times.
 - Respect default tag/validity exclusions — don't resurface known false positives or
