@@ -181,6 +181,17 @@ metadata:
   It is a label for catalogs/validators/routers — it does **not** enforce anything; the body (STOP block) is the enforcement.
 - **`version`** — mirrors the plugin/package version; **not** an independent per-skill semver. The line carries an `# x-release-please-version` annotation and is registered as a `generic` extra-file in `release-please-config.json`, so Release Please bumps it in lockstep with the manifests (see [`docs/maintainers/releasing.md`](docs/maintainers/releasing.md)). Quote it so YAML reads it as a string; never hand-edit it out of step.
 
+### `license:` and `compatibility:` are required on every skill
+
+Both are optional in the [agent-skills spec](https://agentskills.io/specification); both are mandatory here. They sit between `description:` and `metadata:`, matching the spec's own field order.
+
+- **`license: MIT`** — same on every skill, mirroring the repo's root `LICENSE`. A skill installed on its own via `npx skills add --skill <name>` travels without that file, so the frontmatter is the only place its license is legible.
+- **`compatibility:`** — the skill's real environment requirements, in one sentence, max 500 chars. This is the machine-readable version of the skill's own `### Prerequisites` section, so the two must agree: when you raise a minimum `ggshield` version or add a required scope in Prerequisites, update `compatibility` in the same commit.
+
+Write what *this* skill needs, not what the bundle needs — the field earns its place by differentiating. `triage-incidents` needs ggmcp and no CLI at all; `scan-machine` needs endpoint scanning enabled server-side; `create-honeytokens` needs a Manager seat and the `honeytokens:write` scope; `check-hmsl` is user-run and works unauthenticated. A generic "requires ggshield" on all six would be worse than nothing.
+
+Mind YAML: an unquoted `: ` inside the value breaks the frontmatter. Rephrase to avoid the colon rather than quoting the whole string. CI catches it — `skills-ref validate` runs on every skill in `validate.yml` — but catching it locally is faster.
+
 ### Verify before claiming
 
 Before listing GitGuardian product capabilities, check `gitguardian.com` or product docs — do not rely on training data. Before listing `ggshield` CLI capabilities, run `ggshield --help` and `ggshield <subcommand> --help` against the installed version. The product surface and the CLI surface are not the same; GitGuardian has dashboard features (Public Monitoring, NHI Governance) that aren't exposed through `ggshield`, and `ggshield` does **not** ship IaC or SCA scanning despite adjacent vendors doing both.
