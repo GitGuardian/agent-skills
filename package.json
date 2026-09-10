@@ -7,10 +7,14 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:sanity": "vitest run test/sanity.test.ts"
+    "test:sanity": "vitest run test/sanity.test.ts",
+    "check:references": "node scripts/check-references.mjs"
   },
   "devDependencies": {
     "@types/node": "26.2.0",
+    "github-slugger": "2.0.0",
+    "htmlparser2": "12.0.0",
+    "markdown-it": "15.0.1",
     "tsx": "4.22.3",
     "typescript": "7.0.2",
     "vitest": "4.1.7"
