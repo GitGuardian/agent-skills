@@ -23,5 +23,8 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
 
-      - name: Run test suite (install-flow sanity + skill-markdown policy)
+      - name: Validate published reference links and skill mirrors
+        run: npm run check:references
+
+      - name: Run deterministic test suite
         run: npm test
