@@ -124,13 +124,14 @@ Remediation guidance is **per-skill, not shared**. Each skill that needs to tell
 
 Current state:
 
-- `scan-secrets/references/remediation-doctrine.md` — the full doctrine: four triage axes, four deliverable modes, four lifecycle tracks (pre-leak, post-leak public, post-leak internal-private, off-repo), ten worked examples per secret type plus a long-tail schema, the generic coordination framework, public-leak takedown, and per-mode validation. `SKILL.md` routes here directly when findings are present; the sibling `interpreting-results.md` is a *separate* reference for reading ggshield output (JSON shape, validity, severity), the HMSL handoff, and `ggignore` false positives — it is not a remediation file. This doctrine is also the right basis for a future incident-management skill, which shares scan-secrets' full-lifecycle detection context.
+- `scan-secrets/references/remediation-doctrine.md` is a decision framework: principles, four triage axes, four deliverable modes, implementation profiles, exposure tracks, credential lifecycle, coordination, takedown, validation and company workflows. Keep it credential-agnostic: no vendor or secret-type catalogs, tutorials or exception runbooks. Obtain missing implementation details from company guidance and current official documentation or installed help.
+- `triage-incidents/references/remediation-doctrine.md` applies the framework to already-exposed incidents and the MCP workflow contract. Keep each skill self-contained and review common policy changes in both; their cores need not be identical. See [maintainer notes](docs/maintainers/remediation-doctrine.md) for validation and evaluation guidance.
 - `check-hmsl` — keeps a short, self-contained remediation reminder inline (an HMSL match is always public-facing, so "it's burned, rotate it" is the whole story for now).
 - `scan-machine` and `create-honeytokens` — retain their existing remediation prose for now; each will get its own tailored doctrine later.
 
 Do **not** re-introduce a single shared doctrine duplicated across these skills to cover them — author per-skill doctrines instead.
 
-When you add a remediation doctrine for another skill, author it for that skill's detection context rather than copying scan-secrets' wholesale.
+When you add a remediation doctrine for another skill, author it for that skill's detection context rather than copying scan-secrets' wholesale. Preserve the abstract reasoning and orchestration structure when shortening guidance. Specific credentials may appear in evaluation scenarios, but a failed scenario is not a reason to add a dedicated runtime guide; improve the general decision or verification rule when needed.
 
 ### SKILL.md section order
 
@@ -203,6 +204,7 @@ Task-gated working knowledge lives under `docs/maintainers/`. Load the relevant 
 | Running the skill-creator eval loop, authoring `evals.json`, or building secret-bearing fixtures | [`docs/maintainers/evals.md`](docs/maintainers/evals.md) |
 | Cutting a release, bumping the version, or reasoning about SemVer policy | [`docs/maintainers/releasing.md`](docs/maintainers/releasing.md) |
 | Touching manifests, validating the plugin, or publishing to Claude/Cursor/Codex marketplaces (includes the **Critical structural rules** and the manifest field reference) | [`docs/maintainers/distribution.md`](docs/maintainers/distribution.md) |
+| Editing the remediation framework (triage, modes, tracks, coordination and implementation profiles) | [`docs/maintainers/remediation-doctrine.md`](docs/maintainers/remediation-doctrine.md) |
 
 ## Resources
 
