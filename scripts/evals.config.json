@@ -1,0 +1,16 @@
+{
+  "agent": "claude-code",
+  "defaultModel": "claude-sonnet-4-6",
+  "graderModel": "claude-sonnet-4-6",
+  "skills": {
+    "scan-secrets": {
+      "requiresEnv": ["GITGUARDIAN_API_KEY"]
+    },
+    "triage-incidents": {
+      "skipEvals": {
+        "1": "needs a live GitGuardian MCP connection (interactive-only)",
+        "3": "needs a live GitGuardian MCP connection (interactive-only)"
+      }
+    }
+  }
+}
