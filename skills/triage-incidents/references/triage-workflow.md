@@ -38,47 +38,23 @@ Collapse the same credential seen across multiple occurrences into a single row.
 
 ## 3. Drill in
 
-- Use `get_incident` for incident metadata, assignee, and tags. Its embedded occurrence
-  list is capped at 100; when the incident's total is larger, never describe the embedded
-  list as complete.
-- Inspect the available MCP tool schemas before retrieving occurrences. Both occurrence
-  tools take the same flat filters, including `incident_id`, inside `params` and return
-  the same flat envelope:
-  `occurrences`, `occurrences_count`, `cursor`, `has_more`, `applied_filters`, and
-  `suggestion`. Treat that envelope as data only. It contains no remediation guidance,
-  nested subtool result, incident grouping, or global-total guarantee.
-- Use `list_remediation_targets` for the default remediation view. It is a thin preset over
-  `list_repo_occurrences` with `tags=["DEFAULT_BRANCH"]`, `ordering="-date"`,
-  `per_page=20`, and `get_all=false`. When the user's scope is one repository, include its
-  `source_id`; the `DEFAULT_BRANCH` tag does not identify the repository or the currently
-  checked-out branch.
-- For every occurrence of one known incident across all sources, tags, statuses,
-  severities, and validities, call `list_repo_occurrences`:
-
-  ```json
-  {
-    "params": {
-      "incident_id": 55555,
-      "tags": [],
-      "exclude_tags": [],
-      "status": [],
-      "severity": [],
-      "validity": [],
-      "per_page": 100,
-      "get_all": false
-    }
-  }
-  ```
-
-  Do not add `source_id` unless the user intentionally scoped the request to one source.
-  While `has_more` is true, call `list_repo_occurrences` again with the returned `cursor`
-  and every original filter unchanged. Do not interpret `occurrences_count` as a global
-  total.
-- On an older server, adapt to the displayed schema. If `list_remediation_targets` is
-  absent, use `list_repo_occurrences` with the desired tags and filters explicitly. If
-  `incident_id` is absent from the displayed `list_repo_occurrences` schema, do not invent
-  it or claim a complete incident occurrence set; report the limitation and use the
-  dashboard, or explain that the server must be upgraded.
+- Use `get_incident` for internal incident context, such as assignee and tags. Use
+  occurrence tools to investigate where the credential appears.
+- Use `list_remediation_targets` for remediation candidates on a repository's remote
+  default branch. Keep the user's repository scope explicit, and do not assume the
+  remote default branch is the currently checked-out branch.
+- Use `list_repo_occurrences` when the user wants every known occurrence of an internal
+  incident. Preserve the requested scope across sources, branches, tags, statuses,
+  severities, and validities. Do not narrow an all-locations request to the current
+  repository or default branch, or apply routine triage exclusions to it.
+- Read the connected tool descriptions and schemas for parameters, defaults, pagination,
+  and response semantics. Verify coverage against the requested scope before presenting
+  the result as complete; an incident-detail snapshot is not evidence of full coverage.
+- On an older server where `list_remediation_targets` is absent, use
+  `list_repo_occurrences` for the same intended scope, following its displayed contract.
+  For a request covering one incident, if the schema cannot filter by incident, do not
+  invent unsupported parameters or claim a complete incident occurrence set. Report the
+  limitation and use the dashboard, or explain that the server must be upgraded.
 
 ## 4. Drive the fix
 
