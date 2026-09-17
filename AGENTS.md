@@ -34,17 +34,17 @@ README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
 ```
 
-The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
+The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `hook-selection.md` for scanning/hook setup) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
 
 ## Skills index
 
 | Skill | Description |
 |---|---|
-| [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Auto-triggers when writing code that handles credentials. |
+| [`scan-secrets`](skills/scan-secrets/SKILL.md) | Detect hardcoded secrets in files, git history, commits, Docker images, and PyPI packages. Use for explicit scans, audits, and suspected leaks. Routine edit/commit/push prevention routes to `install-hooks`. |
 | [`create-honeytokens`](skills/create-honeytokens/SKILL.md) | Generate AWS decoy credentials (bare or wrapped in realistic code) and guide the user on where to plant them. Auto-triggers around `.env.example`, pre-publication open-source repos, internal wikis. |
 | [`scan-machine`](skills/scan-machine/SKILL.md) | Scan the entire developer machine for credentials across local git repositories, dotfiles, cloud CLI configs, shell history, AI agent caches, and abandoned project trees. **Requires endpoint scanning to be enabled on the GitGuardian workspace** (gated server-side; not available on Free). |
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
-| [`install-hooks`](skills/install-hooks/SKILL.md) | Install `ggshield` as a git hook (pre-commit / pre-push) so secrets are blocked before they enter history, or as an AI-assistant hook (claude-code, codex, copilot, cursor, vscode) so an AI coding tool scans its prompts and actions for secrets in real time. The prevention counterpart to `scan-secrets`. Routes by family and asks which when the request is ambiguous. |
+| [`install-hooks`](skills/install-hooks/SKILL.md) | Configure recurring secret protection through Git pre-commit/pre-push or supported AI-assistant hooks. Reuse effective existing protection, offer missing integrations once, preserve hook managers, and avoid duplicate agent scans. Pre-push checks outgoing commits; it does not prevent local commits. |
 | [`triage-incidents`](skills/triage-incidents/SKILL.md) | Read, prioritize, and drive remediation on secret incidents already detected in the GitGuardian dashboard, via the GitGuardian Developer MCP server. Covers internal and Public Monitoring incidents, ranks them by validity/severity/blast radius/exposure, and closes the loop with confirmation-gated assign/tag/resolve writes. The one MCP-first skill in the bundle. |
 
 ## Slash commands
