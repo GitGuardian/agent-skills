@@ -51,7 +51,7 @@ Verify `ggshield --version` and relevant `--help`. Local installation uses:
 
 ```bash
 ggshield install --mode local --hook-type claude-code
-# Substitute the requested supported assistant: cursor, codex, copilot, vscode, vibe.
+# Substitute the requested supported assistant: cursor, codex, copilot, vscode, vibe (Mistral Vibe).
 ```
 
 For an explicitly requested user-wide AI hook on ggshield 1.53.0+, target just that assistant:
@@ -60,9 +60,9 @@ For an explicitly requested user-wide AI hook on ggshield 1.53.0+, target just t
 ggshield machine setup --no-git-hooks --no-honeytokens --agent claude-code
 ```
 
-Bare `machine setup` also installs global Git hooks and plants a honeytoken. Do not use it for an AI-only request. On older versions, `ggshield install --mode global --hook-type <assistant>` is the legacy path; verify support first. AI hooks require 1.49.0+, Codex requires 1.51.0+, and Vibe requires 1.54.0+.
+Bare `machine setup` also installs global Git hooks and plants a honeytoken. Do not use it for an AI-only request. On older versions, `ggshield install --mode global --hook-type <assistant>` is the legacy path; verify support first. AI hooks require 1.49.0+, Codex requires 1.51.0+, and Mistral Vibe requires 1.54.0+.
 
-Current user-level paths are `~/.claude/settings.json`, `~/.cursor/hooks.json`, `~/.codex/hooks.json`, `~/.copilot/hooks/hooks.json` (Copilot/VS Code), and `~/.vibe/hooks.toml`. Resolve project paths from installer output; local Copilot writes `.github/hooks/hooks.json` and requires folder trust, with additional opt-in for prompt mode. Preserve unrelated hook entries.
+Current user-level paths are `~/.claude/settings.json`, `~/.cursor/hooks.json`, `~/.codex/hooks.json`, `~/.copilot/hooks/hooks.json` (Copilot/VS Code), and `~/.vibe/hooks.toml` (Mistral Vibe). Resolve project paths from installer output; local Copilot writes `.github/hooks/hooks.json` and requires folder trust, with additional opt-in for prompt mode. Preserve unrelated hook entries.
 
 Prompt/pre-tool detections can block before execution. Post-tool detections notify after execution; they cannot undo disclosure. AI scan errors fail open with a warning. Describe the events actually enabled for the assistant; do not promise that every output is blocked before reaching model context. Never invoke `ggshield secret scan ai-hook` manually; the assistant supplies its event input.
 

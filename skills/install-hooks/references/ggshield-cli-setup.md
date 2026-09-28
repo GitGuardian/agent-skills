@@ -195,7 +195,7 @@ For explicitly requested user-wide AI protection on ggshield 1.53.0+, target onl
 ggshield machine setup --no-git-hooks --no-honeytokens --agent claude-code
 ```
 
-Substitute a supported assistant verified in CLI help (`claude-code`, `cursor`, `codex`, `copilot`, `vscode`, `vibe`). Bare `machine setup` also installs global Git hooks and plants a honeytoken; do not use it for an AI-only request. Older versions use `ggshield install --mode global --hook-type <assistant>` for user-wide AI installation. AI hooks require 1.49.0+, Codex requires 1.51.0+, and Vibe requires 1.54.0+.
+Substitute an assistant identifier verified in CLI help: `claude-code`, `cursor`, `codex`, `copilot`, `vscode`, or `vibe` (Mistral Vibe). Bare `machine setup` also installs global Git hooks and plants a honeytoken; do not use it for an AI-only request. Older versions use `ggshield install --mode global --hook-type <assistant>` for user-wide AI installation. AI hooks require 1.49.0+, Codex requires 1.51.0+, and Mistral Vibe requires 1.54.0+.
 
 AI prompt/pre-tool events can block detections; post-tool events notify after execution. AI scan errors fail open with a warning. Do not claim every output is blocked or manually invoke `secret scan ai-hook`. Verify configuration/readiness without a duplicate scan; `ggshield machine doctor` offers read-only checks on supported versions.
 

@@ -28,7 +28,7 @@ An explicit one-off scan or investigation belongs to `scan-secrets`, even if hoo
 
 Before installation, check `ggshield --version`, the relevant command's `--help`, and `ggshield api-status`. The hook environment must have access to the CLI and authentication. Do not repeat these checks for every operation once readiness is established.
 
-AI hooks require ggshield 1.49.0+; Codex requires 1.51.0+, and Vibe requires 1.54.0+. The current user-wide AI setup command requires 1.53.0+. Verify that the requested assistant is installed and supports the configured events.
+AI hooks require ggshield 1.49.0+; Codex requires 1.51.0+, and Mistral Vibe requires 1.54.0+. The current user-wide AI setup command requires 1.53.0+. Verify that the requested assistant is installed and supports the configured events.
 
 ### Setup
 
