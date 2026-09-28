@@ -119,17 +119,11 @@ HMSL works in two auth modes:
 
 The user can confirm auth state with `ggshield hmsl api-status` — `Authenticated: true` means the call will use the user's account quota.
 
-### Install the agent hook (defense in depth)
+### Agent hooks (defense in depth)
 
-The hook scans tool inputs and outputs in agent sessions for detected secrets and blocks before they reach the model context. It is useful defense in depth for general agent work, but it does **not** make agent-executed HMSL acceptable. The user can install it once, globally:
+For recurring protection in general agent work, offer the matching AI hook once through `install-hooks`, or use the [shared setup reference](references/ggshield-cli-setup.md#agent-and-git-hooks) if this skill is installed alone. Reuse existing protection and respect a declined installation. An HMSL lookup does not require installing a hook.
 
-```bash
-ggshield install -t claude-code -m global     # Claude Code
-ggshield install -t cursor -m global          # Cursor
-ggshield install -t copilot -m global         # Copilot
-```
-
-Whether or not the hook is installed, this skill remains user-run only.
+Prompt/pre-tool hook detections can block; post-tool detections notify after execution, and AI scan errors fail open. Hooks do not guarantee secrets stay out of model context and do not make agent-executed HMSL acceptable. Whether or not a hook is installed, this skill remains user-run only.
 
 ## Commands to hand to the user
 

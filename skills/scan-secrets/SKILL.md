@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Use when scanning code, commits, git history, Docker images, or packages for hardcoded secrets, when editing credential-handling code, .env files, CI/CD workflows, Dockerfiles, or deployment scripts, or before committing or pushing.
+description: Scan code, staged changes, commits, git history, Docker images, or packages for hardcoded secrets when the user requests a one-off scan, audits existing content, investigates a suspected leak, or needs help with a finding. Recurring checks on edits, commits, pushes, or AI interactions belong to install-hooks.
 metadata:
   version: "0.6.2" # x-release-please-version
 ---
@@ -11,11 +11,11 @@ metadata:
 
 `ggshield` is a CLI that detects 700+ types of hardcoded secrets — AWS keys, GitHub tokens, database connection strings, private keys, Stripe keys, Slack webhooks, JWTs, and more — in files, git history, Docker images, and PyPI packages.
 
-**Core rule:** when working on code that handles credentials, run `ggshield` *before* presenting the result. Do not commit or surface code that contains a detected secret.
+**Core rule:** use this skill for explicit scans, audits, and concrete suspected or detected leaks. For recurring checks on edits, commits, pushes, or AI interactions, recommend deterministic hooks through `install-hooks`; do not add a manual scan to every operation. Do not commit or surface code that contains a detected secret.
 
 ## Start Here — Read This Before Doing Anything
 
-**Do not skip this section.**
+**Choose the task before running the CLI.** A routine edit, commit, or push is not a request for a separate scan. For recurring prevention, read [references/hook-selection.md](references/hook-selection.md): inspect effective protection once, rely on a matching hook, or offer installation/repair once if missing. If the user declines, continue without repeated prompts or discretionary scans and do not claim the work was scanned. An explicit scan request still takes precedence, including when a hook is installed.
 
 - **Do not improvise alternate scanners.** No grep one-liners, no regex hunts, no custom secret-finding scripts. Use `ggshield secret scan` with the flags documented in **Scan commands** below. The detectors are tuned and validated; ad-hoc patterns are not.
 - **The `ggshield` CLI is mandatory for scanning — do not use the GitGuardian Developer MCP `scan_secrets` tool as a substitute.** If the MCP server is connected, its `scan_secrets` tool will be tempting as a no-install shortcut. It is the wrong tool for this skill: it scans a single in-memory payload you paste in, so it is slow for anything larger than a snippet and **cannot scan git history, commit ranges, staged changes, repositories, Docker images, or PyPI packages** — which is the core of what this skill does. The CLI streams files locally and audits full history in one pass; the MCP path cannot. So:
@@ -39,11 +39,11 @@ metadata:
 
 ## When to Use
 
-Trigger a scan when:
+Use this skill when:
 
 - The user asks to scan a file, directory, or repository for secrets or credentials
-- You are writing or modifying code that handles API keys, tokens, passwords, connection strings, or any credentials — scan before presenting the result
-- The user is about to commit or push — scan staged changes first
+- There is a concrete suspected leak to investigate or a detection to interpret and remediate
+- The user explicitly asks to inspect staged changes now, independently of any later commit or hook
 
 What `ggshield` covers:
 
@@ -52,7 +52,6 @@ What `ggshield` covers:
 - Scan a specific commit, a commit range, or staged changes
 - Scan Docker images and PyPI packages
 - Run as a CI gate that fails on findings
-- Install git hooks (pre-commit / pre-push) and AI agent hooks (Claude Code, Cursor, Copilot) — the agent hooks scan the prompt, tool calls, and tool outputs from inside the agent itself
 - Manage false positives via `# ggignore` comments and `.gitguardian.yaml`
 
 For detailed command variants, expected JSON output shapes, and CI integration, see [references/workflows.md](references/workflows.md).
@@ -63,8 +62,9 @@ For platform-wide topics that span every GitGuardian skill (public docs URL patt
 
 ## When Not to Use
 
-Do not use this skill when:
+Do not trigger an ad-hoc scan when:
 
+- The task is an ordinary edit, commit, or push, including credential-handling code, `.env`, CI/CD, or deployment files. Recommend the appropriate hook for recurring prevention; use `install-hooks` when available. If only this skill is installed, [references/hook-selection.md](references/hook-selection.md) contains the selection, installation, and verification guidance.
 - The user already holds a *known* credential and wants to know whether it has leaked publicly — use `check-hmsl`. This skill finds *unknown* secrets; that one checks known ones against the public-leak corpus.
 - The request is to inventory credentials across the whole machine (dotfiles, cloud CLI configs, shell history, other repos) — use `scan-machine`.
 - You are tempted to substitute a grep one-liner, regex hunt, or custom secret-finding script. Use `ggshield secret scan` — the detectors are tuned and validated; ad-hoc patterns are not.
@@ -73,33 +73,14 @@ Do not use this skill when:
 
 ### Prerequisites
 
-- **`ggshield` 1.49.0 or later** — required for full feature support including the AI agent hooks (`ggshield install -t claude-code`, `-t cursor`, `-t copilot`). Older `ggshield` versions can scan but can't install agent hooks.
+- An installed **`ggshield`** version that supports the requested scan command; verify with `--help`. Hook version requirements are separate and documented in [references/hook-selection.md](references/hook-selection.md).
 - A **GitGuardian account** (free tier available at https://dashboard.gitguardian.com/signup).
 
 ### Setup
 
 If `ggshield --version` succeeds and `ggshield api-status` returns OK, skip shared setup. Otherwise follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) and return here once both checks pass.
 
-#### Step 1 (recommended) — Install the agent hook for defense in depth
-
-Once `ggshield` is installed and authenticated, the recommended first action on a new machine is installing the agent hook. The hook scans prompts, tool inputs, and tool outputs from inside the agent for detected secrets and blocks them before they reach the model context — defense in depth against the agent inadvertently reading or echoing a credential. Match the user's agent:
-
-```bash
-ggshield install -t claude-code -m global     # Claude Code
-ggshield install -t cursor -m global          # Cursor
-ggshield install -t copilot -m global         # Copilot
-```
-
-Propose this on first use with a one-liner: *"For defense in depth — so credentials in files I read never reach my transcript — install the agent hook now? (`ggshield install -t claude-code -m global`)"* Wait for the user's yes/no. The hook is one layer of defense; the user-run-only rule for `ggshield hmsl *` documented in **Start Here** is the other. The two are complementary, not substitutes.
-
-#### Step 2 — Brief the user on what this skill enables
-
-- Scan code for hardcoded secrets — automatically when handling credentials, or on request for a specific file or directory.
-- Audit a repository's git history, a commit range, a single commit, a Docker image, or a PyPI package for leaked secrets.
-- Block secrets *before they are written* via the agent hook installed in Step 1; or via git hooks (`ggshield install --mode local`) and ad-hoc scans of staged changes (`scan pre-commit`).
-- Manage false positives via inline `# ggignore` comments or `.gitguardian.yaml` rules.
-
-Keep the brief tight; the detailed setup reference is for the agent to consult, not for the user to read.
+For ongoing prevention, offer the relevant Git or AI hook once using [references/hook-selection.md](references/hook-selection.md). Reuse the user's existing setup and choices. Hook installation is not a prerequisite for an explicit scan, and a one-off scan request does not authorize changing hook configuration.
 
 ## Scan commands
 
@@ -109,7 +90,7 @@ Always pass `--json` for structured output. Recursive scans (`-r`) trigger an in
 ggshield secret scan repo . --json                       # full git history
 ggshield secret scan path -r -y . --json                 # current files, no git required
 ggshield secret scan path <file> --json                  # single file (no -r needed)
-ggshield secret scan pre-commit --json                   # staged changes
+ggshield secret scan pre-commit --json                   # explicit one-off staged scan only
 ggshield secret scan commit-range HEAD~5..HEAD --json    # commit range
 ggshield secret scan commit <sha> --json                 # specific commit
 ggshield secret scan docker <image> --json               # Docker image
@@ -150,9 +131,9 @@ The three triggers most often missed:
 
 ## Best Practices
 
-- Scan proactively when writing or modifying code that handles credentials or configuration — do not wait to be asked.
+- Let installed hooks perform recurring checks. Offer the matching integration if missing; do not promise to remember to run ggshield on every edit, commit, or push.
 - When a credential is found: always remove it from the code. Rotation is only necessary if the secret has been exposed on a remote — pushed to a shared repository, CI system, or any external service. A secret that is purely local and has never left the machine does not need rotation, only removal.
-- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding (file, line, secret type, validity), then fix and re-scan.
+- Do not commit or present code that contains a detected secret. Stop the workflow, report the finding (file, line, secret type, validity), then fix. For a hook finding, let the hook validate the next authorized retry; for an explicit scan, re-scan the affected scope.
 - For false positives, add `# ggignore` on the offending line, or run `ggshield secret ignore --last-found` to record it in `.gitguardian.yaml`.
 
 ## Troubleshooting

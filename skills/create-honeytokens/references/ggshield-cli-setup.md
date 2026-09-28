@@ -176,19 +176,30 @@ For stateless CI jobs, skip login and set `GITGUARDIAN_API_KEY` as a pipeline se
 
 ## Agent and git hooks
 
-When the active skill needs hooks, install them after the CLI is authenticated:
+For recurring checks on commits, pushes, or assistant interactions, recommend the matching deterministic hook through `install-hooks`. Inspect effective existing coverage first; do not add manual scans to every operation or repeatedly offer an installation the user declined. A setup request authorizes its stated scope; a scan request alone does not authorize hook installation.
+
+After authentication, for an authorized project-local installation without an existing Git hook manager:
 
 ```bash
-ggshield install -t claude-code -m global
-ggshield install -t cursor -m global
-ggshield install -t copilot -m global
-ggshield install -t codex -m global          # ggshield 1.51.0+
-ggshield install -t vscode -m global         # alias for copilot; ggshield 1.51.0+
 ggshield install --mode local --hook-type pre-commit
 ggshield install --mode local --hook-type pre-push
+# AI protection for the requested assistant in this project:
+ggshield install --mode local --hook-type claude-code
 ```
 
-Agent hooks require `ggshield` 1.49.0 or later. The `codex` target and the `vscode` alias (for `copilot`) require 1.51.0 or later — the Codex hook is backed by Codex support added to `ggshield secret scan ai-hook` in 1.51.0.
+Choose the relevant command, not all of them. Pre-commit checks staged changes; pre-push checks outgoing commits. If the repo already uses the pre-commit framework or another manager, integrate ggshield into it and preserve its other checks. Resolve `core.hooksPath` and the effective hook rather than assuming `.git/hooks`.
+
+For explicitly requested user-wide AI protection on ggshield 1.53.0+, target only the requested assistant:
+
+```bash
+ggshield machine setup --no-git-hooks --no-honeytokens --agent claude-code
+```
+
+Substitute an assistant identifier verified in CLI help: `claude-code`, `cursor`, `codex`, `copilot`, `vscode`, or `vibe` (Mistral Vibe). Bare `machine setup` also installs global Git hooks and plants a honeytoken; do not use it for an AI-only request. Older versions use `ggshield install --mode global --hook-type <assistant>` for user-wide AI installation. AI hooks require 1.49.0+, Codex requires 1.51.0+, and Mistral Vibe requires 1.54.0+.
+
+AI prompt/pre-tool events can block detections; post-tool events notify after execution. AI scan errors fail open with a warning. Do not claim every output is blocked or manually invoke `secret scan ai-hook`. Verify configuration/readiness without a duplicate scan; `ggshield machine doctor` offers read-only checks on supported versions.
+
+See the current [Git hook guide](https://docs.gitguardian.com/ggshield-docs/integrations/git-hooks/pre-commit) and [AI hook guide](https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools) for version-specific setup.
 
 ## What's new in ggshield 1.51.0
 
