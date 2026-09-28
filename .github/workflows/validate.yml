@@ -98,7 +98,7 @@ jobs:
           test "$(jq -r '.version' .cursor-plugin/plugin.json)" = "$VERSION"
           test "$(jq -r '.metadata.version' .cursor-plugin/marketplace.json)" = "$VERSION"
           test "$(jq -r '.version' .codex-plugin/plugin.json)" = "$VERSION"
-          test "$(jq -r '.version' kiro/plugin.json)" = "$VERSION"
+          test "$(jq -r '.version' plugin.json)" = "$VERSION"
 
       - name: Check each skill has SKILL.md with frontmatter
         run: |
@@ -145,47 +145,34 @@ jobs:
             skills-ref validate "$d"
           done
 
-      - name: Check Kiro power manifests and skills mirror the skills/ tree
+      # The repo root is also a Kiro power in the Agent Plugins format
+      # (https://agent-plugins.org): plugin.json + mcp.json at the root, next
+      # to the canonical skills/ tree. Checks the Agent Plugins 1.0.0 rules
+      # Kiro relies on. Cursor reads its MCP config from .cursor-mcp.json, so
+      # mcp.json is Agent Plugins only.
+      - name: Check Agent Plugins manifests (Kiro power)
         run: |
           set -e
-          # plugin.json manifest is the Agent Plugins entry point
-          test -f kiro/plugin.json || { echo "missing kiro/plugin.json"; exit 1; }
           python3 - <<'PY'
           import json
-          p = json.load(open('kiro/plugin.json'))
-          for k in ("$schema", "name", "description"):
-              assert p.get(k), f"missing {k} in kiro/plugin.json"
-          assert p["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", "wrong $schema"
-          print("kiro plugin.json OK")
+          from urllib.parse import urlparse
+          p = json.load(open("plugin.json"))
+          assert p.get("$schema") == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", "plugin.json: wrong $schema"
+          allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
+          extra = set(p) - allowed
+          assert not extra, f"plugin.json: fields not allowed by Agent Plugins 1.0.0: {sorted(extra)}"
+          for k in ("name", "description", "version"):
+              assert p.get(k), f"plugin.json: missing {k}"
+          m = json.load(open("mcp.json"))
+          assert m.get("$schema") == "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json", "mcp.json: wrong $schema"
+          assert set(m) == {"$schema", "mcpServers"}, f"mcp.json: unexpected top-level fields {sorted(set(m) - {'$schema', 'mcpServers'})}"
+          srv = m["mcpServers"].get("GitGuardian")
+          assert srv, "mcp.json: GitGuardian server missing"
+          assert srv.get("type") == "streamable-http", "mcp.json: GitGuardian must use type streamable-http"
+          assert set(srv) <= {"type", "url", "headers"}, f"mcp.json: unexpected server fields {sorted(set(srv))}"
+          assert urlparse(srv["url"]).scheme == "https", "mcp.json: url must be https"
+          print("Agent Plugins manifests OK")
           PY
-          # mcp.json points at the hosted server (same as the other client configs)
-          test -f kiro/mcp.json || { echo "missing kiro/mcp.json"; exit 1; }
-          python3 - <<'PY'
-          import json
-          m = json.load(open('kiro/mcp.json'))
-          assert "GitGuardian" in m.get("mcpServers", {}), "GitGuardian server missing from kiro/mcp.json"
-          print("kiro mcp.json OK")
-          PY
-          # Every skill in skills/ must have a mirror under kiro/skills/ with identical
-          # SKILL.md + references/. The `# x-release-please-version` annotation is
-          # stripped from both sides before diffing, so the comment itself may differ
-          # but the version value must match — Release Please bumps both trees.
-          for s in skills/*/; do
-            name=$(basename "$s")
-            test -f "kiro/skills/$name/SKILL.md" || { echo "kiro/skills/$name/SKILL.md missing"; exit 1; }
-            diff <(sed 's/ # x-release-please-version//' "$s/SKILL.md") \
-                 <(sed 's/ # x-release-please-version//' "kiro/skills/$name/SKILL.md") \
-              || { echo "kiro/skills/$name/SKILL.md drifted from skills/$name/SKILL.md"; exit 1; }
-            if [ -d "$s/references" ]; then
-              for r in "$s"/references/*.md; do
-                b=$(basename "$r")
-                test -f "kiro/skills/$name/references/$b" || { echo "kiro/skills/$name/references/$b missing"; exit 1; }
-                diff "$r" "kiro/skills/$name/references/$b" \
-                  || { echo "kiro/skills/$name/references/$b drifted"; exit 1; }
-              done
-            fi
-          done
-          echo "kiro skills mirror OK"
 
       - name: Run claude plugin validate
         # Runs the same validator Anthropic's community-marketplace

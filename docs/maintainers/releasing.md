@@ -4,19 +4,16 @@ We follow [Semantic Versioning](https://semver.org). The plugin is **pre-1.0** a
 
 ## Source of truth
 
-The plugin version lives in **nineteen files** that must move together:
+The plugin version lives in **thirteen files** that must move together:
 
 | File(s) | Field |
 |---|---|
 | `package.json` | `version` |
-| `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.codex-plugin/plugin.json`, `kiro/plugin.json` | `version` |
+| `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.codex-plugin/plugin.json`, `plugin.json` (Kiro) | `version` |
 | `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json` | `metadata.version` |
 | `skills/<name>/SKILL.md` — all six skills | `metadata.version`, via the `# x-release-please-version` annotation |
-| `kiro/skills/<name>/SKILL.md` — all six, the Kiro mirror | same |
 
-All nineteen are registered in `release-please-config.json` (the seven manifests as `json` extra-files, the twelve SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`), a GitHub Release, and the rolling `stable` tag ([below](#the-rolling-stable-tag)). Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
-
-The Kiro tree is a hand-maintained mirror of `skills/`, so it has to be registered too — `validate.yml` diffs the two trees on every PR and fails on any mismatch, version line included. Forgetting to register a new mirror file turns every future release PR red.
+All thirteen are registered in `release-please-config.json` (the seven manifests as `json` extra-files, the six SKILL.md as `generic`), so Release Please moves them in lockstep — never bump one by hand. Plus a matching Git tag (`v<major>.<minor>.<patch>`), a GitHub Release, and the rolling `stable` tag ([below](#the-rolling-stable-tag)). Tag format mirrors what [`ggmcp`](https://github.com/GitGuardian/ggmcp) uses (`tag_format = "v$version"` in its `pyproject.toml`), so the wider GitGuardian release surface stays consistent.
 
 ## When to bump
 

@@ -74,10 +74,10 @@ function* markdownFiles(dir) {
   }
 }
 
-/** Scan skills/ and kiro/skills/ under root. Returns findings with .file. */
+/** Scan skills/ under root. Returns findings with .file. */
 export function scanTree(root) {
   const findings = [];
-  for (const base of ["skills", "kiro/skills"]) {
+  for (const base of ["skills"]) {
     for (const file of markdownFiles(join(root, base))) {
       for (const f of checkBytes(readFileSync(file))) {
         findings.push({ ...f, file: relative(root, file) });
