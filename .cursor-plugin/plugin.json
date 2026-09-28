@@ -20,5 +20,6 @@
     "dotenv",
     "secret-scanning"
   ],
-  "logo": "assets/logo.png"
+  "logo": "assets/logo.png",
+  "mcpServers": "./.cursor-mcp.json"
 }

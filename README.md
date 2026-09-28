@@ -171,10 +171,10 @@ This works with Cursor, GitHub Copilot, OpenCode, Cline, Windsurf, Gemini CLI, K
 3. Enter:
 
    ```text
-   https://github.com/GitGuardian/agent-skills/tree/main/kiro
+   https://github.com/GitGuardian/agent-skills
    ```
 
-If your Kiro version does not accept a GitHub subdirectory, clone this repo and add the local `kiro/` folder instead.
+The repo root is the power: Kiro reads `plugin.json`, `mcp.json`, and the `skills/` folder from it. You can also clone this repo and add the local folder instead.
 
 </details>
 
@@ -241,7 +241,7 @@ Design choices:
 - **Progressive disclosure.** `SKILL.md` stays short enough to load quickly; long remediation, setup, and workflow details live in `references/`.
 - **Structured remediation.** `scan-secrets` points to the GitGuardian Remediation Doctrine before advising on rotation, false positives, history rewrite, or HMSL follow-up.
 - **HMSL handoff.** `check-hmsl` is intentionally user-run only. The agent prepares commands and interprets sanitized output, but it must not read credential files or invoke `ggshield hmsl` on them.
-- **Cross-agent packaging.** The same skills ship through Claude Code, Codex, Cursor, VS Code Copilot, skills.sh, and Kiro-specific power files.
+- **Cross-agent packaging.** The same skills ship through Claude Code, Codex, Cursor, VS Code Copilot, skills.sh, and Kiro (Agent Plugins format).
 
 ## Requirements
 
@@ -260,7 +260,8 @@ The plugin includes GitGuardian Developer MCP server configuration for supported
 |---|---|
 | Claude Code | [`.mcp.json`](.mcp.json) |
 | Codex | [`.codex-mcp.json`](.codex-mcp.json) |
-| Cursor | [`mcp.json`](mcp.json) |
+| Cursor | [`.cursor-mcp.json`](.cursor-mcp.json) |
+| Kiro | [`mcp.json`](mcp.json) |
 
 The MCP server adds GitGuardian API-backed tools for incident triage and honeytoken management. Secret scanning stays CLI-first through `ggshield`, because the skills need local path, staged-change, history, Docker image, and package scanning.
 
@@ -274,6 +275,7 @@ agent-skills/
 |-- .cursor-plugin/         # Cursor plugin manifest and marketplace entry
 |-- .codex-plugin/          # Codex plugin manifest
 |-- .agents/plugins/        # Codex repo-scoped marketplace
+|-- plugin.json, mcp.json   # Kiro power manifests (Agent Plugins format)
 |-- skills/                 # self-contained GitGuardian skills
 |   |-- scan-secrets/       # secret detection and remediation
 |   |-- create-honeytokens/ # honeytoken generation and planting
@@ -281,7 +283,6 @@ agent-skills/
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
 |   |-- install-hooks/      # install ggshield as a git or AI-assistant hook
 |   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
-|-- kiro/                   # Kiro power (Agent Plugins format: plugin.json + skills/ + mcp.json)
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
 ```

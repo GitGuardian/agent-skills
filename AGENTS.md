@@ -10,7 +10,7 @@ Deep reference for specific tasks lives under `docs/maintainers/` and is loaded 
 
 This repo ships skill files that teach AI coding agents how to use [`ggshield`](https://github.com/GitGuardian/ggshield), GitGuardian's open-source CLI. The agent invokes `ggshield` directly; the skill files supply the missing instructions on when, how, and what to do with the output.
 
-Target agents: Claude Code directly via the plugin marketplace, Cursor via the `.cursor-plugin/` manifest, Codex via the `.codex-plugin/` manifest (and the repo-scoped `.agents/plugins/marketplace.json`), and ~50 other agents (Kiro CLI, Copilot, OpenCode, Cline, Windsurf, Gemini CLI, …) via the [skills.sh](https://skills.sh) CLI.
+Target agents: Claude Code directly via the plugin marketplace, Cursor via the `.cursor-plugin/` manifest, Codex via the `.codex-plugin/` manifest (and the repo-scoped `.agents/plugins/marketplace.json`), Kiro via the root `plugin.json` (Agent Plugins format), and ~50 other agents (Kiro CLI, Copilot, OpenCode, Cline, Windsurf, Gemini CLI, …) via the [skills.sh](https://skills.sh) CLI.
 
 ## Repository Structure
 
@@ -19,7 +19,8 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 .cursor-plugin/        # Cursor plugin metadata (same two files)
 .codex-plugin/         # Codex plugin metadata (plugin.json only)
 .agents/plugins/       # Codex repo-scoped marketplace (marketplace.json)
-.codex-mcp.json        # Codex MCP server config (Claude: .mcp.json, Cursor: mcp.json)
+.codex-mcp.json        # Codex MCP server config (Claude: .mcp.json, Cursor: .cursor-mcp.json)
+plugin.json, mcp.json  # Kiro power manifests (Agent Plugins format); the repo root is the power
 .github/workflows/     # CI: JSON + frontmatter validation, install-flow sanity, release automation
 test/sanity.test.ts    # install-flow sanity tests (vitest)
 package.json           # tooling-only (vitest); no runtime deps
@@ -28,7 +29,6 @@ skills/<name>/         # one folder per skill (folder name = SKILL.md frontmatte
   SKILL.md             #   what the agent reads first
   references/<topic>.md #  long-form, loaded on demand; shared refs duplicated per skill
   evals/               #   evals.json + targets.json + files/ fixtures (scan-secrets, check-hmsl)
-kiro/                  #   Kiro power (Agent Plugins format): plugin.json + skills/ mirror + mcp.json
 docs/maintainers/      # task-gated reference for working ON this repo (see bottom of this file)
 README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
