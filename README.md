@@ -19,9 +19,9 @@ Four skills map to four slash commands:
 
 Find hardcoded secrets in paths, staged changes, commits, full history, Docker images, and packages.
 
-**Use when:** handling credentials, editing `.env` or CI files, preparing a commit or push, or auditing a repo.
+**Use when:** requesting a one-off scan, auditing existing files or history, or investigating a suspected leak.
 
-**Key rule:** scan first, then remediate from structured findings.
+**Key rule:** run the scan the user asked for, then remediate from the structured findings. Routine edits, commits, and pushes use hooks, not repeated agent scans.
 
 </details>
 
@@ -69,11 +69,11 @@ Check known credentials against HasMySecretLeaked without exposing plaintext to 
 
 [`install-hooks`](skills/install-hooks/SKILL.md)
 
-Install ggshield as a git hook (pre-commit / pre-push) so secrets are blocked before they enter history, or as an AI-assistant hook (Claude Code, Cursor, Copilot, Codex) so your AI coding tool scans its prompts and actions for secrets in real time.
+Install recurring protection with ggshield. Pre-commit hooks check staged changes before a commit. Pre-push hooks check outgoing commits before a push. AI hooks check supported prompts and tool actions in Claude Code, Cursor, Codex, Copilot, and Mistral Vibe.
 
 **Use when:** asking to install Claude/Cursor/Copilot hooks, setting up secret prevention on a repo, asking to block or stop secrets from being committed or pushed, configuring pre-commit hooks, or hardening after a secret was caught.
 
-**Key rule:** route by family — name an AI tool, get an AI-assistant hook; a bare "install hooks" gets a which-family question. Prevention only; existing code and history still need `scan-secrets`. Global mode modifies user-level config; get explicit consent.
+**Key rule:** check the existing protection, reuse a matching hook, and offer an installation or a repair one time. Keep existing hook managers. A global installation needs an explicit request or approval. A hook installation does not audit existing code or history.
 
 </details>
 
@@ -90,7 +90,7 @@ Read the secret incidents already detected in your GitGuardian dashboard, rank t
 
 </details>
 
-Skills also auto-trigger from context. Editing `.env` files, CI configs, credential-handling code, or deployment scripts should activate `scan-secrets`; asking whether a known token has leaked should activate `check-hmsl`.
+Skills also route from context. Recurring protection while you edit credential-handling code or prepare commits and pushes belongs to `install-hooks`. An existing effective hook does the check, so the agent does not run another scan. An explicit scan or a suspected leak activates `scan-secrets`. A question about whether a known token has leaked activates `check-hmsl`.
 
 ## Quick Start
 
@@ -112,13 +112,13 @@ Add this repo as a plugin marketplace, then install the `gitguardian` plugin:
 /plugin install gitguardian
 ```
 
-Recommended defense in depth after `ggshield` is installed and authenticated:
+For user-wide Claude Code protection after `ggshield` is installed and authenticated (ggshield 1.53.0+):
 
 ```bash
-ggshield install -t claude-code -m global
+ggshield machine setup --no-git-hooks --no-honeytokens --agent claude-code
 ```
 
-The hook scans prompts, tool calls, and tool outputs from inside Claude Code. It requires `ggshield` 1.49.0 or later.
+The hook checks supported prompt and tool events. A finding in a prompt or pre-tool event can block the action. A finding in a post-tool event gives a notification after the action. When a scan has an error, the action continues with a warning. See the [AI hook documentation](https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools).
 
 </details>
 
@@ -185,7 +185,7 @@ If your Kiro version does not accept a GitHub subdirectory, clone this repo and 
 ```text
 Scan this repo for hardcoded credentials
 Audit the full git history for leaked secrets
-Did I just commit any tokens? Scan the staged changes first
+Scan my staged changes once now, without committing
 Find the secrets I leaked in commit abc1234
 Scan this Docker image for embedded credentials
 ```
