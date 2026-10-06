@@ -159,7 +159,7 @@ The credential is in an unsaved buffer or just-saved file. It has not entered an
 1. **Undo the edit.** Revert to the prior file content. Appropriate when the credential was introduced accidentally by the agent itself.
 2. **Refactor to a credential reference.** Replace the inline value with an environment variable, secrets-manager reference, or platform-native equivalent. Show the before/after.
 
-Re-scan after the fix (`ggshield secret scan path <file> --json`) and only proceed once clean.
+The enabled AI hook checks the fixed action on the next authorized retry. Do not run `ai-hook` manually. Do not add a path scan for the same event. If the hook cannot check the affected content, explain the gap and offer a focused one-off scan. Do not claim that the fix was checked. A post-tool notification comes after the action. It does not show that the hook prevented the disclosure.
 
 ### 5.2 Pre-commit hook fired
 
@@ -168,7 +168,7 @@ The credential is staged and about to enter a git commit. The agent blocks the c
 1. **Unstage the change containing the secret** (`git restore --staged <file>`), then fix in place as in [§ 5.1](#51-agent-file-edit-hook-fired).
 2. **If the commit message has already been written**, preserve it for re-use after the fix.
 
-Re-scan; recommit only once clean.
+Stage only the fixed changes again. Retry the authorized commit with the pre-commit hook enabled. That hook checks the staged content. Do not add a separate staged or path scan. A finding or a scan error stays unresolved. Do not bypass it.
 
 ### 5.3 Pre-push hook fired
 
@@ -176,7 +176,7 @@ The credential is in one or more local commits about to leave the machine. This 
 
 1. **Most recent commit only** — fix the file, then `git add <file> && git commit --amend --no-edit`.
 2. **Earlier commits in the unpushed range** — interactive rebase (`git rebase -i <base>`). Edit out, fixup, or squash the offending commits.
-3. **After either rewrite**, re-scan the full repo (`ggshield secret scan repo . --json`). Push only once clean.
+3. **After either rewrite**, the pre-push hook checks the fixed outgoing commits on the next authorized push. Do not add a full-repository scan or a staged scan for the same check. If the push is not authorized, leave the retry pending. If the hook skips the range or cannot scan it, report that the range is unchecked. Then propose a repair of the hook configuration, or a separately authorized scan of that outgoing range.
 
 ### Why no triage axes here
 
@@ -1093,7 +1093,8 @@ Every mode ends with verification. Without it, the agent does not know whether t
 
 ### Universal validation
 
-- **Re-scan the affected artifact.** `ggshield secret scan path <files-or-paths> --json` for file / path findings; `ggshield secret scan repo . --json` for repo-scope findings. The secret should no longer appear. If it does, the remediation didn't reach every consumer or the in-place fix was incomplete.
+- **Hook finding:** the same effective hook checks the fixed scope on the next authorized operation, as in [§ 5](#5-pre-leak-track). Do not add an ad-hoc scan next to it. A pending, skipped, or failed check is not a clean result. Report the gaps and arrange the appropriate check.
+- **Explicit scan finding:** scan the affected artifact again with the relevant CLI scope. Use `ggshield secret scan path <files-or-paths> --json` for file or path findings. Use `ggshield secret scan repo . --json` for a full-history audit. The expected result is that the secret does not appear. If it does, the remediation did not reach every affected location.
 
 ### Mode-specific validation
 
@@ -1132,13 +1133,13 @@ The doctrine never reorders, removes, or overrides a customer step.
 
 ### Rendering
 
-- **Pre-leak (ggshield output):** the configured message is free text. Surface it **verbatim** as the lead guidance, then nest the §§ 5.1–5.3 mechanics (remove-don't-rotate, unstage / amend / rebase, re-scan) underneath to make it actionable.
+- **Pre-leak (ggshield output):** the configured message is free text. Surface it **verbatim** as the lead guidance, then nest the §§ 5.1–5.3 mechanics (remove-don't-rotate, unstage / amend / rebase, check by the same hook) underneath to make it actionable.
 - **Incident page (MCP steps):** reproduce the customer's steps as their own literal numbered list (render each `link` as its `text` → `url`); nest the operationalizing doctrine detail under the relevant step.
 
 ### Filling the blanks
 
 - **Terse step / message** → enrich it underneath with the relevant doctrine detail.
-- **Doctrine considers something important that no customer step covers** — most commonly the re-scan that confirms the fix ([§ 12](#12-validation)), or, in the post-leak tracks, rotation itself — → the agent MAY add it as a clearly-labeled supplement ("Not in your workflow, but recommended: …"), at its discretion. It is *added*, never substituted for a customer step.
+- **Doctrine considers something important that no customer step covers** — most commonly the hook result or the scoped re-scan that checks the fix ([§ 12](#12-validation)), or, in the post-leak tracks, rotation itself — → the agent MAY add it as a clearly-labeled supplement ("Not in your workflow, but recommended: …"), at its discretion. It is *added*, never substituted for a customer step.
 
 ### When a customer step looks risky
 

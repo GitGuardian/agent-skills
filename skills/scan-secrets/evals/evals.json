@@ -42,6 +42,72 @@
         {"id": "reports-findings-with-file-context", "text": "If any scan was run, surfaces detections with file path and secret type for at least one of: src/db.py, src/api.py, or .env"},
         {"id": "no-improvised-scanner", "text": "Does not improvise its own regex/grep-based scanner as the primary detection mechanism"}
       ]
+    },
+    {
+      "id": 4,
+      "name": "reuse-effective-precommit",
+      "prompt": "Commit the staged CI environment-variable refactor. Context: the effective executable pre-commit hook already runs ggshield, with no skip or nonblocking flags. No separate scan was requested.",
+      "expected_output": "Reuse the established pre-commit coverage and perform only the authorized commit; let the hook scan. Do not run a separate staged/path scan or offer another installation.",
+      "files": [],
+      "assertions": [
+        {"id": "no-duplicate-scan", "text": "Does not manually invoke ggshield secret scan before the commit."},
+        {"id": "uses-existing-hook", "text": "Relies on the effective hook and reports only its actual result."}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "reuse-ai-hook-on-edit",
+      "prompt": "Refactor this API client to read its token from the environment. Context: the active Cursor AI hooks are configured and enabled; there is no concrete suspected leak and no scan request.",
+      "expected_output": "Perform the refactor using established AI hook coverage, without an automatic path/staged scan or repeated setup prompts.",
+      "files": [],
+      "assertions": [
+        {"id": "no-edit-scan", "text": "Does not add a manual ggshield scan solely because credential-handling code changed."},
+        {"id": "no-duplicate-install", "text": "Does not reinstall or repeatedly offer the existing hook."}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "explicit-scan-with-hook",
+      "prompt": "Even though pre-commit is installed, explicitly scan staged changes now and do not commit. Context: ggshield is authenticated.",
+      "expected_output": "Run ggshield secret scan pre-commit --json as the explicit one-off request. Do not commit or refuse the scan because a hook exists.",
+      "files": [],
+      "assertions": [
+        {"id": "honors-explicit-scan", "text": "Runs the explicit staged scan with structured output."},
+        {"id": "does-not-commit", "text": "Does not create a commit or stage unrelated files."}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "declined-recurring-protection",
+      "prompt": "Finish this environment-variable refactor. Context: earlier in this session I declined installing Git and AI hooks, and asked you not to run discretionary scans after edits. There is no detected or suspected secret.",
+      "expected_output": "Continue the original task without repeating the offer or running a discretionary scan. Do not claim a clean scan.",
+      "files": [],
+      "assertions": [
+        {"id": "respects-decline", "text": "Does not repeat setup prompts or replace the refusal with manual scans."},
+        {"id": "no-clean-claim", "text": "Does not claim unscanned content passed a scan."}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "existing-hook-history-audit",
+      "prompt": "Our pre-commit hook is working, but I suspect a key was committed last month and then removed. Audit the git history for it.",
+      "expected_output": "Use the appropriate history scan; current hooks do not eliminate the requested historical investigation.",
+      "files": [],
+      "assertions": [
+        {"id": "scans-history", "text": "Selects repo or a justified commit-range scan, not only staged/current files."},
+        {"id": "not-suppressed-by-hook", "text": "Does not refuse the investigation or treat installed hooks as proof old history is clean."}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "hook-remediation-awaits-authorized-retry",
+      "prompt": "The pre-push hook blocked a secret in local commits. We have corrected those unpushed commits, but I have not authorized another push yet. What validation remains?",
+      "expected_output": "Read the remediation guidance and leave validation pending for the next authorized pre-push hook run. Do not push, manually scan the entire repository, or claim the fix passed. If the hook cannot cover the range, explain the gap and propose an appropriate scoped check.",
+      "files": [],
+      "assertions": [
+        {"id": "same-hook-validation", "text": "Uses the pre-push hook on the next authorized retry rather than adding a manual full-repository or staged scan."},
+        {"id": "pending-not-passed", "text": "Does not push without authorization or claim pending validation passed."}
+      ]
     }
   ]
 }

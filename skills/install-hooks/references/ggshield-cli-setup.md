@@ -174,28 +174,39 @@ ggshield auth login --method token --instance https://dashboard.eu1.gitguardian.
 
 For stateless CI jobs, skip login and set `GITGUARDIAN_API_KEY` as a pipeline secret. `ggshield` reads it directly.
 
-## Agent and git hooks
+## AI and Git hooks
 
-When the active skill needs hooks, install them after the CLI is authenticated:
+For recurring checks on commits, pushes, or AI assistant actions, recommend the matching hook through `install-hooks`. Check the existing protection first. Do not add a manual scan to each operation. Do not offer an installation again after the user declined it. An installation request authorizes its stated scope. A scan request alone does not authorize a hook installation.
+
+After authentication, for an authorized project-local installation in a repository without a Git hook manager:
 
 ```bash
-ggshield install -t claude-code -m global
-ggshield install -t cursor -m global
-ggshield install -t copilot -m global
-ggshield install -t codex -m global          # ggshield 1.51.0+
-ggshield install -t vscode -m global         # alias for copilot; ggshield 1.51.0+
 ggshield install --mode local --hook-type pre-commit
 ggshield install --mode local --hook-type pre-push
+# AI hook for the requested assistant in this project:
+ggshield install --mode local --hook-type claude-code
 ```
 
-Agent hooks require `ggshield` 1.49.0 or later. The `codex` target and the `vscode` alias (for `copilot`) require 1.51.0 or later — the Codex hook is backed by Codex support added to `ggshield secret scan ai-hook` in 1.51.0.
+Choose the relevant command. Do not run all of them. A pre-commit hook checks staged changes. A pre-push hook checks outgoing commits. If the repository uses the pre-commit framework or another hook manager, add ggshield to that manager and keep its other checks. Resolve `core.hooksPath` and the effective hook. Do not assume `.git/hooks`.
+
+For user-wide AI hook protection that the user explicitly requested, on ggshield 1.53.0 or later, target only the requested assistant:
+
+```bash
+ggshield machine setup --no-git-hooks --no-honeytokens --agent claude-code
+```
+
+Replace the assistant identifier with one that the CLI help lists: `claude-code`, `cursor`, `codex`, `copilot`, `vscode`, or `vibe` (Mistral Vibe). A bare `machine setup` also installs global Git hooks and plants a honeytoken. Do not use it for an AI-hook-only request. On older versions, use `ggshield install --mode global --hook-type <assistant>` for a user-wide AI hook. AI hooks need ggshield 1.49.0 or later. Codex needs 1.51.0 or later. Mistral Vibe needs 1.54.0 or later.
+
+A finding in a prompt or pre-tool event can block the action. A finding in a post-tool event gives a notification after the action. When an AI scan has an error, the action continues and ggshield shows a warning. Do not claim that the hook blocks all output. Do not run `secret scan ai-hook` manually. Check the configuration without a duplicate scan. On supported versions, `ggshield machine doctor` gives read-only checks.
+
+See the current [Git hook guide](https://docs.gitguardian.com/ggshield-docs/integrations/git-hooks/pre-commit) and [AI hook guide](https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools) for version-specific installation steps.
 
 ## What's new in ggshield 1.51.0
 
 Released 2026-05-26. The features relevant to these skills, and where they apply above:
 
 - **Browser-less login** — `ggshield auth login --method oob` for SSH sessions, containers, and headless servers. See [Headless and CI](#headless-and-ci).
-- **Codex agent hook** — `ggshield install -t codex`, backed by Codex support in `ggshield secret scan ai-hook`. See [Agent and git hooks](#agent-and-git-hooks).
+- **Codex agent hook** — `ggshield install -t codex`, backed by Codex support in `ggshield secret scan ai-hook`. See [AI and Git hooks](#ai-and-git-hooks).
 - **`vscode` hook alias** — `ggshield install -t vscode` now aliases `copilot`.
 - **Signed release binaries** — GitHub Releases assets ship with GitHub Artifact Attestations (SLSA provenance); verify with `gh attestation verify <file> --repo GitGuardian/ggshield`. See [Direct download from GitHub releases](#3-direct-download-from-github-releases).
 - **Plugins served from your instance** — `ggshield plugin install` / `update` / `status` now discover and pull plugins from the GitGuardian instance you're authenticated against (via `/v1/endpoints/plugins/<reference>/{download,signature}`) instead of a hard-coded GitHub URL. Requires the matching backend feature. This is the install path for the `machine_scan` plugin used by the scan-machine skill.
