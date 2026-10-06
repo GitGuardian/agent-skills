@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/GitGuardian/agent-skills/compare/v0.6.2...v0.7.0) (2026-10-06)
+
+
+### Features
+
+* **skills:** declare standalone license and compatibility metadata ([#137](https://github.com/GitGuardian/agent-skills/issues/137)) ([425e5ac](https://github.com/GitGuardian/agent-skills/commit/425e5ac0a1f4f7b05e1e2d6b899a37007064cc3a))
+
 ## [0.6.2](https://github.com/GitGuardian/agent-skills/compare/v0.6.1...v0.6.2) (2026-08-31)
 
 
