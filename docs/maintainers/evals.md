@@ -44,6 +44,40 @@ Eval-loop subagents (the `Agent` tool, even with `mode: bypassPermissions`) cann
 
 **Practical rule:** subagents cannot bootstrap a git-repo fixture themselves. Build fixtures in the **parent session** (or via a one-shot shell setup script that ran before the agent spawned), then point the subagent at the pre-built dir. The `evals/files/<eval-name>/setup.sh` pattern documented above is designed around this constraint — the setup runs once, the subagent only ever reads or hands the fixture to `ggshield`.
 
+## Headless runs — local on demand and CI
+
+The skill-creator loop above is interactive. For unattended runs — locally on demand or in CI — we drive the suites through the [`agent-skill-eval`](https://github.com/tardigrde/agent-skill-eval) harness (`pip install agent-skill-eval`), which runs the real `claude` CLI against each prompt (with and without the skill installed), grades per assertion (deterministic state-diff checks first, LLM rubric for the rest), and reports pass rates, deltas, tokens, and cost.
+
+The canonical `evals/evals.json` files stay in skill-creator format. `scripts/run-evals.mjs` adapts them on the fly:
+
+- builds each fixture with its `setup.sh` into `eval-workspace/ase/<skill>/files/<case>/` (parent-session build, same constraint as above), staging the built contents — `.git` included — so the harness workspace root *is* the fixture repo;
+- flattens `{id, text}` assertion objects to the plain strings ase expects;
+- validates the converted suite (`ase validate`), then runs and reports.
+
+```bash
+npm run evals                              # all suites, default model
+npm run evals -- --skill install-hooks     # one suite
+npm run evals -- --skill scan-secrets --eval-id 2 --model claude-opus-4-8
+npm run evals:dry                          # build + convert + validate only, no API calls
+node scripts/run-evals.mjs --skill install-hooks --agent fake   # offline pipeline smoke test
+```
+
+Anything after `--` that the driver doesn't recognize is passed to `ase run` verbatim (e.g. `-- --runs 3 --no-baseline`). Results land under `eval-workspace/` (gitignored via `*-workspace/`); read them with `ase report --workspace eval-workspace/<skill>-workspace --show-evidence`.
+
+Credentials:
+
+| Env var | Needed for |
+|---|---|
+| `ANTHROPIC_API_KEY` | the `claude-code` agent runs (all suites) |
+| `GITGUARDIAN_API_KEY` | the `scan-secrets` suite (real `ggshield` scans); suite is skipped when absent |
+| `OPENROUTER_API_KEY` / `OPENAI_API_KEY` | LLM rubric grading; when neither is set the driver routes the grader to Anthropic's OpenAI-compatible endpoint using `ANTHROPIC_API_KEY`. With no grader key at all, rubric assertions are marked *skipped*, never silently failed. |
+
+Per-suite policy lives in `scripts/evals.config.json`: `scan-secrets` requires the GitGuardian key; `triage-incidents` evals 1 and 3 are skipped headlessly (they need a live GitGuardian MCP connection and remain interactive-only).
+
+### CI
+
+`.github/workflows/evals.yml` runs the same driver on a weekly schedule and on demand via `workflow_dispatch` (inputs: skill, model, runs). It is deliberately **not** a per-PR gate — behavioral evals are nondeterministic and cost API money; the per-PR gate stays `validate` + `sanity`. Each run uploads the full `eval-workspace/` as an artifact (30-day retention) and writes the markdown scorecards to the job summary. Required repo secrets: `ANTHROPIC_API_KEY` (mandatory), `GITGUARDIAN_API_KEY` (already present for the ggshield workflow), `OPENROUTER_API_KEY` (optional, dedicated grader).
+
 ## What ships in this repo vs lives upstream
 
 | In this repo | In `skill-creator` (external) |
