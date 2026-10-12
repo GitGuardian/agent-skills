@@ -23,8 +23,9 @@ A honeytoken is a **decoy credential** that does nothing useful but raises an al
 
 1. **Confirm the planting surface with the user explicitly.** Ask: "Where do you want me to plant this?" If the answer is vague ("just somewhere"), surface the candidate list from the When to Use section — `.env.example`, pre-publication open-source repo, internal wiki page, deploy script, archived repo, container image, public artifact. Do not generate first and ask later.
 2. **Double-check the planting surface is not in the production import graph.** If a teammate can `import { fn } from './services/Foo'` on the default branch and call it, your own CI will fire the honeytoken from real code. Prefer non-importable file types (`.env`, `.yaml`, `.json`, `.csv`, runbook pages), isolated directories (`tests/fixtures/`, `examples/`, `archived/`), or a non-default branch. Full tactics — including the "real to attackers, decoy to defenders" dual-audience principle — in [references/planting-strategy.md](references/planting-strategy.md) → "Avoiding self-triggering".
-3. **Always pass a meaningful `--description`.** The alert fires months later, often to a different on-call. `"planted in repo X / file Y on 2026-MM-DD"` beats `"test"` by a wide margin. If the user doesn't supply one, propose one before generating.
-4. **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md). If `ggshield api-status` doesn't show `honeytokens:write` in the `Token scopes:` line, walk through **Onboarding (first use)** below before attempting `honeytoken create`. The agent can drive the scope upgrade on the user's behalf — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
+3. **Keep the honeytoken values out of the conversation.** Always pass `-o` so `ggshield` writes the values straight to disk, and never read, print, or retype them. A ggshield AI hook flags them as a valid AWS key and blocks the agent. See [Planting without exposing the values](#planting-without-exposing-the-values).
+4. **Always pass a meaningful `--description`.** The alert fires months later, often to a different on-call. `"planted in repo X / file Y on 2026-MM-DD"` beats `"test"` by a wide margin. If the user doesn't supply one, propose one before generating.
+5. **Run Onboarding first if the CLI isn't set up.** If `ggshield --version` fails, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md). If `ggshield api-status` doesn't show `honeytokens:write` in the `Token scopes:` line, walk through **Onboarding (first use)** below before attempting `honeytoken create`. The agent can drive the scope upgrade on the user's behalf — see [references/gitguardian-platform.md](references/gitguardian-platform.md).
 
 ## When to Use
 
@@ -55,7 +56,8 @@ Do not use this skill when:
 ggshield api-status                                      # verify the PAT includes honeytokens:write
 ggshield honeytoken create --type AWS \
   --name "<planting-surface>-<YYYY-MM>" \
-  --description "<where it was planted and why>"
+  --description "<where it was planted and why>" \
+  -o <planting-file>
 ```
 
 If `api-status` shows `honeytokens:write` is missing from `Token scopes:`, run the scope-recovery flow from [references/gitguardian-platform.md](references/gitguardian-platform.md) (you can drive it on the user's behalf). If `ggshield --version` fails, follow [references/ggshield-cli-setup.md](references/ggshield-cli-setup.md) first.
@@ -83,7 +85,7 @@ Two forms — pick based on context:
 
 ```bash
 # Bare honeytoken — just the credentials, no surrounding code
-ggshield honeytoken create --type AWS --name <name> --description "<purpose>"
+ggshield honeytoken create --type AWS --name <name> --description "<purpose>" -o <path>
 
 # Honeytoken wrapped in a realistic-looking file (preferred when planting in code)
 ggshield honeytoken create-with-context --type AWS --name <name> --description "<purpose>" --language python -o <path>
@@ -104,6 +106,43 @@ Key flags:
 | `--language <lang>` | (`create-with-context` only) Force the wrapper language. Inferred from the output filename if not set |
 
 Exit codes: `0` = honeytoken created, non-zero = error (most commonly auth / permissions, see Troubleshooting).
+
+### Planting without exposing the values
+
+A honeytoken looks exactly like a valid AWS key. If its values enter the conversation, the ggshield AI hook (`ggshield secret scan ai-hook`) flags them and can block the agent. The values also persist in transcripts and logs, where a reader can trigger the decoy and cause false alerts. Move the values from `ggshield` to the planting file with commands that never print them:
+
+- Always pass `-o`. With `-o`, `ggshield` prints only the honeytoken ID, name, and dashboard URL. Without `-o`, it prints the values.
+- Do not use the GitGuardian MCP `generate_honeytoken` tool to plant. Its response contains the values.
+- Do not open the planted file, `cat` it, or write the values with an edit tool. Verify with the masked check below.
+
+If the planting file has no AWS lines yet, `-o <planting-file>` is enough. `ggshield` appends `aws_access_key_id=...` and `aws_secret_access_key=...` lines.
+
+If the file already has placeholder lines to fill (for example `AWS_ACCESS_KEY_ID=` in an `.env.example`), write to a staging file and substitute with a script:
+
+```bash
+STAGE="$(mktemp -d)/honeytoken.env"
+ggshield honeytoken create --type AWS --name "<name>" --description "<purpose>" -o "$STAGE"
+python3 - "$STAGE" "<planting-file>" <<'EOF'
+import re, sys
+vals = dict(l.strip().split("=", 1) for l in open(sys.argv[1]) if "=" in l)
+s = open(sys.argv[2]).read()
+for key in ("aws_access_key_id", "aws_secret_access_key"):
+    s, n = re.subn(rf"(?mi)^({key}[ \t]*[=:][ \t]*).*$", lambda m: m.group(1) + vals[key], s)
+    if n != 1: sys.exit(f"expected exactly one {key} line in the target, found {n}")
+open(sys.argv[2], "w").write(s)
+EOF
+rm -r "$(dirname "$STAGE")"
+```
+
+Verify with a masked check that shows only the first and last 4 characters:
+
+```bash
+grep -iE '^aws_(access_key_id|secret_access_key)' "<planting-file>" | sed -E 's/([=:] *)(.{4}).*(.{4})$/\1\2...\3/'
+```
+
+If the agent can only reach the planting surface through a tool call (a wiki or Notion page written through an MCP tool, for example), do not put the values in that call. Write them to a staging file with `-o` and ask the user to paste them in.
+
+When the user commits the planted file, their ggshield pre-commit hook will flag the decoy. This is expected. Tell the user, and let them decide how to commit it (for example `ggshield secret ignore --last-found`).
 
 ## Best Practices
 
