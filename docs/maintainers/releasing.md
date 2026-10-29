@@ -9,7 +9,7 @@ The plugin version lives in **nineteen files** that must move together:
 | File(s) | Field |
 |---|---|
 | `package.json` | `version` |
-| `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.codex-plugin/plugin.json`, `kiro/plugin.json` | `version` |
+| `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.codex-plugin/plugin.json`, `plugin.json` (root, Kiro registry), `kiro/plugin.json` | `version` |
 | `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json` | `metadata.version` |
 | `skills/<name>/SKILL.md` — all six skills | `metadata.version`, via the `# x-release-please-version` annotation |
 | `kiro/skills/<name>/SKILL.md` — all six, the Kiro mirror | same |

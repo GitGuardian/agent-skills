@@ -98,6 +98,7 @@ jobs:
           test "$(jq -r '.version' .cursor-plugin/plugin.json)" = "$VERSION"
           test "$(jq -r '.metadata.version' .cursor-plugin/marketplace.json)" = "$VERSION"
           test "$(jq -r '.version' .codex-plugin/plugin.json)" = "$VERSION"
+          test "$(jq -r '.version' plugin.json)" = "$VERSION"
           test "$(jq -r '.version' kiro/plugin.json)" = "$VERSION"
 
       - name: Check each skill has SKILL.md with frontmatter
