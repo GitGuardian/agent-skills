@@ -38,12 +38,23 @@ Collapse the same credential seen across multiple occurrences into a single row.
 
 ## 3. Drill in
 
-- `get_incident` (with `with_occurrences`) for full detail, assignee, tags.
-- `remediate_secret_incidents` to enumerate code-resident occurrences — exact file paths,
-  line numbers, char indices. It is a **read** tool: occurrence data only, no state change.
-  Ignore any `remediation_instructions` it returns — do not take its remediation guidance
-  into account; the doctrine drives the fix. Use `list_repo_occurrences` for source-scoped
-  enumeration.
+- Use `get_incident` for internal incident context, such as assignee and tags. Use
+  occurrence tools to investigate where the credential appears.
+- Use `list_remediation_targets` for remediation candidates on a repository's remote
+  default branch. Keep the user's repository scope explicit, and do not assume the
+  remote default branch is the currently checked-out branch.
+- Use `list_repo_occurrences` when the user wants every known occurrence of an internal
+  incident. Preserve the requested scope across sources, branches, tags, statuses,
+  severities, and validities. Do not narrow an all-locations request to the current
+  repository or default branch, or apply routine triage exclusions to it.
+- Read the connected tool descriptions and schemas for parameters, defaults, pagination,
+  and response semantics. Verify coverage against the requested scope before presenting
+  the result as complete; an incident-detail snapshot is not evidence of full coverage.
+- On an older server where `list_remediation_targets` is absent, use
+  `list_repo_occurrences` for the same intended scope, following its displayed contract.
+  For a request covering one incident, if the schema cannot filter by incident, do not
+  invent unsupported parameters or claim a complete incident occurrence set. Report the
+  limitation and use the dashboard, or explain that the server must be upgraded.
 
 ## 4. Drive the fix
 
