@@ -4,7 +4,7 @@ description: Use when generating or planting GitGuardian honeytokens, canary tok
 license: MIT
 compatibility: Requires the ggshield CLI authenticated against a GitGuardian workspace, a Manager access level or higher, and a token carrying the honeytokens:write scope. Not available on the Free plan.
 metadata:
-  version: "0.6.2" # x-release-please-version
+  version: "0.7.0" # x-release-please-version
 ---
 
 # ggshield — Create Honeytokens
