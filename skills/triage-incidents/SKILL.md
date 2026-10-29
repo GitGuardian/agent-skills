@@ -4,7 +4,7 @@ description: Use when triaging or reviewing GitGuardian secret incidents already
 license: MIT
 compatibility: Requires the GitGuardian Developer MCP server (ggmcp) connected and authenticated with incident read scope, plus write scope to assign, tag, or resolve. Does not use the ggshield CLI.
 metadata:
-  version: "0.6.2" # x-release-please-version
+  version: "0.7.0" # x-release-please-version
 ---
 
 # GitGuardian — Triage Incidents

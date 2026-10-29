@@ -4,7 +4,7 @@ description: Use when scanning code, commits, git history, Docker images, or pac
 license: MIT
 compatibility: Requires the ggshield CLI, version 1.49.0 or later, installed and authenticated against a GitGuardian account. Needs network access to the GitGuardian API.
 metadata:
-  version: "0.6.2" # x-release-please-version
+  version: "0.7.0" # x-release-please-version
 ---
 
 # ggshield — GitGuardian Secret Scanner
