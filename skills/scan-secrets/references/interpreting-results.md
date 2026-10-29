@@ -1,6 +1,6 @@
 # ggshield: interpreting results
 
-Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, and false-positive handling. Remediation itself — triage, rotation, history-rewrite rules, per-secret-type runbooks — lives in [`remediation-doctrine.md`](remediation-doctrine.md); SKILL.md routes there directly when findings are present.
+Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, and false-positive handling. Remediation itself — triage, invalidation, history-rewrite rules and completion checks — lives in [`remediation-doctrine.md`](remediation-doctrine.md); SKILL.md routes there directly when findings are present.
 
 ## Understanding Scan Output
 
@@ -77,7 +77,7 @@ ggshield hmsl check -t env /path/to/.env --json -n none      # .env-formatted in
 
 Exit codes: `0` = no matches found (not known to be leaked publicly); `1` = at least one secret matched (leaked); non-zero = error.
 
-A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — the credential is public, so dispatch it to the post-leak / public-facing track in [`remediation-doctrine.md`](remediation-doctrine.md#6-post-leak--public-facing-track).
+A match means GitGuardian's HMSL corpus saw the exact secret in a public artifact (public GitHub repo, commit, gist, or issue). Treat a match as confirmation, not coincidence — the credential is public, so apply the public-exposure rules in [the remediation framework](remediation-doctrine.md#6-post-leak--public-facing-track).
 
 If the user has the `check-hmsl` skill installed locally, it covers additional flows (multi-stage `fingerprint`/`query`/`decrypt` for sensitive bulk audits, `check-secret-manager hashicorp-vault` for vault inventories, troubleshooting). The agent should load that skill for those flows. The rules above remain in force regardless.
 
@@ -85,7 +85,7 @@ If the user has the `check-hmsl` skill installed locally, it covers additional f
 
 ## Custom remediation message in ggshield output
 
-If the user's GitGuardian workspace has a **custom remediation workflow** configured, ggshield (≥ 1.30.0) prints the workspace's own remediation message in its output when a hook blocks a secret (pre-commit / pre-push / pre-receive). It is the customer's security team's process and **takes the lead** — surface it to the user verbatim as the primary guidance, then fill in the mechanics around it from the doctrine. Do not replace it with generic advice. See [`remediation-doctrine.md` § 13](remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay).
+If the user's GitGuardian workspace has a **custom remediation workflow** configured, ggshield (≥ 1.30.0) prints the workspace's own remediation message in its output when a hook blocks a secret (pre-commit / pre-push / pre-receive). It is the customer's security team's process and **takes the lead** — surface it to the user verbatim as the primary guidance, then fill in the mechanics around it from the doctrine. Do not replace it with generic advice. See [the company workflow rules](remediation-doctrine.md#13-custom-remediation-workflows-the-organizational-overlay).
 
 ---
 
