@@ -7,7 +7,7 @@ content holds only the build recipe, not a usable repo.
 ## What these evals test
 
 `install-hooks` is the **prevention** skill: it installs `ggshield` as a git hook
-(pre-commit / pre-push) so secrets are blocked before they enter history, **or**
+(pre-commit / pre-push) to protect commits or outgoing pushes, **or**
 as an AI-assistant hook (claude-code, codex, copilot, cursor, vscode) so an AI
 coding tool scans its prompts and actions for secrets in real time. The evals
 grade whether the agent routes to the right hook family and installs it correctly
@@ -16,14 +16,14 @@ grade whether the agent routes to the right hook family and installs it correctl
 - **`install-precommit-local`** — a clean repo. Grades that the agent treats the
   request as installing a hook (not scanning existing code), installs for *this*
   repo (`-m local`), surfaces the pre-commit/pre-push choice, and verifies by
-  exit code + hook-file presence (no fabricated test-commit).
+  installer success + effective executable hook/manager dispatch (no fabricated test-commit).
 - **`global-needs-consent`** — grades that a "every repo on my machine" request
   is recognized as a global install (`--mode global`, which changes the user's
-  global git config) and that the agent gets **explicit consent before** running
-  it.
+  global git config). The request already explicitly authorizes that scope; the
+  agent explains the change and reuses that authorization.
 - **`already-has-hook`** (edge case) — the repo already has a custom pre-commit
-  hook. Grades that the agent preserves it with `-a` / `--append` (or confirms
-  before `-f` / `--force`) instead of silently clobbering it.
+  hook. Grades that the agent preserves its checks and integrates a reachable,
+  blocking ggshield command. Blind appending after an unconditional exit fails.
 - **`install-claude-code`** — a clean repo where the user says "install Claude
   hooks". Grades that the agent routes to the AI-assistant family
   (`ggshield install -t claude-code`), installs for this project (`-m local`),
@@ -32,10 +32,14 @@ grade whether the agent routes to the right hook family and installs it correctl
   (no family keyword). Grades that the agent STOPS and asks which family (git vs
   AI-assistant) rather than silently guessing a hook type.
 
+## Routing scenarios without fixtures
+
+The remaining cases carry setup facts in the prompt and can run as read-only decision checks: recurring pre-push protection, a lint-only pre-commit framework, a scoped user-wide Cursor install, and a shadowed pre-push hook. Record proposed actions without executing installs or scans. These checks evaluate routing and command selection; they do not prove runtime hook behavior.
+
 ## Why there is no `_shared/secrets.env`
 
 Unlike `scan-secrets` and `check-hmsl`, these fixtures plant **no** detectable
-credential. The skill verifies a hook by exit code and hook-file presence, not
+credential. The skill verifies effective configuration and readiness, not
 by firing a test secret, so the evals need no real-shape secret values — and
 there is nothing here for a repo-wide CI secret scan to flag.
 

@@ -78,52 +78,26 @@ ggshield secret scan path -r -y . --json
 
 ---
 
-## Workflow 3: Scan Before Committing (Pre-commit)
+## Workflow 3: Explicit One-off Staged Scan
 
-Use this to check only the staged changes before a commit.
+Use this when the user explicitly asks to scan the current staged changes now. Use it also when a pre-commit hook exists. A routine commit or push request alone does not trigger this scan.
 
 ```bash
-# Stage your changes first
-git add .
-
-# Then scan staged changes
+# Scan what is already staged. Do not stage unrelated files to scan them.
 ggshield secret scan pre-commit --json
 ```
 
-**Exit codes:**
-
-- `0` — No secrets found, safe to commit
-- `1` — Secrets detected, commit should be blocked
+A staged scan does not check the outgoing commit history. It is not a substitute for pre-push protection.
 
 ---
 
-## Workflow 4: Automated Scan in Agent Context
+## Workflow 4: Recurring Checks During Agent Work
 
-When an AI agent is writing or modifying code that handles credentials, configuration, or environment variables, run this scan automatically.
+For recurring checks while you edit credential-handling code, commit, push, or use AI tools, offer the matching hook through `install-hooks`. If only this skill is installed, use [hook-selection.md](hook-selection.md). It contains the full selection and installation workflow.
 
-**Pattern for agent use:**
+Check the existing protection once and reuse the result. If a matching hook exists, let it scan the normal authorized operation. Do not run another staged, path, or AI hook scan next to it. If no hook exists, offer an installation or a repair one time. If the user declined, do not scan or ask again. Never claim that unscanned work passed a scan.
 
-```bash
-# Always use --json for structured output
-# Always use GITGUARDIAN_API_KEY env var (never interactive login)
-# -y is required alongside -r — the recursive-scan confirmation prompt would otherwise hang the agent
-GITGUARDIAN_API_KEY="$GITGUARDIAN_API_KEY" ggshield secret scan path -r -y . --json
-```
-
-**Parsing the result in a script:**
-
-```bash
-result=$(GITGUARDIAN_API_KEY="$GITGUARDIAN_API_KEY" ggshield secret scan path -r -y . --json)
-exit_code=$?
-
-if [ $exit_code -ne 0 ]; then
-  echo "Secrets detected! Review the output:"
-  echo "$result" | python3 -m json.tool
-  exit 1
-fi
-
-echo "No secrets found."
-```
+An explicit scan, an audit, or a concrete suspected leak is still a reason to use the relevant scan workflow. When a hook finds a secret, remediate it. The same hook checks the next authorized retry.
 
 ---
 
@@ -177,64 +151,7 @@ Requires `docker` to be installed and running.
 
 ## Workflow 8: Install Hooks
 
-`ggshield install` covers two distinct kinds of hooks. They are complementary — installing both gives the strongest coverage.
-
-- **Git hooks** (pre-commit / pre-push) — fire on `git commit` / `git push`. Block secrets at version-control time regardless of which agent (or human) wrote the code.
-- **AI agent hooks** (Claude Code, Cursor, Copilot) — fire *inside* the agent. Scan the user's prompt before it goes to the model, scan commands / file reads / MCP calls before the agent runs them, and scan tool outputs after execution. Catches secrets the agent is about to write or about to read into context. Requires ggshield 1.49.0+.
-
-When recommending hooks to a user, default to suggesting both: git hooks for the repo, plus the agent hook matching the tool they're using right now.
-
-### Git hooks
-
-```bash
-# Pre-commit hook (runs on every git commit)
-ggshield install --mode local
-
-# Pre-push hook (runs on every git push)
-ggshield install --mode local --hook-type pre-push
-
-# Install globally for all repos (pre-commit)
-ggshield install --mode global
-
-# Install globally for all repos (pre-push)
-ggshield install --mode global --hook-type pre-push
-```
-
-### AI agent hooks
-
-`-t` picks the tool, `-m` picks the scope. `global` writes to the user's home config (covers every project); `local` writes to the current project only.
-
-```bash
-# Claude Code — hooks merged into ~/.claude/settings.json (global) or .claude/settings.json (local)
-ggshield install -t claude-code -m global
-ggshield install -t claude-code -m local
-
-# Cursor — hooks merged into .cursor/hooks.json
-ggshield install -t cursor -m global
-ggshield install -t cursor -m local
-
-# VS Code with GitHub Copilot
-ggshield install -t copilot -m global
-ggshield install -t copilot -m local
-```
-
-ggshield merges its entries into any existing config without touching other hooks. Pass `--force` to overwrite previously-installed ggshield entries that the user has customized.
-
-> See https://docs.gitguardian.com/ggshield-docs/integrations/ai-coding-tools/secret-scanning-for-ai-coding-tools for the up-to-date list of supported tools.
-
-### Uninstall
-
-```bash
-# Git hooks
-ggshield uninstall --mode local
-ggshield uninstall --mode global
-```
-
-For AI agent hooks, remove the `ggshield` entries from the tool's config file manually:
-
-- Claude Code: `~/.claude/settings.json` (global) or `.claude/settings.json` (local)
-- Cursor: `.cursor/hooks.json`
-- Copilot: VS Code settings file
+Use `install-hooks`. If this skill is installed alone, use [hook-selection.md](hook-selection.md). Choose pre-commit for staged changes at commit time. Choose pre-push for outgoing commits. Choose the matching AI hook for supported assistant events. Keep the existing hook manager. Check the effective configuration without a scan. Do not suggest all hook families at once. Do not make a global change without a requested global scope.
 
 ---
 
@@ -245,9 +162,9 @@ For AI agent hooks, remove the `ggshield` entries from the tool's config file ma
 | Full repo audit (git history) | `ggshield secret scan repo . --json` |
 | Scan current files | `ggshield secret scan path -r -y . --json` |
 | Install git pre-commit hook | `ggshield install --mode local` |
-| Install Claude Code agent hook | `ggshield install -t claude-code -m global` |
+| Install project-local Claude Code hook | `ggshield install -t claude-code -m local` |
 | Scan a single file | `ggshield secret scan path <file> --json` |
-| Scan staged changes | `ggshield secret scan pre-commit --json` |
+| Explicit one-off staged scan | `ggshield secret scan pre-commit --json` |
 | Scan a commit range | `ggshield secret scan commit-range HEAD~5..HEAD --json` |
 | Scan a specific commit | `ggshield secret scan commit <sha> --json` |
 | Scan Docker image | `ggshield secret scan docker <image> --json` |
