@@ -1,0 +1,84 @@
+name: evals
+
+# Behavioral skill evals: each case runs the real claude CLI (via the
+# agent-skill-eval harness) against the skill with a fixture workspace, then
+# grades the transcript per assertion. These runs are nondeterministic and
+# cost API money, so they are NOT a per-PR gate: they run on a weekly
+# schedule and on demand via workflow_dispatch. Per-PR validation of the
+# eval definitions themselves stays in the validate/sanity workflows.
+#
+# Required secrets:
+#   ANTHROPIC_API_KEY    agent runs + rubric grading fallback (required)
+#   GITGUARDIAN_API_KEY  scan-secrets suite (skipped when absent)
+#   OPENROUTER_API_KEY   optional dedicated rubric-grader key
+
+on:
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: "Skill to evaluate (blank = all suites)"
+        required: false
+        default: ""
+      model:
+        description: "Agent model id"
+        required: false
+        default: "claude-sonnet-4-6"
+      runs:
+        description: "Runs per eval (pass@k)"
+        required: false
+        default: "1"
+  schedule:
+    # Weekly sweep — catches regressions from model updates and skill edits.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".node-version"
+
+      - name: Check credentials
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is not set — eval agent runs cannot start."
+            exit 1
+          fi
+          if [ -z "$GITGUARDIAN_API_KEY" ]; then
+            echo "::warning::GITGUARDIAN_API_KEY not set — the scan-secrets suite will be skipped."
+          fi
+
+      - name: Install eval toolchain
+        run: |
+          pipx install agent-skill-eval
+          pipx install ggshield
+          npm install -g @anthropic-ai/claude-code
+          ase --version && ggshield --version && claude --version
+
+      - name: Run evals
+        run: |
+          ARGS=()
+          if [ -n "${{ inputs.skill }}" ]; then ARGS+=(--skill "${{ inputs.skill }}"); fi
+          if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
+          if [ -n "${{ inputs.runs }}" ] && [ "${{ inputs.runs }}" != "1" ]; then ARGS+=(--runs "${{ inputs.runs }}"); fi
+          node scripts/run-evals.mjs "${ARGS[@]}"
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: eval-workspace
+          path: eval-workspace/
+          retention-days: 30
+          include-hidden-files: true
