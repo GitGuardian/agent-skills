@@ -94,6 +94,10 @@ Iteration cadence, raw outputs, and what we keep from each round are local-only 
 - **Prompts + expected outputs first; assertions later.** Add assertions after the first iteration reveals what "good" looks like in practice.
 - **Vary phrasing and formality.** Mix casual ("hey can you check…") and precise ("Run `ggshield secret scan path` on…").
 - **Include at least one edge case** — a malformed input, an ambiguous request, or a boundary the skill's instructions might not cover.
+- **Include one negative control per suite** — a prompt where the correct behavior is *not* running the skill's tool: an explain-only question (`scan-secrets` #4, `check-hmsl` #3, `install-hooks` #6) or a request that belongs to a sibling skill (`triage-incidents` #9). These grade trigger/scope discipline — the failure mode where the agent fires the heavy path on a question — and they run cheap (no fixtures, no API side effects).
+- **Suites with unavoidable side effects mark the affected evals interactive-only** in `scripts/evals.config.json` (`skipEvals`, with the reason) rather than omitting the case: `create-honeytokens` #1 creates a real honeytoken on the workspace dashboard, so it never runs headlessly but stays available to interactive skill-creator sessions.
+
+Every skill ships a suite — `test/evals-schema.test.ts` enforces that, plus suite shape (skill_name matches the folder, unique eval and assertion ids, non-empty prompts/assertions, fixture paths that exist and carry a `setup.sh` when they're directories). It runs in the `sanity` workflow on every PR, so schema drift is caught without spending a single model call.
 
 ## Declaring which models the harness sweeps
 
