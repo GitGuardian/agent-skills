@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Scan files, staged changes, commits, history, Docker images, or packages for hardcoded secrets. Use when the user asks for a scan, during an audit, or when you investigate a suspected leak or a finding. Use install-hooks for recurring checks on edits, commits, pushes, and AI assistant actions.
+description: Scan files, staged changes, commits, history, Docker images, or packages for hardcoded secrets. Use when the user asks for a scan, during an audit, or when the user asks you to investigate a suspected leak or a finding. Use install-hooks for recurring checks on edits, commits, pushes, and AI assistant actions.
 license: MIT
 compatibility: Requires the ggshield CLI, version 1.49.0 or later, installed and authenticated against a GitGuardian account. Needs network access to the GitGuardian API.
 metadata:
@@ -11,7 +11,9 @@ metadata:
 
 ## Overview
 
-Use `ggshield secret scan` for an explicit scan or a suspected leak. For routine credential edits, commits, and pushes, hooks do the checks. Reuse protection that works, or offer an installation one time through `install-hooks`. If that skill is not available, [hook-selection.md](references/hook-selection.md) is a self-contained fallback. If the user declined an installation, do not run repeated scans instead. Do not report unscanned work as clean.
+**Run a scan only when the user asks for one.** Never start a scan on your own initiative: not after an edit, not before a commit or push, not because you suspect a leak. Tell the user what you suspect and offer the scan. **Never write your own secret scanner**: no grep, regex, script, or any other tool to look for secrets. `ggshield secret scan` is the only scanner.
+
+For routine credential edits, commits, and pushes, hooks do the checks. Reuse protection that works, or offer an installation one time through `install-hooks`. If that skill is not available, [hook-selection.md](references/hook-selection.md) is a self-contained fallback. If the user declined an installation, do not run repeated scans instead. Do not report unscanned work as clean.
 
 ## When to Use
 

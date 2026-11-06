@@ -11,7 +11,7 @@ metadata:
 
 ## Overview
 
-Hooks do the recurring checks. The agent does not. Check the existing protection once per context. Reuse protection that works. Offer a missing installation or a repair one time. If the user declines, do not ask again, and do not run scans instead.
+Hooks do the recurring checks. The agent does not. Never run a scan yourself, and never write a script or other tool to find secrets. Check the existing protection once per context. Reuse protection that works. Offer a missing installation or a repair one time. If the user declines, do not ask again, and do not run scans instead.
 
 ## When to Use
 

@@ -8,7 +8,7 @@
 
 AI hooks do not replace Git hooks. Use the stage and the scope that the user requested. Ask only for a missing choice.
 
-Reuse protection that works. Offer a missing installation or a repair one time. An explicit installation request authorizes its stated scope. A scan request does not. A global installation needs explicit authorization. If the user declines, do not ask again, and do not run scans instead. An explicit scan request or a concrete suspected leak still needs an investigation.
+Reuse protection that works. Offer a missing installation or a repair one time. An explicit installation request authorizes its stated scope. A scan request does not. A global installation needs explicit authorization. If the user declines, do not ask again, and do not run scans instead. Never run a scan yourself, and never write a script or other tool to find secrets. If you suspect a leak, tell the user and offer a scan.
 
 ## Check protection once per context
 
