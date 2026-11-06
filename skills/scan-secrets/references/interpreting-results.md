@@ -1,6 +1,6 @@
 # ggshield: interpreting results
 
-Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, and false-positive handling. Remediation itself — triage, rotation, history-rewrite rules, per-secret-type runbooks — lives in [`remediation-doctrine.md`](remediation-doctrine.md); SKILL.md routes there directly when findings are present.
+Heavy reference loaded on demand from `SKILL.md`. Covers scan-output structure, the HMSL follow-up contract, and false-positive handling. Remediation itself — triage, rotation, history-rewrite rules, credential lifecycle — lives in [`remediation-doctrine.md`](remediation-doctrine.md); SKILL.md routes there directly when findings are present.
 
 ## Understanding Scan Output
 
