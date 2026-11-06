@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires the ggshield CLI, version 1.49.0 or later. The user runs the commands, not the agent. A GitGuardian account is optional, since HMSL runs anonymously with a lower quota.
 metadata:
   command-handoff: "true"
-  version: "0.6.2" # x-release-please-version
+  version: "0.7.0" # x-release-please-version
 ---
 
 # ggshield — Check HasMySecretLeaked (HMSL)

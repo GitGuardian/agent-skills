@@ -4,7 +4,7 @@ description: Scan a developer's entire machine for credentials across local git 
 license: MIT
 compatibility: Requires the ggshield CLI, version 1.45.0 or later, with the machine_scan plugin, authenticated against a GitGuardian workspace that has endpoint scanning enabled. Not available on the Free plan.
 metadata:
-  version: "0.6.2" # x-release-please-version
+  version: "0.7.0" # x-release-please-version
 ---
 
 # ggshield — Scan Machine
