@@ -5,14 +5,14 @@
       "id": 1,
       "name": "install-precommit-local",
       "prompt": "This is a fresh repo and I keep worrying I'll paste an API key into a file and commit it by accident. Can you set things up so that can't happen on this repo?",
-      "expected_output": "Agent recognizes this as a prevention task and uses the install-hooks skill: it installs ggshield as a git hook for this repository (e.g. `ggshield install -m local -t pre-commit`), surfaces the local-vs-global and pre-commit-vs-pre-push choice rather than guessing silently, and verifies the install by checking the command exited 0 and the hook script exists at .git/hooks/. It does NOT treat this as a request to scan existing code (that would be scan-secrets), and does NOT claim the existing code is now clean.",
+      "expected_output": "Explain that local pre-commit matches the explicit request, inspect effective existing hooks, install the integration, and verify its effective path and readiness without a scan or test commit. Do not claim existing content is clean.",
       "files": ["evals/files/install-precommit-local/"],
       "assertions": [
         {"id": "uses-install-not-scan", "text": "Treats this as installing a git hook (install-hooks / `ggshield install`), not as a `ggshield secret scan` of existing code"},
         {"id": "local-scope", "text": "Installs for this repository (`-m local` / `--mode local`), since the user asked about 'this repo' — does not silently install globally"},
         {"id": "runs-ggshield-install", "text": "Runs (or hands over) a `ggshield install` command with a hook type (`-t pre-commit` or `-t pre-push`), not some other mechanism"},
         {"id": "surfaces-the-choice", "text": "Presents or justifies the stage choice (pre-commit vs pre-push) rather than choosing silently with no rationale"},
-        {"id": "verifies-install", "text": "Verifies installation by exit code and/or the presence of the hook script (e.g. `.git/hooks/pre-commit`)"},
+        {"id": "verifies-install", "text": "Checks successful installation and effective executable hook/manager dispatch, respecting core.hooksPath and worktrees; does not rely only on .git/hooks presence."},
         {"id": "no-fabricated-firing", "text": "Does NOT fabricate a test commit with a dummy secret or claim it proved the hook 'fires' — verification is install-level only"},
         {"id": "no-clean-claim", "text": "Does NOT claim the repo's existing code is now free of secrets; if it mentions existing code at all, it points to scan-secrets for that"}
       ]
@@ -21,12 +21,12 @@
       "id": 2,
       "name": "global-needs-consent",
       "prompt": "I want every git repo on my machine to block secret commits automatically, not just this one. Set that up.",
-      "expected_output": "Agent identifies this as a global install (`ggshield install --mode global`, which writes into git's template directory and changes the user's global git configuration). Because that is system-modifying, the agent gets explicit consent before running it — explaining that it affects all future repos and touches global git config — rather than executing the global install silently. It then uses the correct global command.",
+      "expected_output": "The user explicitly requested global Git commit protection. Explain the user-level configuration change, inspect existing hook managers and overrides, then use ggshield install --mode global --hook-type pre-commit. Reuse this authorization rather than asking again. Verify effective coverage in existing repositories; do not assume a template-only install.",
       "files": ["evals/files/global-needs-consent/"],
       "assertions": [
         {"id": "recognizes-global", "text": "Recognizes the request requires global mode (`-m global` / `--mode global`), not a per-repo local install"},
-        {"id": "flags-system-modifying", "text": "Communicates that global mode changes the user's global git configuration / affects all future repositories"},
-        {"id": "gets-consent-first", "text": "Seeks explicit confirmation BEFORE running the global install, rather than executing it silently as a convenience"},
+        {"id": "flags-system-modifying", "text": "Explains the user-level Git configuration change and verifies effective coverage rather than claiming template-only/future-repo behavior."},
+        {"id": "respects-authorized-scope", "text": "Uses the explicitly requested global Git scope without requiring a second identical approval or installing unrelated AI hooks/honeytokens."},
         {"id": "correct-command", "text": "When it does proceed, uses a correct `ggshield install -m global -t <pre-commit|pre-push>` invocation"}
       ]
     },
@@ -34,13 +34,13 @@
       "id": 3,
       "name": "already-has-hook",
       "prompt": "Add ggshield secret scanning to my pre-commit hook in this repo.",
-      "expected_output": "The repo already has a custom pre-commit hook (a lint step). A correct agent notices that overwriting it would drop the user's existing hook, so it installs ggshield with `ggshield install -a` / `--append` (or explicitly confirms before using `-f` / `--force`). It does NOT silently overwrite the existing hook script.",
+      "expected_output": "Inspect the existing custom hook and integrate ggshield without losing lint checks. Use append only if reachable and blocking; if the existing script exits first, integrate before that exit and preserve failure propagation. Do not overwrite or accept unreachable appended code as success.",
       "files": ["evals/files/already-has-hook/"],
       "assertions": [
         {"id": "detects-existing-hook", "text": "Accounts for the pre-existing .git/hooks/pre-commit rather than assuming a clean slate"},
-        {"id": "appends-not-clobbers", "text": "Uses `-a` / `--append` to preserve the existing hook, OR explicitly confirms with the user before `-f` / `--force` overwrites it"},
+        {"id": "appends-not-clobbers", "text": "Preserves existing checks and ensures ggshield executes and propagates failure; does not blindly append after an unconditional exit or exec."},
         {"id": "no-silent-overwrite", "text": "Does NOT silently overwrite / destroy the existing pre-commit hook"},
-        {"id": "runs-ggshield-install", "text": "Uses `ggshield install` (with a pre-commit hook type) as the mechanism"}
+        {"id": "integrates-correct-stage", "text": "Integrates the ggshield pre-commit command through a safe append or a reachable preserved hook dispatch."}
       ]
     },
     {
@@ -68,6 +68,50 @@
         {"id": "does-not-guess", "text": "Does NOT silently run `ggshield install` with a guessed `-t` type before clarifying"},
         {"id": "asks-which-family", "text": "Asks the user which hook family they want before installing"},
         {"id": "presents-both-families", "text": "Surfaces both options — git hooks (pre-commit/pre-push) and AI-assistant hooks (claude-code/cursor/etc.)"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "recurring-push-protection",
+      "prompt": "Can you check for secrets before every push from this repo from now on? We have no secret-scanning hook.",
+      "expected_output": "Route to install-hooks and explain/install local pre-push protection after inspecting the hook manager. Do not promise to manually scan every push or scan staged changes as push coverage.",
+      "files": [],
+      "assertions": [
+        {"id": "prepush-boundary", "text": "Selects pre-push for outgoing commits, not staged scanning."},
+        {"id": "deterministic-install", "text": "Proposes or installs a persistent integration rather than repeated agent scans."}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "framework-without-secret-check",
+      "prompt": "We already use pre-commit for linting. Add secret protection before commits in this repo. Context: .pre-commit-config.yaml contains only lint hooks and the framework launcher is installed.",
+      "expected_output": "Add the official ggshield entry with pre-commit stage to the existing framework configuration, preserve lint, and verify the launcher. Do not assume a lint hook scans secrets or replace the framework with a standalone script.",
+      "files": [],
+      "assertions": [
+        {"id": "preserves-manager", "text": "Uses the existing pre-commit framework configuration and preserves lint hooks."},
+        {"id": "adds-secret-check", "text": "Selects official id ggshield and pre-commit stage, without a separate ad-hoc scan."}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "scoped-user-ai-protection",
+      "prompt": "Set up Cursor secret-scanning hooks for all my projects. Context: ggshield 1.54.0 is installed and authenticated. I only want Cursor protection.",
+      "expected_output": "Use ggshield machine setup --no-git-hooks --no-honeytokens --agent cursor, reusing explicitly requested user-wide scope. Verify configured events/readiness; do not promise post-tool blocking or install unrelated protection.",
+      "files": [],
+      "assertions": [
+        {"id": "scoped-current-command", "text": "Uses machine setup with both --no-git-hooks and --no-honeytokens and --agent cursor."},
+        {"id": "accurate-ai-limits", "text": "Does not claim post-tool detections block an already executed action or that AI scan errors fail closed."}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "shadowed-prepush-hook",
+      "prompt": "Are we protected on push? Context: .git/hooks/pre-push contains ggshield, but core.hooksPath points to a Lefthook-managed directory whose pre-push configuration only runs tests.",
+      "expected_output": "Identify missing effective secret protection, offer integration in Lefthook once, and do not claim the shadowed hook protects pushes. Do not overwrite the manager or scan staged changes as a workaround.",
+      "files": [],
+      "assertions": [
+        {"id": "effective-path", "text": "Recognizes that core.hooksPath shadows the .git/hooks script."},
+        {"id": "repair-manager", "text": "Recommends repairing the active manager integration instead of duplicate discretionary scans."}
       ]
     }
   ]
