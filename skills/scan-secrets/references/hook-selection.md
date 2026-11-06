@@ -44,7 +44,7 @@ For an explicitly requested global Git installation, use `--mode global`. Check 
 
 ## Install AI hooks
 
-Check the installed version and its help output. Replace `<assistant>` with the requested supported identifier: `claude-code`, `cursor`, `codex`, `copilot`, `vscode`, or `vibe` (Mistral Vibe).
+Check the installed version and its help output. Replace `<assistant>` with the requested supported identifier: `claude-code`, `cursor`, `codex`, `copilot`, `vscode`, `vibe` (Mistral Vibe), `junie`, or `kiro`.
 
 ```bash
 # Project-local protection:
@@ -53,7 +53,7 @@ ggshield install --mode local --hook-type <assistant>
 ggshield machine setup --no-git-hooks --no-honeytokens --agent <assistant>
 ```
 
-A bare `machine setup` also installs Git hooks and plants a honeytoken. On older versions, use `ggshield install --mode global --hook-type <assistant>`, and check that the version supports it. AI hooks need ggshield 1.49.0 or later. Codex needs 1.51.0 or later. Mistral Vibe needs 1.54.0 or later.
+A bare `machine setup` also installs Git hooks and plants a honeytoken. On older versions, use `ggshield install --mode global --hook-type <assistant>`, and check that the version supports it. AI hooks need ggshield 1.49.0 or later. Codex needs 1.51.0 or later. Mistral Vibe needs 1.54.0 or later. Junie and Kiro need 1.55.0 or later.
 
 Read the configuration paths from the installer output. Keep the unrelated entries. A local Copilot hook needs folder trust. Prompt mode needs an additional opt-in. A finding in a prompt or pre-tool event can block the action. A finding in a post-tool event cannot undo the action. When an AI scan has an error, the action continues and ggshield shows a warning. Describe the enabled events. Do not promise that the hook blocks all output. Never run `secret scan ai-hook` manually. The assistant supplies its input.
 
