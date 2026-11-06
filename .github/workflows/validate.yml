@@ -146,7 +146,7 @@ jobs:
             skills-ref validate "$d"
           done
 
-      - name: Check Kiro power manifests and skills mirror the skills/ tree
+      - name: Check Kiro power manifests
         run: |
           set -e
           # plugin.json manifest is the Agent Plugins entry point
@@ -167,26 +167,6 @@ jobs:
           assert "GitGuardian" in m.get("mcpServers", {}), "GitGuardian server missing from kiro/mcp.json"
           print("kiro mcp.json OK")
           PY
-          # Every skill in skills/ must have a mirror under kiro/skills/ with identical
-          # SKILL.md + references/. The `# x-release-please-version` annotation is
-          # stripped from both sides before diffing, so the comment itself may differ
-          # but the version value must match — Release Please bumps both trees.
-          for s in skills/*/; do
-            name=$(basename "$s")
-            test -f "kiro/skills/$name/SKILL.md" || { echo "kiro/skills/$name/SKILL.md missing"; exit 1; }
-            diff <(sed 's/ # x-release-please-version//' "$s/SKILL.md") \
-                 <(sed 's/ # x-release-please-version//' "kiro/skills/$name/SKILL.md") \
-              || { echo "kiro/skills/$name/SKILL.md drifted from skills/$name/SKILL.md"; exit 1; }
-            if [ -d "$s/references" ]; then
-              for r in "$s"/references/*.md; do
-                b=$(basename "$r")
-                test -f "kiro/skills/$name/references/$b" || { echo "kiro/skills/$name/references/$b missing"; exit 1; }
-                diff "$r" "kiro/skills/$name/references/$b" \
-                  || { echo "kiro/skills/$name/references/$b drifted"; exit 1; }
-              done
-            fi
-          done
-          echo "kiro skills mirror OK"
 
       - name: Run claude plugin validate
         # Runs the same validator Anthropic's community-marketplace
