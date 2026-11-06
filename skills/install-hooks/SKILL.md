@@ -4,7 +4,7 @@ description: Install or repair hooks that check for secrets on each commit, push
 license: MIT
 compatibility: Requires the ggshield CLI installed and authenticated, version 1.49.0 or later for AI-assistant hooks and 1.51.0 or later for codex. Git hooks need git; AI-assistant hooks need the target tool installed.
 metadata:
-  version: "0.7.0" # x-release-please-version
+  version: "0.8.0" # x-release-please-version
 ---
 
 # Install secret-scanning hooks
