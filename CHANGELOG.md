@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/GitGuardian/agent-skills/compare/v0.7.0...v0.8.0) (2026-11-06)
+
+
+### Features
+
+* **remediation:** replace the per-secret-type appendix with a credential-lifecycle section ([#150](https://github.com/GitGuardian/agent-skills/issues/150)) ([d944e8a](https://github.com/GitGuardian/agent-skills/commit/d944e8ab90c88c80d32d4d6a62ca654070bcca87))
+
+
+### Bug Fixes
+
+* **create-honeytokens:** plant without exposing values to the agent ([#145](https://github.com/GitGuardian/agent-skills/issues/145)) ([cb1e94c](https://github.com/GitGuardian/agent-skills/commit/cb1e94ca1f4efe38b36bf88208489d73a78e1fa8))
+* prefer hooks for recurring secret scans ([#140](https://github.com/GitGuardian/agent-skills/issues/140)) ([c616f01](https://github.com/GitGuardian/agent-skills/commit/c616f01cc4fda0792ffb5eb748f2590d7850e4b6))
+* **triage:** select occurrence tools by scope ([#136](https://github.com/GitGuardian/agent-skills/issues/136)) ([c6fdb45](https://github.com/GitGuardian/agent-skills/commit/c6fdb45ac53f6b75c200fb241f93192d1460fd0f))
+
 ## [0.7.0](https://github.com/GitGuardian/agent-skills/compare/v0.6.2...v0.7.0) (2026-10-29)
 
 
