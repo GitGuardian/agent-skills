@@ -75,9 +75,7 @@ HMSL handoff sub-step, which is user-run regardless.
 ### Prerequisites
 
 - The **GitGuardian Developer MCP server** (ggmcp) 0.8 or later, connected and
-  authenticated. See https://github.com/GitGuardian/ggmcp. Older servers use different
-  tool names; if `list_internal_incidents` is absent but `list_incidents` is present,
-  ask the user to upgrade the server.
+  authenticated. See https://github.com/GitGuardian/ggmcp.
 - A token with incident **read** scope for triage, and **write** scope to assign / tag /
   resolve. ggmcp hides tools whose scopes the token lacks.
 
