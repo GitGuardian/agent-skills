@@ -5,10 +5,10 @@
       "id": 1,
       "name": "triage-and-prioritize",
       "prompt": "We've got a pile of open GitGuardian incidents. Can you pull them and tell me what I should fix first?",
-      "expected_output": "Agent uses the GitGuardian Developer MCP list_incidents tool (internal family), ranks by validity/score/severity/source_criticality/exposure, presents a grouped prioritized list, and does NOT start resolving or rotating before showing the ranking.",
+      "expected_output": "Agent uses the GitGuardian Developer MCP list_internal_incidents tool (internal family), ranks by validity/score/severity/source_criticality/exposure, presents a grouped prioritized list, and does NOT start resolving or rotating before showing the ranking.",
       "files": [],
       "assertions": [
-        {"id": "uses-list-incidents", "text": "Pulls incidents via the GitGuardian Developer MCP list_incidents tool (internal family), not a ggshield secret scan"},
+        {"id": "uses-list-incidents", "text": "Pulls incidents via the GitGuardian Developer MCP list_internal_incidents tool (internal family), not a ggshield secret scan"},
         {"id": "ranks-by-axes", "text": "Prioritizes using validity, score, severity, source_criticality, and/or public_exposure rather than arbitrary order"},
         {"id": "groups-occurrences", "text": "Collapses the same credential across occurrences into one item where applicable"},
         {"id": "triage-before-action", "text": "Presents the ranked list before driving any remediation; does not begin rotating/resolving first"}
@@ -21,7 +21,7 @@
       "expected_output": "Agent does NOT mark the incident resolved on intent alone. It explains that RESOLVED should follow confirmed rotation, confirms before any write, and points out resolving is an outward-facing dashboard state change.",
       "files": [],
       "assertions": [
-        {"id": "no-resolve-on-intent", "text": "Does not call update_incident_status to RESOLVED purely because the user asked; ties RESOLVED to confirmed rotation"},
+        {"id": "no-resolve-on-intent", "text": "Does not call resolve_internal_incident purely because the user asked; ties RESOLVED to confirmed rotation"},
         {"id": "confirms-write", "text": "Treats the status change as an outward-facing dashboard write and confirms / cautions before doing it"},
         {"id": "offers-path", "text": "Offers a sensible path (rotate first, then resolve; or assign/tag in the meantime) rather than a bare refusal"}
       ]
@@ -33,7 +33,7 @@
       "expected_output": "Agent recognizes this as a Public Monitoring incident, uses the public-incident tool family (list_public_incidents / get_public_incident), and treats the credential as always-burned: rotation is mandatory regardless of any history cleanup.",
       "files": [],
       "assertions": [
-        {"id": "uses-public-family", "text": "Uses the public-incident MCP tools (list_public_incidents / get_public_incident), not the internal list_incidents, for a public-GitHub leak"},
+        {"id": "uses-public-family", "text": "Uses the public-incident MCP tools (list_public_incidents / get_public_incident), not the internal list_internal_incidents, for a public-GitHub leak"},
         {"id": "always-burned", "text": "Treats a public leak as burned — rotation is mandatory and not deferred behind history rewriting"},
         {"id": "no-history-rewrite-as-fix", "text": "Does not present git history rewrite as a substitute for rotation on a public leak"}
       ]
@@ -93,15 +93,15 @@
     {
       "id": 8,
       "name": "complete-known-incident-occurrences",
-      "prompt": "Incident 55555 is urgent. Give me every known code occurrence across every repository/source, branch/tag, status, severity, and validity. I am currently on a feature branch in one repository. The connected GitGuardian MCP server exposes get_incident, list_repo_occurrences, and list_remediation_targets. Explain which occurrence view you choose, what you check in the live tool descriptions and schemas before calling it, and how you decide whether coverage is complete. Then explain what you do on an older server without list_remediation_targets, and on one where list_repo_occurrences also cannot filter by incident. Do not perform any writes.",
-      "expected_output": "Agent selects list_repo_occurrences for the internal incident and preserves the explicit all-locations scope instead of narrowing it to the current repository, a default-branch candidate view, or routine triage exclusions. It consults the connected tool descriptions and schemas for calling details and verifies requested coverage before claiming completeness; an incident-detail snapshot alone is insufficient. When the preset is absent, it uses the supported occurrence tool for the same intended scope. If incident filtering is unavailable, it does not invent parameters or claim a complete set; it reports the limitation and uses the dashboard or recommends upgrading. Occurrence retrieval does not authorize remediation or dashboard writes.",
+      "prompt": "Incident 55555 is urgent. Give me every known code occurrence across every repository/source, branch/tag, status, severity, and validity. I am currently on a feature branch in one repository. The connected GitGuardian MCP server exposes get_internal_incident, list_internal_occurrences, and list_internal_incident_locations. Explain which occurrence view you choose, what you check in the live tool descriptions and schemas before calling it, how you lift the default filters, and how you decide whether coverage is complete. Do not perform any writes.",
+      "expected_output": "Agent selects list_internal_occurrences with incident_id for the internal incident and preserves the explicit all-locations scope instead of narrowing it to the current repository, the default-branch view of list_internal_incident_locations, or routine triage exclusions. It lifts the default filters by passing empty lists for tags, exclude_tags, status, severity, and validity, follows next_arguments until has_more is false, consults the connected tool descriptions and schemas for calling details, and verifies requested coverage before claiming completeness; an incident-detail snapshot alone is insufficient. Occurrence retrieval does not authorize remediation or dashboard writes.",
       "files": [],
       "assertions": [
-        {"id": "selects-incident-view", "text": "Selects list_repo_occurrences for a known internal incident rather than the default-branch remediation-candidate view"},
+        {"id": "selects-incident-view", "text": "Selects list_internal_occurrences with incident_id for a known internal incident rather than the default-branch view of list_internal_incident_locations"},
         {"id": "preserves-user-scope", "text": "Preserves all requested sources, branches, tags, statuses, severities, and validities instead of narrowing to the current checkout, remote default branch, or routine triage exclusions"},
         {"id": "consults-tool-contract", "text": "Consults live tool descriptions and schemas for parameters, defaults, pagination, and response semantics rather than assuming a fixed calling recipe"},
         {"id": "verifies-coverage", "text": "Verifies the requested coverage before claiming completeness and does not treat an incident-detail snapshot alone as proof of a complete set"},
-        {"id": "handles-old-schema", "text": "Uses list_repo_occurrences when the preset is absent; if incident filtering is unsupported, reports the limitation without inventing parameters or claiming completeness and offers the dashboard or an upgrade"},
+        {"id": "lifts-default-filters", "text": "Lifts the default filters (empty lists for tags, exclude_tags, status, severity, and validity) and follows next_arguments until has_more is false, rather than presenting one filtered page as the full set"},
         {"id": "stays-read-only", "text": "Does not treat occurrence retrieval as authorization to remediate or change dashboard state"}
       ]
     }
