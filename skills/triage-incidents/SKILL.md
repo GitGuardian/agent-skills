@@ -2,7 +2,7 @@
 name: triage-incidents
 description: Use when triaging or reviewing GitGuardian secret incidents already detected in the dashboard, when asked what is leaking in the org or what to fix first, when remediating or rotating a credential flagged in an incident, after a Public Monitoring alert, or to assign, tag, or resolve incidents. Operates through the GitGuardian Developer MCP server.
 license: MIT
-compatibility: Requires the GitGuardian Developer MCP server (ggmcp) connected and authenticated with incident read scope, plus write scope to assign, tag, or resolve. Does not use the ggshield CLI.
+compatibility: Requires the GitGuardian Developer MCP server (ggmcp) 0.8 or later, connected and authenticated with incident read scope, plus write scope to assign, tag, or resolve. Does not use the ggshield CLI.
 metadata:
   version: "0.8.0" # x-release-please-version
 ---
@@ -23,11 +23,13 @@ HMSL handoff sub-step, which is user-run regardless.
 ## Start Here — Read This Before Doing Anything
 
 - **Two non-interchangeable incident categories.** Internal incidents (integrated
-  sources: private/org repos, Slack, Jira, registries) use `list_incidents` /
-  `get_incident`. Public incidents (Public Monitoring on the worldwide perimeter:
-  public GitHub, gists, Docker Hub) use `list_public_incidents` / `get_public_incident`.
-  IDs are not interchangeable; an internal write tool called with a public ID silently
-  404s. Default to internal unless the user's intent is about leaks "on public GitHub /
+  sources: private/org repos, Slack, Jira, registries) use the `*_internal_*` tools
+  (`list_internal_incidents` / `get_internal_incident`). Public incidents (Public
+  Monitoring on the worldwide perimeter: public GitHub, gists, Docker Hub) use the
+  `*_public_*` tools (`list_public_incidents` / `get_public_incident`). IDs are not
+  interchangeable; a tool called with an ID of the other kind returns a 404. For a
+  pasted incident link or an ID of unknown kind, call `get_gitguardian_resource` first.
+  Default to internal unless the user's intent is about leaks "on public GitHub /
   outside the org / on Docker Hub / found by Public Monitoring".
 - **Triage before action — even for valid incidents.** Rank the full set first; do not
   start remediating the first incident before the user has seen the prioritized list. A
@@ -55,7 +57,7 @@ HMSL handoff sub-step, which is user-run regardless.
   user before any write, and only mark RESOLVED after rotation is actually confirmed —
   never on intent.
 - **HMSL stays user-run.** When a finding's validity is `unknown` / `no_checker` /
-  `not_checked`, the follow-up is HasMySecretLeaked. Do not run `ggshield hmsl` yourself
+  `failed_to_check`, the follow-up is HasMySecretLeaked. Do not run `ggshield hmsl` yourself
   and do not read the credential into context — print the command for the user
   (`-n none --json`). If the `check-hmsl` skill is installed, load it for the full
   protocol.
@@ -72,14 +74,15 @@ HMSL handoff sub-step, which is user-run regardless.
 
 ### Prerequisites
 
-- The **GitGuardian Developer MCP server** (ggmcp) connected and authenticated. See
-  https://github.com/GitGuardian/ggmcp.
+- The **GitGuardian Developer MCP server** (ggmcp) 0.8 or later, connected and
+  authenticated. See https://github.com/GitGuardian/ggmcp.
 - A token with incident **read** scope for triage, and **write** scope to assign / tag /
   resolve. ggmcp hides tools whose scopes the token lacks.
 
 ### Setup
 
-- Verify connectivity and read scope with a cheap read such as `count_incidents` (or `list_sources`).
+- Verify connectivity and read scope with a cheap read such as `count_internal_incidents` (or `list_sources`). `get_my_identity`
+  shows the token's scopes and the user's role.
 - If the incident **write** tools are absent from the available toolset, the token lacks
   write scope. Degrade to **read-only triage** and hand the user the equivalent dashboard
   action instead of failing. See [`references/gitguardian-platform.md`](references/gitguardian-platform.md)

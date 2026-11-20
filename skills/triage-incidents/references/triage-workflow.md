@@ -5,17 +5,18 @@ public incidents use separate tool families with non-interchangeable IDs.
 
 ## 1. Scope
 
-- **Internal** (default): `list_incidents`. Sources the workspace integrated — private/
+- **Internal** (default): `list_internal_incidents`. Sources the workspace integrated — private/
   org repos, Slack, Jira, registries.
 - **Public**: `list_public_incidents`. GitGuardian Public Monitoring on the worldwide
   public perimeter (public GitHub, gists, Docker Hub).
 
 Pick one family per query and say which you used. Never pass a public incident ID to an
-internal tool or vice versa — it 404s silently.
+internal tool or vice versa — it returns a 404. When the user pastes an incident link or an
+ID of unknown kind, call `get_gitguardian_resource` to open it and learn its kind.
 
 ## 2. Rank — the doctrine axes are server-side filters
 
-The remediation doctrine's four triage axes map directly onto `list_incidents` filters,
+The remediation doctrine's four triage axes map directly onto `list_internal_incidents` filters,
 so prioritization is built from real data, not guessed:
 
 | Doctrine axis | MCP filter |
@@ -26,9 +27,12 @@ so prioritization is built from real data, not guessed:
 | Blast radius | `source_criticality`: `critical` … `unknown` |
 
 Supporting signals: `ordering=-score` (0–100 priority score), `validity`
-(`valid` > `unknown`/`no_checker`/`not_checked` > `invalid`), `severity`,
+(`valid` > `unknown`/`no_checker`/`failed_to_check` > `invalid`), `severity`,
 `occurrence_count_min`, `opened_for_days`. Defaults already exclude `FALSE_POSITIVE` /
-`TEST_FILE` / `CHECK_RUN_SKIP_*` tags and `INVALID` validity — keep those exclusions.
+`TEST_FILE` / `CHECK_RUN_SKIP_*` tags, `invalid` validity, `low` / `info` severity and
+`IGNORED` status — keep those exclusions. Multi-value filters take lists. List tools return
+`has_more` and `next_arguments`: call the tool again with `next_arguments` for the next
+page, and do not present a partial page as the full set.
 
 Surface a grouped, ranked table:
 
@@ -38,23 +42,24 @@ Collapse the same credential seen across multiple occurrences into a single row.
 
 ## 3. Drill in
 
-- Use `get_incident` for internal incident context, such as assignee and tags. Use
-  occurrence tools to investigate where the credential appears.
-- Use `list_remediation_targets` for remediation candidates on a repository's remote
-  default branch. Keep the user's repository scope explicit, and do not assume the
+- Use `get_internal_incident` for internal incident context, such as assignee and
+  tags; pass `with_history` for its comments and status changes. Use
+  `get_public_incident` for a public one. Use occurrence tools to investigate where the
+  credential appears.
+- Use `list_internal_incident_locations` for the places to remediate: the files that
+  still hold the secret on each source's default branch, and the pull requests already
+  opened to fix them. Keep the user's repository scope explicit, and do not assume the
   remote default branch is the currently checked-out branch.
-- Use `list_repo_occurrences` when the user wants every known occurrence of an internal
-  incident. Preserve the requested scope across sources, branches, tags, statuses,
-  severities, and validities. Do not narrow an all-locations request to the current
-  repository or default branch, or apply routine triage exclusions to it.
+- Use `list_internal_occurrences` with `incident_id` when the user wants every known
+  occurrence of an internal incident. Preserve the requested scope across sources,
+  branches, tags, statuses, severities, and validities: pass `[]` for `tags`,
+  `exclude_tags`, `status`, `severity`, and `validity` to lift the default filters. Do
+  not narrow an all-locations request to the current repository or default branch, or
+  apply routine triage exclusions to it. For public incidents, use
+  `list_public_occurrences`.
 - Read the connected tool descriptions and schemas for parameters, defaults, pagination,
   and response semantics. Verify coverage against the requested scope before presenting
   the result as complete; an incident-detail snapshot is not evidence of full coverage.
-- On an older server where `list_remediation_targets` is absent, use
-  `list_repo_occurrences` for the same intended scope, following its displayed contract.
-  For a request covering one incident, if the schema cannot filter by incident, do not
-  invent unsupported parameters or claim a complete incident occurrence set. Report the
-  limitation and use the dashboard, or explain that the server must be upgraded.
 
 ## 4. Drive the fix
 
@@ -83,7 +88,7 @@ Either way, these fill-ins hold — map each under the relevant customer step wh
 workflow is present:
 
 - **Rotation first.** A rotated credential is dead; that is what stops the attack.
-- **HMSL for unverifiable validity.** `unknown` / `no_checker` / `not_checked` → hand the
+- **HMSL for unverifiable validity.** `unknown` / `no_checker` / `failed_to_check` → hand the
   user a `ggshield hmsl check ... -n none --json` command to run themselves. Do not run
   it and do not read the credential into context.
 - **History rewrite only under the narrow doctrine conditions** — not by default.
@@ -92,13 +97,25 @@ workflow is present:
 
 ## 5. Close the loop (writes)
 
-Confirmation-gated. Internal: `assign_incident`, `update_incident_status`,
-`update_or_create_incident_custom_tags`, optional `create_code_fix_request`. Public:
-`assign_public_incident`, `update_public_incident_status`.
+Confirmation-gated. Each tool makes one change to one incident kind:
+
+| Change | Internal | Public |
+|---|---|---|
+| Assign / unassign | `assign_internal_incident`, `unassign_internal_incident` | `assign_public_incident`, `unassign_public_incident` |
+| Resolve / ignore / reopen | `resolve_internal_incident`, `ignore_internal_incident`, `reopen_internal_incident` | `resolve_public_incident`, `ignore_public_incident`, `reopen_public_incident` |
+| Tag (one tag per call) | `add_internal_incident_custom_tag`, `remove_internal_incident_custom_tag` | `add_public_incident_custom_tag`, `remove_public_incident_custom_tag` |
+| Comment | `add_internal_incident_comment`, `edit_internal_incident_comment` | `add_public_incident_comment`, `edit_public_incident_comment` |
+| Code fix (optional) | `create_internal_incident_code_fix_request`, with location IDs from `list_internal_incident_locations` | — |
+
+A write result with `changed: false` means the incident was already in the requested
+state.
 
 Guards:
 - **Confirm before every write.** Assignment, tagging, and status changes are
   outward-facing changes on the shared dashboard.
 - **Only mark RESOLVED after rotation is confirmed** — never on intent.
+- **Ask, never choose, the answers only the user has.** Resolving takes whether the
+  secret was revoked (internal) or a resolve reason (public); ignoring takes an ignore
+  reason. Ask the user for these values.
 - If write tools are absent, the token lacks write scope — hand the user the dashboard
   action instead.
