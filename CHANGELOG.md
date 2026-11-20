@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/GitGuardian/agent-skills/compare/v0.8.0...v0.9.0) (2026-11-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **triage-incidents:** require ggmcp 0.8 and use its tool names ([#151](https://github.com/GitGuardian/agent-skills/issues/151))
+
+### Features
+
+* **triage-incidents:** require ggmcp 0.8 and use its tool names ([#151](https://github.com/GitGuardian/agent-skills/issues/151)) ([84377f0](https://github.com/GitGuardian/agent-skills/commit/84377f0c8d9aded0a9b90e9f7ca395726dee3242))
+
+
+### Bug Fixes
+
+* **remediation:** match the ggmcp 0.8 workflow shape and drop older-server wording ([#155](https://github.com/GitGuardian/agent-skills/issues/155)) ([1ae5001](https://github.com/GitGuardian/agent-skills/commit/1ae50013fe518c9724148ac4e924c7226532d67a))
+
 ## [0.8.0](https://github.com/GitGuardian/agent-skills/compare/v0.7.0...v0.8.0) (2026-11-06)
 
 
