@@ -1,6 +1,6 @@
 ---
 name: create-honeytokens
-description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials. Use around .env.example, sample configs, pre-publication open-source repos, internal wikis, runbooks, deploy scripts, or other attractive leak surfaces.
+description: Use when generating or planting GitGuardian honeytokens, canary tokens, decoys, or tripwire credentials in a local file. Use around .env.example, sample configs, pre-publication open-source repos, deploy scripts, fixtures, or other attractive leak surfaces in the project. Deploying into Confluence, Slack, Jira, SharePoint or across many repositories, and managing existing honeytokens, is manage-honeytokens.
 license: MIT
 compatibility: Requires the ggshield CLI authenticated against a GitGuardian workspace, a Manager access level or higher, and a token carrying the honeytokens:write scope. Not available on the Free plan.
 metadata:
@@ -49,6 +49,7 @@ Do not use this skill when:
 - The task is to detect or remediate *real* secrets that already exist in code, files, or history — use `scan-secrets`. Honeytokens are decoys you plant, not secrets you find.
 - The user needs a decoy for a provider other than AWS. `ggshield honeytoken` currently issues AWS-shaped tokens only; do not fabricate a fake key for another provider.
 - The only available planting spot is somewhere an attacker would never look (a private local file the user alone sees). A honeytoken that no one can stumble on raises no alert and is wasted — confirm a real planting surface first.
+- The honeytoken is going into Slack, Microsoft Teams, Jira, ServiceNow, Confluence, SharePoint, OneDrive or across many integrated repositories, or the task is to list, verify, reset, revoke or rotate existing honeytokens — use `manage-honeytokens`. This skill mints and plants one decoy in a local file.
 
 ## Quick Start (if ggshield is already installed and authorized)
 

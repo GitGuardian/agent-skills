@@ -34,7 +34,7 @@ README.md              # user-facing: what / install / what-you-can-do
 LICENSE                # MIT
 ```
 
-The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `hook-selection.md` for scanning/hook setup) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
+The seven skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`, `manage-honeytokens`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `hook-selection.md` for scanning/hook setup) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
 
 ## Skills index
 
@@ -46,6 +46,7 @@ The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 | [`install-hooks`](skills/install-hooks/SKILL.md) | Install recurring secret protection through Git pre-commit or pre-push hooks, or through supported AI hooks. Reuse protection that works, offer a missing installation one time, keep hook managers, and avoid duplicate agent scans. Pre-push checks outgoing commits. It does not prevent local commits. |
 | [`triage-incidents`](skills/triage-incidents/SKILL.md) | Read, prioritize, and drive remediation on secret incidents already detected in the GitGuardian dashboard, via the GitGuardian Developer MCP server. Covers internal and Public Monitoring incidents, ranks them by validity/severity/blast radius/exposure, and closes the loop with confirmation-gated assign/tag/resolve writes. The one MCP-first skill in the bundle. |
+| [`manage-honeytokens`](skills/manage-honeytokens/SKILL.md) | Deploy honeytokens into the sources GitGuardian scans (Slack, Teams, Jira, ServiceNow, Confluence, SharePoint, OneDrive, integrated repositories), reconcile deployments against the server and the source, show which triggered and whether the rest are still in place, and run reset / revoke-and-clean-up / rotation. Reuses the endpoint-protection vocabulary (deployment, plant, reconcile, `write` / `delete`, `planted` / `failed` / `removed`). Reads through ggmcp; mints and writes through the Honeytoken API from a shell so the key pair never enters the conversation. Keeps a deployment registry on each honeytoken (custom tags + `GG-DEPLOYMENT` note). Endpoints stay with `ggshield honeytoken plant`. |
 
 ## Slash commands
 
@@ -59,6 +60,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
 | `/gitguardian:install-hooks` | `skills/install-hooks/SKILL.md` |
 | `/gitguardian:triage-incidents` | `skills/triage-incidents/SKILL.md` |
+| `/gitguardian:manage-honeytokens` | `skills/manage-honeytokens/SKILL.md` |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
@@ -188,7 +190,7 @@ Both are optional in the [agent-skills spec](https://agentskills.io/specificatio
 - **`license: MIT`** — same on every skill, mirroring the repo's root `LICENSE`. A skill installed on its own via `npx skills add --skill <name>` travels without that file, so the frontmatter is the only place its license is legible.
 - **`compatibility:`** — the skill's real environment requirements, in one sentence, max 500 chars. This is the machine-readable version of the skill's own `### Prerequisites` section, so the two must agree: when you raise a minimum `ggshield` version or add a required scope in Prerequisites, update `compatibility` in the same commit.
 
-Write what *this* skill needs, not what the bundle needs — the field earns its place by differentiating. `triage-incidents` needs ggmcp and no CLI at all; `scan-machine` needs endpoint scanning enabled server-side; `create-honeytokens` needs a Manager seat and the `honeytokens:write` scope; `check-hmsl` is user-run and works unauthenticated. A generic "requires ggshield" on all six would be worse than nothing.
+Write what *this* skill needs, not what the bundle needs — the field earns its place by differentiating. `triage-incidents` needs ggmcp and no CLI at all; `scan-machine` needs endpoint scanning enabled server-side; `create-honeytokens` needs a Manager seat and the `honeytokens:write` scope; `check-hmsl` is user-run and works unauthenticated. A generic "requires ggshield" on all seven would be worse than nothing.
 
 Mind YAML: an unquoted `: ` inside the value breaks the frontmatter. Rephrase to avoid the colon rather than quoting the whole string. CI catches it — `skills-ref validate` runs on every skill in `validate.yml` — but catching it locally is faster.
 
