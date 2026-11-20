@@ -18,9 +18,13 @@ source (`gg_api_core/tools/list_honeytokens.py`, `generate_honey_token.py`).
 3. **`ggshield honeytoken create` / `create-with-context`** only when neither of the above is
    available and the user already has `ggshield` authenticated with `honeytokens:write`. It mints
    and prints, nothing more; registry writes still need the API.
-4. **Dashboard handoff** when no write path exists: give the exact page and action
+4. **The dashboard in the user's browser, on their yes**, when the user declines a PAT or has
+   none: offer it for that one step (a reset, an events read, a Sources check), proceed only on an
+   explicit yes per step (a stated session preference counts), and keep reads scoped to the
+   events table and the Sources panel. Never read the token page whole: it prints the pair.
+5. **Dashboard handoff** when no write path and no browser exist: give the exact page and action
    (`https://dashboard.gitguardian.com/workspace/<id>/honeytokens/<honeytoken_id>` → Reset /
-   Revoke / Edit).
+   Revoke / Edit) and name the ggmcp tool that would have made the step automatic.
 
 ## ggmcp tools
 
@@ -101,6 +105,13 @@ List everything that triggered, newest first, with the deployment tags:
 ```bash
 curl -sS "${H[@]}" "$GITGUARDIAN_API_URL/v1/honeytokens?status=triggered&ordering=-triggered_at&per_page=100" \
   | jq -r '.[] | [.id, .name, .triggered_at, .open_events_count, (.custom_tags | map("\(.key)=\(.value)") | join(",")), (.tags|join(","))] | @tsv'
+```
+
+GitGuardian's own egress IPs, to tell the platform's validity check from an attacker (no auth;
+check both instances, a US workspace has been rung from the EU list):
+
+```bash
+curl -sS https://api.gitguardian.com/v1/ips; curl -sS https://api.eu1.gitguardian.com/v1/ips
 ```
 
 Events for one token (who tried, from where, doing what):

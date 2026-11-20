@@ -85,7 +85,10 @@ first step of any other workflow. Read-only.
    to all statuses, newest first. For "which triggered" filter `status: triggered` and order
    `-triggered_at`. Carry the system `tags` (`publicly_exposed`).
 2. **Enrich.** For triggered tokens, `GET /honeytokens_events?honeytoken_id=HT&status=open`
-   (count, first and last `triggered_at`, distinct `ip_address`, `action`, raw `tags`, `data`).
+   (count, first and last `triggered_at`, distinct `ip_address`, `action`, raw `tags`, `data`),
+   then match each `ip_address` against `GET /v1/ips` on both instances: events from a
+   GitGuardian egress CIDR with `GetCallerIdentity` and a `python-requests` user agent are the
+   platform's own validity check and are counted apart as *self-trigger*, never as an intrusion.
    For every token, the registry and `/sources` (which sources and elements the scanner found
    the token in, on any surface).
 3. **Read the source** when asked ("still in place?") or when the inventory is small (fewer than
@@ -116,8 +119,11 @@ review.
 1. **Review the events first.** `GET /honeytokens_events?honeytoken_id=HT` (open ones, newest
    first). For each: `triggered_at`, `ip_address`, `action`, `tags` as returned, and the `data`
    object. Then the token's own `tags` and the registry: where this deployment lives and who can
-   see it.
-2. **Decide with the user.** Reset is right when the origin is benign and understood: a teammate
+   see it. Match every `ip_address` against GitGuardian's egress list (`GET /v1/ips`, both
+   instances): a `GetCallerIdentity` from one of those CIDRs with a `python-requests` user agent
+   is the internal-monitoring validity checker ringing the decoy it detected; say so and set those
+   events aside before the question below.
+2. **Decide with the user**, about the events that remain. Reset is right when the origin is benign and understood: a teammate
    tried the credential from the runbook, a CI job touched the file, an internal scanner. It is
    wrong when the origin is unknown, when the honeytoken carries the `publicly_exposed` tag (it
    was seen on public GitHub — the location leaked), when the IP is foreign to the organization,
@@ -131,7 +137,11 @@ review.
    allowlist in the dashboard (events from allowlisted IPs become `allowed` and do not trigger).
    This is a dashboard setting; hand it over with the exact IP and reason.
 5. **Note it.** `POST /honeytokens/HT/notes`: `RESET <date> by <who>: <origin> — <reason>;
-   <allowlist proposed / not needed>`.
+   <allowlist proposed / not needed>`. When some events were self-triggers, name the egress IP in
+   the note; expect them again on the next re-check until the checker excludes honeytokens.
+6. **No PAT?** Offer the dashboard in the user's browser for the events read and the reset,
+   proceed on their yes, and keep the read to the events table (`honeytoken-api.md`, *Tool
+   selection order*).
 
 ## 4. Revoke and clean up
 

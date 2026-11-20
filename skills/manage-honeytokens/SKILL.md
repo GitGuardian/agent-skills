@@ -120,9 +120,15 @@ with the server; do not touch `~/.aws` or the `endpoint-deployments` endpoints f
    standard shape every detector matches. Expect the organisation's own verifying scanners
    (trufflehog in CI) to ring it; settle allowlisting before the first deployment. Full playbook
    in [references/vcs-playbook.md](references/vcs-playbook.md).
-9. **If the write path is missing, degrade, don't improvise.** No API token means read-only
-   reconcile through ggmcp plus a handoff of the exact dashboard action; no write path for a
-   source means a paste block built from a file the API wrote, never from the conversation.
+9. **If a step has no tool, degrade in a fixed order, don't improvise.** On the GitGuardian side:
+   ggmcp for every read it supports; the Honeytoken API with a PAT (ask for a file path, never
+   the value) for everything else; then, if the user declines or has no PAT, **offer the
+   dashboard in the user's own browser for that one step** and proceed only on their yes (one yes
+   per step; a stated preference such as "just use the browser" holds for the session), with
+   reads scoped to the events table and the Sources panel, never the token page, which prints
+   the pair, and never a whole-page read; with no browser either, flag the exact dashboard action
+   and the missing ggmcp tool. On the source side, no write path means a paste block built from
+   a file the API wrote, never from the conversation.
    Details in [references/honeytoken-api.md](references/honeytoken-api.md).
 
 ## When to Use
@@ -233,8 +239,8 @@ Each workflow is a short runbook in [references/lifecycle-workflows.md](referenc
 | Ask | Workflow | Reads | Writes (confirmation-gated) |
 |---|---|---|---|
 | plant / deploy | **Plant** — pre-flight (same workspace, write-path capabilities, quota headroom), pick surface, scout, one token per deployment, draft the artifact with placeholders, register `pending`, mint-and-write in one pipeline, read back, set `planted`; on failure after the mint, revoke the orphan | `list_sources`, source connector, `list_honeytokens` | `POST /honeytokens` with tags piped into the source API; `POST notes`; `POST /revoke` on an orphan |
-| list / which triggered / still there? | **Reconcile** — list, join with events and `/sources`, read each deployment from its source, derive `write` / `delete` / `revoke` / `ask` / `review`; an active token with no `GG-DEPLOYMENT` note is reported as an orphan | `list_honeytokens`, `/honeytokens_events`, `/sources`, `/notes`, source connector | none; applying an action is a separate gated step |
-| it was one of ours | **Reset** — read events, confirm benign origin, re-arm, note the reason | `/honeytokens_events` | `POST /reset`, `POST notes`, optional IP allowlist handoff |
+| list / which triggered / still there? | **Reconcile** — list, join with events (self-triggers from GitGuardian egress IPs labelled as such) and `/sources`, read each deployment from its source, derive `write` / `delete` / `revoke` / `ask` / `review`; an active token with no `GG-DEPLOYMENT` note is reported as an orphan | `list_honeytokens`, `/honeytokens_events`, `/v1/ips`, `/sources`, `/notes`, source connector | none; applying an action is a separate gated step |
+| it was one of ours | **Reset** — read events, match IPs against GitGuardian's own egress list (`/v1/ips`), confirm benign origin, re-arm, note the reason | `/honeytokens_events`, `/v1/ips` | `POST /reset`, `POST notes`, optional IP allowlist handoff |
 | remove / delete / decommission | **Revoke and clean up** — apply `delete` at every deployment first (`removed`), then revoke | registry, source connector | source delete/edit, `POST /revoke`, `POST notes` |
 | rotate / refresh | **Rotate** — one go, then unattended: mint new (tags carried over + `replaces`), `write(new)`, read back, `delete(old)` through the write path, `POST /revoke` old, cross-link notes on both tokens; see runbook below | registry, `/honeytokens_events` (old must not be under investigation), source connector | mint, source write + delete (or edit in place), `POST notes` ×2, `POST /revoke` |
 | does it work? / show me | **Prove it** — a controlled trigger from the user's own machine (a command that reads the pair from the API with their PAT and runs `sts get-caller-identity`, never a pasted pair), the event shown with its link, then reset and an allowlist proposal | `/honeytokens_events`, `get_honeytoken` | `POST /reset`, `POST notes` (after the user confirms it was them) |
@@ -297,7 +303,13 @@ Endpoints, scopes, object fields and `curl` recipes: [references/honeytoken-api.
   `action` and `data` (user agent, country, request details — shape varies by action) decide reset
   vs revoke. Event-level `tags` carry the dashboard's IP labels (public-monitoring IP, AWS internal
   IP, custom IP rules); print them as returned rather than matching on a literal string.
-  Allowlisted sources produce `allowed` events that never trigger.
+  Allowlisted sources produce `allowed` events that never trigger. **Before asking "was that
+  you?", match every event IP against GitGuardian's own egress list**: `GET /v1/ips` on the
+  instance's API host (US `api.gitguardian.com`, EU `api.eu1.gitguardian.com`; check both, a US
+  workspace has been hit from the EU list), unauthenticated. `GetCallerIdentity` with a
+  `python-requests` user agent from one of those CIDRs is the platform's own validity check
+  ringing the decoy it just detected, not an attacker: say so, count those events separately,
+  and only ask about the rest.
 - **Rotation cadence is a policy, not a reflex.** Default to rotating when a location changes
   owner or exposure (a space goes external, a repo is archived, a contractor leaves), or on a
   schedule the user sets; record it in the `rotation` tag so reconcile can flag overdue deployments.
@@ -324,6 +336,12 @@ Endpoints, scopes, object fields and `curl` recipes: [references/honeytoken-api.
 - **`generate_honeytoken` returned an existing token** — `new_token` defaults to `false`, which
   reuses the most recent active token. Another reason not to mint through it; if it must be
   used, pass `new_token: true` and treat the pair as exposed (rule 1).
+- **A token triggers minutes after detection, N × `GetCallerIdentity` from `python-requests` on an
+  IP in `/v1/ips`** — GitGuardian's internal-monitoring validity checker is calling AWS with the
+  honeytoken it just found; it repeats on every re-check (daily on Slack, within the polling cycle
+  on Jira). Not an intrusion. Reset with a note naming the egress IP, expect the repeat until the
+  checker excludes honeytokens, and propose allowlisting the egress CIDRs if the noise matters.
+  The dashboard may not label these IPs as GitGuardian's.
 - **A GitGuardian alert or incident appeared on the decoy itself** — the source is monitored by a
   workspace other than the one that minted the token (rule 4). The decoy is burned: remove it,
   revoke the token, resolve the foreign incident, and re-plant from the right workspace.
