@@ -49,7 +49,7 @@ HMSL handoff sub-step, which is user-run regardless.
   `id` (GitGuardian's default workflow) or the tool is unavailable, set the returned steps
   aside — do not render them — and let the doctrine drive end-to-end. See doctrine § 13.
 - **Choose occurrence tools by the user's scope.** Use the drill-in step to select
-  the occurrence view and handle older servers. Read the connected tool descriptions
+  the occurrence view. Read the connected tool descriptions
   and schemas for calling details; plan remediation through the doctrine and workspace
   workflow above.
 - **Never auto-resolve.** Marking an incident RESOLVED / IGNORED, assigning it, or
