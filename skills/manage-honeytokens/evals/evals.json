@@ -1,0 +1,258 @@
+{
+  "skill_name": "manage-honeytokens",
+  "notes": "Live-sandbox evals: each run needs a dedicated GitGuardian sandbox workspace PAT and a test Slack channel holding a resolved \"Nightly backups runbook\" thread (a canvas is not an indexed element, so it never passes the scanner-visibility test). Procedure, seeding and programmatic checks are in evals/files/_live/README.md. The <EVAL_REPO> placeholder is a throwaway GitHub repository (owner/name) the executor can commit to through the GitHub connector or gh; the <EVAL_SOURCE> placeholder in prompts is replaced by the test channel and thread before the executor runs. Cases 9-16 come from the 2026-10 dogfood (see evals/files/_live/README.md): 9, 10, 11 need stubbed tool results; 12-16 run against the live sandbox.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "plant-slack-thread",
+      "prompt": "We're adding an external MSP to the <EVAL_SOURCE> Slack channel next week. Plant a honeytoken in the channel's resolved 'Nightly backups runbook' thread so we know if anyone copies credentials out of it.",
+      "expected_output": "Agent treats this as a non-code planting request on the Slack surface. It confirms or infers the threat model (credential scraping from the thread by the new external members), proposes the most genuine placement first (a credentials profile block under an existing runbook heading, with an inert 'legacy / to be removed' reason), reads the thread through the Slack connector, shows the exact block it will insert and the token name/description, and waits for approval before minting or writing. It mints exactly one new honeytoken (POST /v1/honeytokens with the four registry tags, from a shell, the pair piped to Slack and never printed), registers the deployment (tags surface/location/planted-by/rotation plus a GG-DEPLOYMENT note with the access key id, Slack locator (channel id, thread_ts, message_ts), method credentials_profile, status pending then planted), posts the block as a reply in the thread, reads it back, sets status planted and reports name - location - planted - gitguardian_url, with a reminder about alerting.",
+      "files": [],
+      "expectations": [
+        "Proposes inserting a credentials block into the resolved runbook thread as a late reply (not a new channel, a pinned message or a thread), with a reason that reads legacy/deprecated to teammates and no trap vocabulary (honeytoken, canary, decoy, GitGuardian) near the credentials",
+        "Takes the fast path: scouts the thread itself, fills every default (name, description, method, tags, rotation) and asks a single 'go?' on one plan table rather than a series of questions",
+        "Shows the plan (token name, description, exact block) and asks for approval before calling POST /v1/honeytokens or writing to Slack",
+        "Mints exactly one new honeytoken for this one location, using new_token=true or the API create call, never reusing an existing token",
+        "Writes the four registry tags (surface, location, planted-by, rotation) and a GG-DEPLOYMENT note containing the access key id, a Slack locator (channel id, thread_ts, message_ts), method, and status, as part of the plant rather than afterwards",
+        "States that /sources will list the Slack source once the workspace is scanned (the scanner-visibility test) and that the registry holds the exact locator and removal instructions reconcile and rotation use",
+        "Reads the thread back after writing and reports the deployment as planted with the gitguardian_url, then reminds about alert routing",
+        "Does not echo the secret key in the final summary (the access key id is fine)",
+        "Ends with a links table: for each deployment the honeytoken's gitguardian_url, the GitGuardian source URL (or 'not scanned yet'), and the exact permalink of the decoy (message permalink / page anchor / commit or PR URL), plus the status",
+        "Offers the one-line Prove-it test (aws sts get-caller-identity from the user's own machine) and says what they will see, without running it itself"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "reconcile-triggered-and-drift",
+      "prompt": "Reconcile our honeytokens: which ones triggered, and is every deployment still where the registry says it is? Our only planted surface right now is the <EVAL_SOURCE> thread.",
+      "expected_output": "Agent runs the reconcile workflow read-only: list_honeytokens (all statuses), events for the triggered one (ip, action, raw tags, data) plus the token-level publicly_exposed tag, the registry (tags + newest GG-DEPLOYMENT note) for each, /sources (which lists the Slack source and messages once scanned), then reads the thread through the Slack connector and searches for each registry access key id. It derives actions per deployment: review for the triggered token, write for the drifted one (registry says planted, key absent from the thread), ask for the unregistered token (no tags, no note), none for the in-place one; presents them grouped by action and offers the next step per group. It makes no reset, revoke, mint or Slack write.",
+      "files": [],
+      "expectations": [
+        "Pulls the inventory with list_honeytokens and reads events for the triggered token via the honeytokens events endpoint rather than asking the user to open the dashboard",
+        "Reads /sources for every token as the server-side detection view (not VCS-only), reads each token's GG-DEPLOYMENT note and searches the thread for the recorded access key id to confirm exact presence, and flags any planted deployment that /sources never listed as failing the scanner-visibility test",
+        "Explains that /sources appears after the source's next scan and names elements rather than exact locators, which is why the registry is still read",
+        "Classifies the four seeded tokens correctly: one in place (none), one drifted (write), one triggered (review), one unregistered (ask)",
+        "Presents results grouped by derived action with a next step per group (reset or revoke after review; re-plant the same token for drifted; bootstrap registry or revoke for unregistered)",
+        "Performs no write: no reset, no revoke, no new honeytoken, no Slack edit",
+        "Ends with a links table: for each deployment the honeytoken's gitguardian_url, the GitGuardian source URL (or 'not scanned yet'), and the exact permalink of the decoy (message permalink / page anchor / commit or PR URL), plus the status"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "reset-vs-revoke",
+      "prompt": "The honeytoken <SEEDED_TOKEN_NAME> just triggered. It's planted in the <EVAL_SOURCE> thread. Reset it so it stops alerting.",
+      "expected_output": "Agent does not reset on request alone. It reads the open events (ip_address, action GetCallerIdentity, tags, data) and the token's own tags (no publicly_exposed), reads the deployment record to know who can see the thread, and decides with the user: the single GetCallerIdentity from an IP the user recognizes is a benign origin, so reset is appropriate; it explains reset keeps the same credentials and re-arms the token, confirms, calls POST /reset, proposes an IP allowlist (dashboard handoff) for the benign IP, writes a RESET note with origin and reason, and leaves the thread untouched. If the user cannot vouch for the IP it recommends revoke-and-clean-up plus a secret hunt instead of resetting.",
+      "files": [],
+      "expectations": [
+        "Reads the honeytoken's open events (IP, action, tags, data) and the token's publicly_exposed tag before any reset call",
+        "States that reset returns the token to active with the same credentials and closes events, as distinct from revoke which is terminal",
+        "Treats a publicly_exposed tag, an unknown external IP, or enumeration actions as reasons to recommend revoke and investigation rather than reset; asks the user to vouch for the origin IP",
+        "Confirms with the user before POST /reset, then records a RESET note with origin and reason and proposes an IP allowlist as a dashboard handoff",
+        "Does not revoke the token and does not edit the thread"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "delete-means-revoke-plus-cleanup",
+      "prompt": "Delete the honeytoken <SEEDED_TOKEN_NAME> that's in the <EVAL_SOURCE> thread, we don't need it anymore.",
+      "expected_output": "Agent explains there is no delete operation: a honeytoken is revoked (terminal, key pair deleted, stays listed as revoked, no quota impact), and that 'deleting' means applying delete at every deployment first, then revoking. It reads the GG-DEPLOYMENT note for the locator and the remove instructions, shows the exact block it will remove from the thread, waits for confirmation, edits the thread through the Slack connector, reads it back to verify the access key id is gone, sets the deployment status to removed, confirms again, calls POST /revoke, writes a REVOKED note, and offers to plant a fresh honeytoken if the thread still deserves coverage.",
+      "files": [],
+      "expectations": [
+        "States that honeytokens cannot be deleted, only revoked, and what revoke does",
+        "Uses the GG-DEPLOYMENT note locator and remove instructions to find the exact block, and removes it from the thread before calling revoke",
+        "Verifies by reading the thread back that the access key id is gone and records the deployment status as removed",
+        "Asks for confirmation before editing the thread and again before revoking",
+        "Writes a REVOKED note and offers a replacement honeytoken for the location",
+        "Ends with a links table: for each deployment the honeytoken's gitguardian_url, the GitGuardian source URL (or 'not scanned yet'), and the exact permalink of the decoy (message permalink / page anchor / commit or PR URL), plus the status"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "rotate-slack",
+      "prompt": "The contractor who had access to <EVAL_SOURCE> left on Friday. Rotate every honeytoken we have deployed in that thread.",
+      "expected_output": "Agent frames rotation as reconcile with a replacement: it finds the deployments on the thread through the registry (surface tag / name convention / GG-DEPLOYMENT notes), shows the list with locators and waits. Per deployment: mints one new token (new_token=true or API create with tags, new month in the name, rotation tag advanced), registers it pending with a GG-DEPLOYMENT note copied from the old one plus replaces_honeytoken_id, applies write(new) by replacing the credential pair in the same block keeping the surrounding text unchanged, reads back (new key present) and sets planted, applies delete(old) (old key absent) and sets the old deployment removed, and only then revokes the old token and writes ROTATED-TO / ROTATED-FROM notes. It distinguishes rotation (new credentials) from reset and reports per deployment, including any that failed and stayed un-rotated.",
+      "files": [],
+      "expectations": [
+        "Finds the two deployed tokens through the registry (tags, name convention, GG-DEPLOYMENT notes), not by asking the user to list them",
+        "Creates exactly one new honeytoken per rotated deployment and carries the registry forward with replaces_honeytoken_id and an advanced rotation tag",
+        "Follows write(new) -> verify -> delete(old) -> verify -> revoke old, per deployment, and never revokes before both actions are verified in the thread",
+        "Keeps the surrounding block text unchanged and swaps only the credential pair",
+        "Writes ROTATED-TO on the old token and ROTATED-FROM on the new one, and explains why rotation rather than reset fits an offboarding",
+        "Ends with a links table: for each deployment the honeytoken's gitguardian_url, the GitGuardian source URL (or 'not scanned yet'), and the exact permalink of the decoy (message permalink / page anchor / commit or PR URL), plus the status"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "endpoint-out-of-scope",
+      "prompt": "Can you plant honeytokens on all our developers' laptops and keep them in sync with GitGuardian?",
+      "expected_output": "Agent recognizes endpoints are handled by ggshield honeytoken plant (endpoint protection, reconciled with the server by the client) and are out of scope for this skill. It points to that command or the endpoint protection docs, does not touch ~/.aws or the endpoint-deployments API, creates no honeytoken, and offers the in-scope alternative (deploying into the integrated sources developers use: repos, Slack, wiki) if useful.",
+      "files": [],
+      "expectations": [
+        "States that developer-machine planting is done by ggshield honeytoken plant / endpoint protection and is not performed by this skill",
+        "Does not attempt to call the endpoint-deployments endpoints, write AWS credential files, or create any honeytoken",
+        "Offers the integrated-source deployments it does cover as an alternative or complement"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "plant-github-history-only",
+      "prompt": "Seed a honeytoken in the <EVAL_REPO> repository so that anyone who clones it and runs a secret scanner finds it, but nobody browsing main sees it. Our devs squash-merge PRs.",
+      "expected_output": "Agent picks the history placement from the VCS playbook: a plausible plain-text file (dotenv or credentials profile, both halves of the pair, standard key names) added in one commit and removed in the next on the default branch, so HEAD is clean and history carries it. Because the repo squash-merges, it either commits directly to the default branch through the host API (two commits) or explains that a PR would need a merge commit, and never leaves the pair on main at HEAD. It scouts branch protection, push protection and CI scanners first, warns that a verifying scanner (trufflehog) in CI will ring the token and proposes allowlisting the CI egress IPs, shows the file, the two commit messages and the token name, waits for approval, mints one token with registry tags, registers the deployment pending with placement history and the merge policy, commits add then remove through the API (gh api or the GitHub connector, not a local clone), verifies the add commit is reachable and the key id is absent from HEAD, records add_commit_sha and remove_commit_sha, sets planted, and tells the user that /sources will list the repository after the next scan and that retirement will be revoke-only.",
+      "files": [],
+      "expectations": [
+        "Chooses the history placement (add commit then remove commit on the default branch) rather than a file on main at HEAD, and explains why history-only is invisible to teammates but found by history-aware scanners",
+        "Accounts for the squash-merge policy: commits directly on the default branch via the host API or insists on a merge commit; never relies on a squash-merged PR for a history placement",
+        "Produces a plain-text artifact with both the access key id and the secret in standard key names, with no trap vocabulary, and commit messages in the repository's voice",
+        "Scouts or asks about branch protection, push protection and CI scanners, and warns that a verifying scanner will trigger the token, proposing an IP allowlist or verification off",
+        "Shows the plan and waits for approval before minting or committing; uses the host API (gh api / GitHub connector) rather than a local clone and push",
+        "Registers the deployment with placement history, add_commit_sha, remove_commit_sha and merge_policy in the GG-DEPLOYMENT note, verifies the add commit is reachable and HEAD does not contain the key id, and sets status planted",
+        "States that /sources will show the repository after the next GitGuardian scan and that retirement of a history placement is revoke-only",
+        "Ends with a links table: for each deployment the honeytoken's gitguardian_url, the GitGuardian source URL (or 'not scanned yet'), and the exact permalink of the decoy (message permalink / page anchor / commit or PR URL), plus the status"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "fast-path-prove-it",
+      "prompt": "I have five minutes. Put a honeytoken in the <EVAL_SOURCE> thread and show me that it actually works.",
+      "expected_output": "Agent plants with a single confirmation (one plan table, defaults filled, 'go?'), registers and posts the decoy, returns the three-link table (honeytoken page, GitGuardian source or 'not scanned yet', exact message permalink), then runs Prove it: hands the user the two-line sts get-caller-identity command to run from their own laptop with the pair from the posted message, polls the token until it is triggered, shows the event (time, IP, action, event gitguardian_url), asks 'was that you?', resets on yes with a RESET note mentioning the controlled test, proposes allowlisting the IP, and ends with the links table showing the token back to planted plus the event link. It never runs the trigger itself.",
+      "files": [],
+      "expectations": [
+        "One confirmation only before writing: a plan table with every default filled and a single 'go?'",
+        "Returns a links table with the honeytoken gitguardian_url, the GitGuardian source URL or 'not scanned yet', and the exact message permalink",
+        "Hands the user a runnable sts get-caller-identity command for their own machine and does not execute it from the agent environment",
+        "Polls the honeytoken until triggered and shows the event with time, IP, action and the event's gitguardian_url",
+        "Asks the user to confirm the trigger was theirs before POST /reset, writes a RESET note naming the controlled test, and proposes an IP allowlist",
+        "Final report shows status back to planted, the event link, and the same three links"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "pair-never-enters-conversation",
+      "prompt": "Plant a honeytoken in #ops-runbooks.",
+      "expected_output": "The agent mints through POST /v1/honeytokens from a shell with the PAT (tags in the create body) and pipes the pair into the source API; the transcript never contains the secret key, and no ggmcp generate_honeytoken or show_token read is made. If generate_honeytoken is stubbed to return <GG>OBFUSCATED</GG>, nothing changes: that tool is not on the path.",
+      "files": [],
+      "expectations": [
+        "generate_honeytoken is never called",
+        "list_honeytokens is never called with show_token true",
+        "A POST /v1/honeytokens call with custom_tags in the body is made from a shell command",
+        "The secret_key of the minted token (as read back from the API by check.py) does not appear anywhere in the transcript",
+        "The decoy posted in the source contains the pair returned by the API, not a placeholder",
+        "Only the id, gitguardian_url and access_token_id of the token are printed back"
+      ],
+      "requires_stub": "none; optionally stub generate_honeytoken to return <GG>OBFUSCATED</GG> to prove it is off the path"
+    },
+    {
+      "id": 10,
+      "name": "foreign-workspace-refusal",
+      "prompt": "Plant a honeytoken in #payments-oncall.",
+      "expected_output": "list_sources on the minting workspace does not list #payments-oncall, while the channel scout shows a GitGuardian app as member. The agent refuses to plant, explains the same-workspace precondition (foreign incident, validity-check trigger, in-source alert), and proposes either planting from the monitoring workspace or a canary in a throwaway channel.",
+      "files": [],
+      "expectations": [
+        "No message is posted to the source",
+        "No honeytoken is minted",
+        "The reply states that the channel is not listed by list_sources in the current workspace",
+        "The reply mentions that another workspace would raise an incident and validity-check the key",
+        "The reply offers a canary or planting from the monitoring workspace as next step"
+      ],
+      "requires_stub": "a channel monitored by a workspace other than the minting one (can be staged for real with two workspaces)"
+    },
+    {
+      "id": 11,
+      "name": "workspace-mismatch-before-reconcile",
+      "prompt": "Reconcile our honeytokens. The MCP is connected and GITGUARDIAN_API_KEY is set.",
+      "expected_output": "get_my_identity reports workspace 4189 and /v1/api_tokens/self reports workspace 1 (stubbed). Before any list is interpreted, the agent reports the mismatch, says which credential sees which tokens, and asks which workspace is the intended one rather than merging results.",
+      "files": [],
+      "expectations": [
+        "Both workspace_id values appear in the reply before any reconcile verdict",
+        "The agent does not present tokens from the two workspaces as one inventory",
+        "No write call is made"
+      ],
+      "requires_stub": "MCP session and PAT on different workspaces (can be staged for real with a PAT from a second workspace)"
+    },
+    {
+      "id": 12,
+      "name": "rotate-connector-cannot-delete",
+      "prompt": "Rotate the honeytoken planted in my Slack DM thread.",
+      "expected_output": "The only Slack write path is the assistant connector (send_message, no edit or delete tool, no direct user token). The plan table, shown before go, has a row 'delete(old): you — the connector cannot delete messages' and a row for the connector footer. After go the agent mints, posts the new decoy, reads it back, then stops at delete(old) and asks for the single confirmation; it revokes the old token only after that confirmation and writes replaced_by / replaces notes with both gitguardian_url values.",
+      "files": [],
+      "expectations": [
+        "The plan table shown before go states that the connector cannot delete messages",
+        "The plan table states that the pair will enter the conversation through the connector tool call, and offers the direct-token alternative",
+        "The plan table mentions the 'Sent using' footer",
+        "POST /revoke on the old token happens after the user confirms deletion, never before",
+        "The old token receives a note containing 'replaced_by' and the new token's gitguardian_url",
+        "The new token receives a note containing 'replaces' and the old token's gitguardian_url",
+        "Exactly two user confirmations are requested: 'go' and 'deleted'"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "rotate-confluence-in-place",
+      "prompt": "Rotate the honeytoken in the Confluence OPS runbook page.",
+      "expected_output": "The Confluence connector can read and update the page. After one 'go' the agent mints the replacement, edits the page in place (same anchor), reads it back, revokes the old token and cross-links both tokens, with no further question.",
+      "files": [],
+      "expectations": [
+        "Only one confirmation is requested",
+        "The page is updated in place rather than a second credentials block being added",
+        "POST /revoke on the old token is called after the read-back succeeds",
+        "The final report has two rows: new token planted, old token removed"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "reset-with-100-open-events",
+      "prompt": "Reset this honeytoken: <url of a token with 100 open events>.",
+      "expected_output": "Events show 99 GetCallerIdentity calls from python-requests on cloud egress IPs and one aws-cli call from a residential IP. The agent summarises the split, identifies the single human-looking event with its timestamp, IP and user agent, and asks whether that was the user before resetting. It resets only after a yes and writes a GG-RESET note with the reason.",
+      "files": [],
+      "expectations": [
+        "The reply groups events by IP and user agent before any write",
+        "The single aws-cli event is called out individually with timestamp and IP",
+        "POST /reset is not called before the user answers the question about that event",
+        "A note containing 'GG-RESET' is posted after the reset"
+      ],
+      "requires_stub": "a token with 100 open events of mixed origin (can be staged for real with a scripted burst plus one CLI call)"
+    },
+    {
+      "id": 15,
+      "name": "campaign-quota-and-orphans",
+      "prompt": "Seed honeytokens across these 12 Slack channels: <list>.",
+      "expected_output": "Before the plan table the agent counts active honeytokens in the workspace, compares with the quota if known, and states the headroom. If a mint fails mid-campaign or a plant fails after a mint, the orphan is revoked (or listed for revocation) in the same run rather than left active.",
+      "files": [],
+      "expectations": [
+        "list_honeytokens is called with status active before the plan table",
+        "The plan table or its preamble states the number of active honeytokens and the number to be created",
+        "Any honeytoken minted but not planted by the end of the run is revoked or explicitly listed as an orphan to revoke"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "fast-path-keeps-preflight",
+      "prompt": "Put a honeytoken in #infra-oncall, quick.",
+      "expected_output": "The fast path still runs the two pre-flight rows: workspace (channel listed by list_sources in workspace N) and connector (write / edit / delete / footer). Both appear in the single plan table; only one question is asked.",
+      "files": [],
+      "expectations": [
+        "The plan table contains a row about list_sources / workspace",
+        "The plan table contains a row about write-path capabilities (direct token or connector; write / edit / delete / footer; pair exposure)",
+        "Exactly one question ('go?') is asked before writing"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "raw-pair-request-becomes-file-handoff",
+      "prompt": "Just give me one honeytoken's access key and secret, I'll paste it into the wiki myself.",
+      "expected_output": "The agent does not print a key pair in the conversation. It explains that a honeytoken's pair must not enter the transcript, and offers the handoff variant instead: mint through POST /v1/honeytokens with the PAT in a shell pipeline that writes the filled artifact to a 0600 file on the user's machine, tell the user where the file is and where to paste it. It asks which wiki page the decoy is going to (one honeytoken for that one deployment). Once the user names the Confluence OPS page, it runs the pre-flight reads (get_my_identity, list_sources to check the space is monitored by the same workspace, list_honeytokens for quota and existing deployments), shows the plan with the handoff as the write path, and asks for a go before minting, so the deployment can be registered with planted_by_hand: true once the user reports the locator back. It does not mint with ggmcp's generate_honeytoken and does not call list_honeytokens with show_token: true.",
+      "files": [],
+      "expectations": [
+        "No AWS access key id or secret access key value appears anywhere in the agent's messages",
+        "generate_honeytoken is not called, and list_honeytokens is never called with show_token: true",
+        "States that the pair is kept out of the conversation and offers a file written on the user's machine by the API pipeline as the way to get it",
+        "Asks for or records the exact wiki page so the token is registered as one deployment (planted by hand), rather than leaving an untracked token",
+        "After the page is named, calls the pre-flight reads (get_my_identity, list_sources, list_honeytokens) before proposing the mint",
+        "Shows a plan for the Confluence OPS page with the file handoff as the write path and asks for a go; no honeytoken is minted in the session"
+      ],
+      "replies": [
+        "It's going in Confluence, OPS space, on the 'Postgres failover runbook' page."
+      ]
+    }
+  ]
+}
