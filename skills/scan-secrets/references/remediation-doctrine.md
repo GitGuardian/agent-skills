@@ -409,7 +409,7 @@ A GitGuardian workspace can configure a **custom remediation workflow**: custome
 ### Two delivery channels — which one this skill sees
 
 - **Pre-commit / Pre-push / Pre-receive (pre-leak).** When a GitGuardian-configured git hook blocks a secret, **ggshield prints the workspace's configured message in its own CLI output** (ggshield ≥ 1.30.0). This is the channel this skill sees most often — there is no separate fetch; the message arrives inline in the hook/scan output. Maps to the pre-leak track ([§ 5](#5-pre-leak-track)).
-- **Incident page (post-leak).** Fetched via the `get_remediation_workflow` MCP tool as an ordered list of steps (`{ title, description?, link? }`), when the agent has the GitGuardian Developer MCP connected. This is the channel the incident-triage surface uses; it maps to the post-leak tracks ([§§ 6–8](#6-post-leak--public-facing-track)).
+- **Incident page (post-leak).** Fetched via the `get_remediation_workflow` MCP tool, when the agent has the GitGuardian Developer MCP connected. The tool wraps the response under a top-level `workflow` key: `workflow.steps` is the ordered list of steps (`{ title, description?, link? }`) and is always present, because the default workflow has steps too; `workflow.id` is present only when the workspace configured a custom workflow. Gate custom-vs-default on `workflow.id`, never on `steps` — no `id` means GitGuardian's default workflow, and the doctrine drives. This is the channel the incident-triage surface uses; it maps to the post-leak tracks ([§§ 6–8](#6-post-leak--public-facing-track)).
 
 If neither channel yields a custom workflow (default workspace config, ggshield < 1.30.0, or no MCP), the doctrine drives end-to-end as in [§§ 5–12](#5-pre-leak-track).
 
