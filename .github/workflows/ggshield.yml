@@ -1,8 +1,15 @@
 name: ggshield
 
 on:
+  # Pushes to this repository: `main` and every maintainer branch. A pull
+  # request from a branch in this repository is scanned here, on its head
+  # commit, which is the commit the required check is read from.
   push:
-  pull_request:
+  # Pull requests from forks. A `pull_request` run from a fork gets no
+  # repository secrets, so ggshield had no API key and the required check
+  # could never pass. `pull_request_target` runs in this repository's
+  # context, with its secrets. See the job comment for why that is safe.
+  pull_request_target:
 
 # Least privilege: reads the tree, talks to the GitGuardian API, never
 # writes back.
@@ -11,20 +18,83 @@ permissions:
 
 jobs:
   secret-scan:
+    # Why `pull_request_target` is safe here:
+    #
+    # A `pull_request_target` run has the repository's secrets, so this
+    # job must never execute code from the pull request. It does not.
+    # The checkout step pins the pull request's head SHA and only writes
+    # files to disk. ggshield runs from a pinned image and only reads git
+    # objects. No `npm install`, no script from the checkout, and no other
+    # step runs in this job. Do not add one.
+    #
+    # The pull request could ship its own `.gitguardian.yaml` to exclude
+    # paths from the scan. The step before the scan replaces that file with
+    # the copy from the base commit, so ggshield uses the base branch's
+    # settings. The residual risk: an inline `ggignore` comment still hides
+    # the secret on its line. A reviewer sees that comment in the diff.
+    #
+    # Which event runs the scan:
+    # - push: every push to this repository.
+    # - pull_request_target: only when the head branch lives in a fork.
+    #   A branch in this repository is already scanned by its push, so
+    #   scanning it again here would double every run.
+    #
     # Runs triggered by Dependabot read secrets from the repository's
     # Dependabot store, not the Actions store, so `GITGUARDIAN_API_KEY`
     # arrives empty and ggshield fails to authenticate. Skip instead of
     # copying the key into a second store: these branches only touch
     # dependency manifests and workflow pins, and the push scan on `main`
     # covers the content once the bump merges.
-    if: github.actor != 'dependabot[bot]'
+    if: >-
+      github.actor != 'dependabot[bot]' && (
+        github.event_name == 'push' ||
+        github.event.pull_request.head.repo.full_name != github.repository
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Empty on push, which checks out the pushed commit as before.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Full history, so the base commit is present for the range.
           fetch-depth: 0
+          # Do not leave the token in .git/config for the steps below.
+          persist-credentials: false
 
-      - name: Scan for secrets
+      - name: Scan pushed commits
+        if: github.event_name == 'push'
         uses: GitGuardian/ggshield-action@2002482fb5990b486be5598ebcf48a8eba393fce # v1.53.0
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+
+      # ggshield reads `.gitguardian.yaml` (or `.gitguardian.yml`,
+      # `.gitguardian`) from the working tree. Put back the base commit's
+      # copy, or remove the file when the base has none. This is a git
+      # operation on the tree. It runs nothing from the pull request, and
+      # the commits that change the file are still scanned.
+      - name: Use the base branch's ggshield config
+        if: github.event_name == 'pull_request_target'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          for f in .gitguardian .gitguardian.yml .gitguardian.yaml; do
+            rm -f -- "$f"
+            if git cat-file -e "$BASE_SHA:$f" 2>/dev/null; then
+              git show "$BASE_SHA:$f" > "$f"
+            fi
+          done
+
+      # Not ggshield-action: its `ci` mode reads the head commit from
+      # GITHUB_SHA, which `pull_request_target` sets to the base branch,
+      # and a workflow cannot override GITHUB_* variables. The range is
+      # passed explicitly instead. Same image as the action pin above;
+      # bump both together.
+      - name: Scan pull request commits
+        if: github.event_name == 'pull_request_target'
+        uses: docker://gitguardian/ggshield:v1.53.0@sha256:387ad1467f110ce759a97dc4b25c978e7df58181f8e4793df55d40f89ce7142d
+        with:
+          entrypoint: ggshield
+          args: secret scan -v commit-range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
