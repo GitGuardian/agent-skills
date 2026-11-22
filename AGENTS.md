@@ -22,6 +22,7 @@ Target agents: Claude Code directly via the plugin marketplace, Cursor via the `
 .codex-mcp.json        # Codex MCP server config (Claude: .mcp.json, Cursor: mcp.json)
 .github/workflows/     # CI: JSON + frontmatter validation, install-flow sanity, release automation
 test/sanity.test.ts    # install-flow sanity tests (vitest)
+scripts/               # CI checks: skill markdown policy, ggmcp tool-contract check (pin: package.json "ggmcp")
 package.json           # tooling-only (vitest); no runtime deps
 release-please-*.{json} # Release Please config + released-version manifest
 skills/<name>/         # one folder per skill (folder name = SKILL.md frontmatter `name:`)
@@ -210,7 +211,7 @@ Task-gated working knowledge lives under `docs/maintainers/`. Load the relevant 
 
 | When you're… | Read |
 |---|---|
-| Adding a skill, a slash command, or editing a duplicated reference; planning router-pattern scaling | [`docs/maintainers/contributing.md`](docs/maintainers/contributing.md) |
+| Adding a skill, a slash command, or editing a duplicated reference; bumping the ggmcp pin or allow-listing a tool-contract false positive; planning router-pattern scaling | [`docs/maintainers/contributing.md`](docs/maintainers/contributing.md) |
 | Running the skill-creator eval loop, authoring `evals.json`, or building secret-bearing fixtures | [`docs/maintainers/evals.md`](docs/maintainers/evals.md) |
 | Cutting a release, bumping the version, or reasoning about SemVer policy | [`docs/maintainers/releasing.md`](docs/maintainers/releasing.md) |
 | Touching manifests, validating the plugin, or publishing to Claude/Cursor/Codex marketplaces (includes the **Critical structural rules** and the manifest field reference) | [`docs/maintainers/distribution.md`](docs/maintainers/distribution.md) |

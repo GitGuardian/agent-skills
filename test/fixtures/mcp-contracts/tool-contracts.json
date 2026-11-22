@@ -1,0 +1,391 @@
+{
+  "server": "ggmcp",
+  "tools": [
+    {
+      "description": "Get the workspace's remediation workflow: the ordered steps the dashboard shows for fixing a secret incident, the worksp",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "get_remediation_workflow",
+      "outputSchema": {
+        "description": "Result from retrieving the remediation workflow.",
+        "properties": {
+          "workflow": {
+            "additionalProperties": true,
+            "description": "Remediation workflow data",
+            "type": "object"
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "type": "object"
+      },
+      "requiredScopes": [
+        "incidents:read"
+      ]
+    },
+    {
+      "description": "List the workspace's honeytokens: their name, status (active, triggered when someone used one, or revoked), dates and cr",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Where to resume, from next_arguments of a previous result. Leave it unset for the first page; do not build one"
+          },
+          "get_all": {
+            "default": false,
+            "description": "If True, fetch page after page until the last one, about 60 KB of results, or 10 pages, whichever comes first; stop_reason says which. If False, return one page",
+            "type": "boolean"
+          },
+          "mine": {
+            "default": false,
+            "description": "Only the honeytokens the current user created",
+            "type": "boolean"
+          },
+          "ordering": {
+            "default": "-created_at",
+            "description": "Sort order: a field, prefixed with '-' for descending",
+            "enum": [
+              "created_at",
+              "-created_at",
+              "triggered_at",
+              "-triggered_at",
+              "revoked_at",
+              "-revoked_at",
+              "name",
+              "-name"
+            ],
+            "type": "string"
+          },
+          "page_size": {
+            "default": 20,
+            "description": "Number of results per page, 1 to 100",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only the honeytokens whose name contains this text"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "triggered",
+                  "revoked"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only the honeytokens in this state; triggered means someone used one"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_honeytokens",
+      "outputSchema": {
+        "description": "Honeytokens, without their credentials.",
+        "properties": {
+          "has_more": {
+            "description": "True when more results match than this result holds",
+            "type": "boolean"
+          },
+          "honeytokens": {
+            "description": "Honeytokens with their name, status, dates and creator. Their credentials are not included.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "next_arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The arguments for the next call: the same filters, with the cursor that resumes after these results. Pass them as given. Null when has_more is false."
+          },
+          "page_size": {
+            "description": "Number of results per page this call used",
+            "type": "integer"
+          },
+          "stop_reason": {
+            "description": "Why the results stop here: 'end' (no more results), 'page' (one page was asked for), 'size_budget' (get_all reached its size budget), 'page_limit' (get_all reached its page limit)",
+            "enum": [
+              "end",
+              "page",
+              "size_budget",
+              "page_limit"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_size",
+          "has_more",
+          "stop_reason",
+          "next_arguments",
+          "honeytokens"
+        ],
+        "type": "object"
+      },
+      "requiredScopes": [
+        "honeytokens:read"
+      ]
+    },
+    {
+      "description": "(Internal incidents only; for Public Monitoring use list_public_incidents) List the secret incidents found in the source",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "assignee_id": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by assignee member ID. Use 0 for unassigned incidents. Cannot be used with 'mine'."
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Where to resume, from next_arguments of a previous result. Leave it unset for the first page; do not build one"
+          },
+          "mine": {
+            "default": false,
+            "description": "If True, fetch only incidents assigned to the current user. Overrides assignee_id.",
+            "type": "boolean"
+          },
+          "ordering": {
+            "default": "-date",
+            "description": "Sort order: a field, prefixed with '-' for descending",
+            "enum": [
+              "date",
+              "-date",
+              "score",
+              "-score",
+              "severity",
+              "-severity",
+              "status",
+              "-status"
+            ],
+            "type": "string"
+          },
+          "page_size": {
+            "default": 20,
+            "description": "Number of results per page, 1 to 100",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "public_exposure": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by public exposure. Values: source_publicly_visible, public_incident_linked, leaked_outside_perimeter"
+          },
+          "source_criticality": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source criticality. Values: critical, high, medium, low, unknown"
+          },
+          "teams": {
+            "anyOf": [
+              {
+                "items": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by team ID(s)"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_internal_incidents",
+      "outputSchema": {
+        "description": "Result from listing incidents.",
+        "properties": {
+          "applied_filters": {
+            "additionalProperties": true,
+            "description": "Filters that were applied to the query",
+            "type": "object"
+          },
+          "has_more": {
+            "description": "True when more results match than this result holds",
+            "type": "boolean"
+          },
+          "incidents": {
+            "description": "Incidents. Each one's secret and displayed_occurrence are summarized (validity, detector, source, file and lines); call get_internal_incident for an incident's full details.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "next_arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The arguments for the next call: the same filters, with the cursor that resumes after these results. Pass them as given. Null when has_more is false."
+          },
+          "page_size": {
+            "description": "Number of results per page this call used",
+            "type": "integer"
+          },
+          "stop_reason": {
+            "description": "Why the results stop here: 'end' (no more results), 'page' (one page was asked for), 'size_budget' (get_all reached its size budget), 'page_limit' (get_all reached its page limit)",
+            "enum": [
+              "end",
+              "page",
+              "size_budget",
+              "page_limit"
+            ],
+            "type": "string"
+          },
+          "suggestion": {
+            "default": "",
+            "description": "Suggestions for interpreting or modifying the results",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_size",
+          "has_more",
+          "stop_reason",
+          "next_arguments"
+        ],
+        "type": "object"
+      },
+      "requiredScopes": [
+        "incidents:read"
+      ]
+    },
+    {
+      "description": "Synthetic: enum behind a $ref.",
+      "inputSchema": {
+        "$defs": {
+          "Severity": {
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "info",
+              "unknown"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "incident_id": {
+            "type": "integer"
+          },
+          "severity": {
+            "$ref": "#/$defs/Severity"
+          }
+        },
+        "required": [
+          "incident_id",
+          "severity"
+        ],
+        "type": "object"
+      },
+      "name": "set_internal_incident_severity",
+      "outputSchema": {
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "severity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changed",
+          "severity"
+        ],
+        "type": "object"
+      },
+      "requiredScopes": [
+        "incidents:write"
+      ]
+    }
+  ],
+  "version": "0.0.0-fixture"
+}

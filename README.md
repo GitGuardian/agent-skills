@@ -247,6 +247,7 @@ Design choices:
 
 - A [GitGuardian account](https://dashboard.gitguardian.com/signup). The free tier is enough for repo scanning and basic setup.
 - [`ggshield`](https://github.com/GitGuardian/ggshield) 1.49.0 or later for full hook support.
+- The [GitGuardian Developer MCP server](https://github.com/GitGuardian/ggmcp) (ggmcp) 0.8.0 for MCP-backed flows such as incident triage. The hosted server tracks the latest release; CI checks every tool, argument and output field the skills name against the tool contracts of this pinned version.
 - Additional workspace capabilities for some flows:
   - Honeytokens require Manager access and a token with `honeytokens:write`.
   - Machine scans require endpoint scanning enabled on the workspace.

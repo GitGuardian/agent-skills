@@ -5,9 +5,14 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "ggmcp": {
+    "version": "0.8.0",
+    "commit": "3e27106674afb564991ad837bbd250c1ec654a0d"
+  },
   "scripts": {
     "test": "vitest run",
-    "test:sanity": "vitest run test/sanity.test.ts"
+    "test:sanity": "vitest run test/sanity.test.ts",
+    "check:mcp-contracts": "node scripts/check-mcp-contracts.mjs"
   },
   "devDependencies": {
     "@types/node": "26.2.0",

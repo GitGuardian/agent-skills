@@ -181,3 +181,49 @@ jobs:
           set -e
           npm install -g @anthropic-ai/claude-code@2.1.245
           claude plugin validate .
+
+  # Skills name ggmcp tools, arguments, enum values and output fields. This
+  # job checks every name against the tool contracts of the ggmcp version
+  # pinned in package.json ("ggmcp": version + commit). The contracts are
+  # generated here from a throwaway install until ggmcp publishes them with
+  # each release (GitGuardian/ggmcp#249). ggmcp is not on PyPI (the PyPI
+  # name gg-mcp belongs to an unrelated project), so it installs from the
+  # pinned commit of its GitHub tag.
+  mcp-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".node-version"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned ggmcp in a throwaway venv
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.ggmcp.version' package.json)"
+          COMMIT="$(jq -r '.ggmcp.commit' package.json)"
+          # The pin names both, so a bump that moves one and not the other fails here.
+          # An annotated tag lists its commit on the peeled ^{} line.
+          TAG_COMMIT="$(git ls-remote https://github.com/GitGuardian/ggmcp.git "refs/tags/v$VERSION" "refs/tags/v$VERSION^{}" \
+            | awk '$2 ~ /\^\{\}$/ {peeled = $1} {last = $1} END {print peeled ? peeled : last}')"
+          test "$TAG_COMMIT" = "$COMMIT" || { echo "::error::package.json pins ggmcp $VERSION at $COMMIT, but tag v$VERSION is $TAG_COMMIT"; exit 1; }
+          python -m venv "$RUNNER_TEMP/ggmcp"
+          "$RUNNER_TEMP/ggmcp/bin/pip" install --quiet --index-url https://pypi.org/simple \
+            "ggmcp @ git+https://github.com/GitGuardian/ggmcp.git@$COMMIT"
+          INSTALLED="$("$RUNNER_TEMP/ggmcp/bin/python" -c 'from importlib.metadata import version; print(version("ggmcp"))')"
+          test "$INSTALLED" = "$VERSION" || { echo "::error::installed ggmcp $INSTALLED, pinned $VERSION"; exit 1; }
+
+      - name: Dump the tool contracts (no API key)
+        run: |
+          set -euo pipefail
+          env -u GITGUARDIAN_API_KEY -u GITGUARDIAN_PERSONAL_ACCESS_TOKEN \
+            "$RUNNER_TEMP/ggmcp/bin/python" -I scripts/dump-mcp-contracts.py > "$RUNNER_TEMP/tool-contracts.json"
+          jq -r '"ggmcp \(.version): \(.tools | length) tools"' "$RUNNER_TEMP/tool-contracts.json"
+
+      - name: Check skills against the tool contracts
+        run: node scripts/check-mcp-contracts.mjs "$RUNNER_TEMP/tool-contracts.json"
