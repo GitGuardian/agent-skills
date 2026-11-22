@@ -44,6 +44,52 @@ All copies of a given file should share the same checksum after your edit. If yo
 
 `kiro/skills/` is a legacy copy of `skills/`, kept until the Kiro registry is repointed at the repo root. Kiro now installs from the root `plugin.json` and `skills/`. CI no longer checks that the two trees match, so you do not need to update `kiro/skills/` when you edit a skill.
 
+## Checking skills against the ggmcp tool contracts
+
+The `mcp-contracts` job in `validate.yml` checks every ggmcp tool, argument, enum value and output field named in `skills/*/SKILL.md`, `skills/*/references/**` and `skills/*/evals/**` (Markdown and JSON) against the tool contracts of the pinned ggmcp version. It reports each mismatch as `file:line` with the nearest valid name. `kiro/` is not checked.
+
+The pin lives in `package.json`:
+
+```json
+"ggmcp": { "version": "0.8.0", "commit": "<commit of tag v0.8.0>" }
+```
+
+ggmcp is not on PyPI (the PyPI name `gg-mcp` belongs to an unrelated project), so CI installs it from the pinned commit of its GitHub tag, and fails if the tag and the commit disagree.
+
+**Run it locally:**
+
+```bash
+python3 -m venv /tmp/ggmcp
+/tmp/ggmcp/bin/pip install --index-url https://pypi.org/simple \
+  "ggmcp @ git+https://github.com/GitGuardian/ggmcp.git@$(jq -r .ggmcp.commit package.json)"
+/tmp/ggmcp/bin/python -I scripts/dump-mcp-contracts.py > /tmp/tool-contracts.json
+npm run check:mcp-contracts -- /tmp/tool-contracts.json
+```
+
+The dump builds the server in-process and lists its tools: no API key, no GitGuardian API call. When ggmcp publishes `tool-contracts.json` with its releases (GitGuardian/ggmcp#249), CI can download that file instead.
+
+**Bump the pin** when a new ggmcp release ships: set `version`, set `commit` to `git ls-remote https://github.com/GitGuardian/ggmcp.git "refs/tags/v<version>^{}"` (or the plain tag line for a lightweight tag), update the README Requirements line, and let the job report what the skills got wrong.
+
+**What it reads.** Extraction is conservative: a name is checked only when its context ties it to one tool.
+
+- A backticked tool name is a tool reference. A backticked name shaped like a tool (a tool verb followed by words from tool names, such as `list_incidents`) that is not a tool, argument or output field is reported as an unknown tool.
+- A Markdown table with a column headed Arguments, Parameters, Inputs or Filters is a parameter table, bound to the tool in the row (or, without one, to the single tool named in the paragraph above the table). Backticked values in parentheses after an argument, or after `` `arg`: ``, are enum values. A column headed Returns, Output or Fields lists output fields.
+- In a sentence or table cell naming exactly one tool: `` `arg: value` ``, `` `arg=value` ``, `` `tool` with `arg` `` and "pass `` `arg` ``" name arguments; backticked names after "returns" name output fields. In evals JSON, bare tool names and "with some_arg" count too.
+- An output field is reported only when the schema disproves it: a name that may sit inside an open object (such as `id` inside `get_remediation_workflow`'s `workflow`) passes, unless it is listed beside a real top-level field.
+- Fenced code blocks and code fixtures under `evals/files/` (scripts, `.env`) are not read, so REST calls in them are not mistaken for MCP calls.
+
+**False positives** go in `skills/<skill>/evals/mcp-contracts-allow.json`:
+
+```json
+{
+  "allow": [
+    { "name": "list_incidents", "tool": null, "file": "references/history.md", "reason": "Quotes the pre-0.8 name on purpose" }
+  ]
+}
+```
+
+`name` (the reported identifier) and `reason` are required. `tool` limits the entry to findings about that tool, `file` to one file (a path suffix). Prefer rewording the skill so the context is unambiguous; use the allow-list only when the text is right as written.
+
 ## Future scaling
 
 When the skill library crosses ~5 skills:
