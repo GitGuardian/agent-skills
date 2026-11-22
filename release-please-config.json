@@ -88,6 +88,10 @@
         },
         {
           "type": "generic",
+          "path": "skills/write-skill/SKILL.md"
+        },
+        {
+          "type": "generic",
           "path": "kiro/skills/scan-secrets/SKILL.md"
         },
         {

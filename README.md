@@ -90,6 +90,19 @@ Read the secret incidents already detected in your GitGuardian dashboard, rank t
 
 </details>
 
+<details>
+<summary><strong>Write a skill (contributors)</strong> — <code>/gitguardian:write-skill</code></summary>
+
+[`write-skill`](skills/write-skill/SKILL.md)
+
+For people contributing to this repository, not for using GitGuardian. Walks an agent through the repo rules, CLI- versus MCP-backed design, evals, gg-mcp tool-contract checks, local checks, and a pull request that can merge.
+
+**Use when:** creating, extending, or reviewing a skill in this repo, or opening a pull request here.
+
+**Key rule:** tool names and arguments come from `ggshield --help` and the pinned gg-mcp schema, never from memory or the REST docs. Marked internal: skills.sh installs it only when asked for by name (`--skill write-skill`).
+
+</details>
+
 Skills also route from context. Recurring protection while you edit credential-handling code or prepare commits and pushes belongs to `install-hooks`. An existing effective hook does the check, so the agent does not run another scan. An explicit scan or a suspected leak activates `scan-secrets`. A question about whether a known token has leaked activates `check-hmsl`.
 
 ## Quick Start
@@ -280,7 +293,8 @@ agent-skills/
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
 |   |-- install-hooks/      # install ggshield as a git or AI-assistant hook
-|   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
+|   |-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
+|   `-- write-skill/        # contributor skill: write a skill and open a mergeable PR here
 |-- kiro/                   # Kiro power (Agent Plugins format: plugin.json + skills/ + mcp.json)
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets
@@ -333,6 +347,10 @@ ggshield secret scan path -r -y .
 ```
 
 CI also runs `claude plugin validate .` and a repo-wide `ggshield` scan to catch accidental secrets before merge.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Pull requests must come from a branch in this repository, not a fork: the required secret scan needs the repository's API key.
 
 ## License
 

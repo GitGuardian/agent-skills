@@ -15,6 +15,16 @@ function discoverSkills(): string[] {
     .sort();
 }
 
+// skills.sh hides skills whose frontmatter sets `metadata.internal` to true
+// ("true" or "1" as a string) unless they are requested by name. write-skill
+// is internal: it is for contributors to this repo, not for users.
+function isInternal(skill: string): boolean {
+  const skillMd = readFileSync(join(SKILLS_DIR, skill, "SKILL.md"), "utf-8");
+  const frontmatter = skillMd.split(/^---$/m)[1] ?? "";
+  const metadata = /^metadata:\n((?:[ \t]+.*\n?)*)/m.exec(frontmatter)?.[1] ?? "";
+  return /^[ \t]+internal:\s*["']?(true|1)["']?\s*$/m.test(metadata);
+}
+
 type InstallResult = {
   exitCode: number;
   output: string;
@@ -56,6 +66,7 @@ function runSkillsAdd(skillName?: string): InstallResult {
 
 describe("agent-skills sanity check", () => {
   const expectedSkills = discoverSkills();
+  const publicSkills = expectedSkills.filter((s) => !isInternal(s));
   const cleanupDirs: string[] = [];
 
   let installAll: InstallResult;
@@ -90,8 +101,8 @@ describe("agent-skills sanity check", () => {
     expect(installAll.exitCode).toBe(0);
   });
 
-  it("installs every discovered skill into .claude/skills/", () => {
-    expect(installAll.installedSkills).toEqual(expectedSkills);
+  it("installs every non-internal skill into .claude/skills/", () => {
+    expect(installAll.installedSkills).toEqual(publicSkills);
   });
 
   it("each installed skill has a SKILL.md", () => {

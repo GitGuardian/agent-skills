@@ -1,0 +1,22 @@
+[
+  {"query": "I want to contribute a new skill to GitGuardian/agent-skills that wraps ggshield's docker scanning. Where do I start?", "should_trigger": true},
+  {"query": "write a skill for this repo that lets the agent assign gitguardian incidents to the right team", "should_trigger": true},
+  {"query": "Can you review skills/manage-honeytokens before I ask for a review? Check the frontmatter, section order and the MCP tool names.", "should_trigger": true},
+  {"query": "Add a trigger eval to the check-hmsl skill, it doesn't have one", "should_trigger": true},
+  {"query": "Are the gg-mcp tool arguments in skills/triage-incidents/references still right for the pinned version?", "should_trigger": true},
+  {"query": "Open the PR for my new skill on GitGuardian/agent-skills, it's on my branch", "should_trigger": true},
+  {"query": "My PR to agent-skills from my fork fails the secret-scan job, how do I get it merged?", "should_trigger": true},
+  {"query": "extend install-hooks so it also covers the windsurf hook, and update the evals", "should_trigger": true},
+  {"query": "the reviewer says my honeytoken skill documents the MCP list tool with REST pagination params. Fix it.", "should_trigger": true},
+  {"query": "What do I need to tick in the PR template before the maintainers will merge my skill?", "should_trigger": true},
+  {"query": "Scan this repository for hardcoded secrets.", "should_trigger": false},
+  {"query": "set up a pre-commit hook so I never commit an api key again", "should_trigger": false},
+  {"query": "What are my open GitGuardian incidents and which one should I fix first?", "should_trigger": false},
+  {"query": "Plant a honeytoken in our .env.example before we open-source the repo.", "should_trigger": false},
+  {"query": "Has this AWS key leaked publicly? I inherited it from a contractor.", "should_trigger": false},
+  {"query": "Write a Claude Code skill for my team that formats our changelog entries.", "should_trigger": false},
+  {"query": "Create a Cursor rule that enforces our TypeScript naming conventions.", "should_trigger": false},
+  {"query": "Cut a release of the plugin, the release-please PR is open.", "should_trigger": false},
+  {"query": "Scan my whole laptop for credentials lying around in dotfiles.", "should_trigger": false},
+  {"query": "rotate the slack token flagged in incident 4412", "should_trigger": false}
+]
