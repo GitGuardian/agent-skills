@@ -61,6 +61,14 @@ Iteration cadence, raw outputs, and what we keep from each round are local-only 
 - **Vary phrasing and formality.** Mix casual ("hey can you check…") and precise ("Run `ggshield secret scan path` on…").
 - **Include at least one edge case** — a malformed input, an ambiguous request, or a boundary the skill's instructions might not cover.
 
+## Trigger evals
+
+`evals/trigger-eval.json` checks the frontmatter `description`: does the skill fire on the prompts it should, and stay quiet on the ones that belong elsewhere? It is a JSON array of `{"query": "...", "should_trigger": true|false}` objects, about 16–24 queries, roughly half positive. Write the negatives as near misses: prompts that belong to a sibling skill (`scan-secrets` versus `install-hooks`) or sit in the same domain without being in scope. skill-creator's description-optimization loop reads this format. Report precision and recall in the pull request.
+
+## Live eval harnesses
+
+Some evals can only be graded against live resources: a sandbox GitGuardian workspace, a PAT, a Slack channel. For those, keep only `skills/<skill>/evals/files/README.md` in this repository, describing the procedure (what to seed, what to run, how to grade, how to tear down). The runnable seed, check and teardown scripts live in the internal skill package, where the internal eval tooling and CI run them. Outside contributors do not have those resources, and the public repository should not carry code that is only useful with credentials. `triage-incidents/evals/files/README.md` is the model.
+
 ## Declaring which models the harness sweeps
 
 The agent-skills spec defines `evals.json` (prompts, expected outputs, assertions) but does not define how to declare a target-model matrix — model selection is treated as a runtime flag. We keep `evals.json` spec-compliant and declare the matrix in a sibling file:

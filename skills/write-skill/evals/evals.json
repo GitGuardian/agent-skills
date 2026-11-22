@@ -1,0 +1,56 @@
+{
+  "skill_name": "write-skill",
+  "evals": [
+    {
+      "id": 1,
+      "name": "new-mcp-backed-skill",
+      "prompt": "I want to add a skill to this repo that lists our GitGuardian honeytokens and tells me which ones have triggered. It should go through the MCP server. Can you write it and get a PR up?",
+      "expected_output": "Agent reads AGENTS.md and docs/maintainers/contributing.md, checks for overlap with create-honeytokens, picks an MCP-backed design, takes tool names and arguments from the gg-mcp schema (list_honeytokens with status, mine, page_size, next_arguments for pagination), builds the folder with license, compatibility and metadata.version, writes evals.json and trigger-eval.json, registers the skill in AGENTS.md, README.md and release-please-config.json, runs the local checks, and asks before pushing a branch to GitGuardian/agent-skills.",
+      "files": [],
+      "assertions": [
+        {"id": "reads-contract", "text": "Reads AGENTS.md and docs/maintainers/contributing.md before writing files"},
+        {"id": "schema-not-rest", "text": "Takes the honeytoken tool arguments from the gg-mcp schema (status, search, mine, ordering, page_size, cursor, get_all) and does not use REST-only names such as per_page, creator_id or show_token"},
+        {"id": "next-arguments", "text": "Describes pagination by calling the tool again with next_arguments, not by reading a next_cursor field"},
+        {"id": "frontmatter-complete", "text": "Writes frontmatter with name, description, license, compatibility and metadata.version with the x-release-please-version comment"},
+        {"id": "trigger-eval", "text": "Creates evals/evals.json and evals/trigger-eval.json for the new skill"},
+        {"id": "registers", "text": "Adds index rows in AGENTS.md and README.md and a generic entry in release-please-config.json, and does not add a kiro/ copy"},
+        {"id": "asks-before-push", "text": "Runs the local checks and asks the user before git push"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fork-pr-blocked",
+      "prompt": "I opened a PR from my fork with a new skill and the secret-scan check keeps failing with an auth error. Everything else is green. What's wrong?",
+      "expected_output": "Agent explains that the required secret-scan check runs ggshield with the repository's API key, that GitHub does not give repository secrets to workflows on fork pull requests, and that the fix is to move the branch into GitGuardian/agent-skills (write access or a maintainer push) and open a new pull request. It does not suggest disabling the check or adding a personal key to the fork.",
+      "files": [],
+      "assertions": [
+        {"id": "names-cause", "text": "Says the check fails because fork pull requests do not receive the repository's GITGUARDIAN_API_KEY secret"},
+        {"id": "branch-in-main-repo", "text": "Says the pull request must come from a branch in GitGuardian/agent-skills, via write access or a maintainer pushing the branch"},
+        {"id": "no-workaround", "text": "Does not suggest skipping the check, editing the workflow, or adding the contributor's own API key"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "live-harness-placement",
+      "prompt": "my skill's evals need a sandbox GitGuardian workspace, a PAT and a Slack channel. I wrote seed.py, check.py and teardown.py under evals/files/_live. Is that ok to commit here?",
+      "expected_output": "Agent applies the repository rule: keep only a README under evals/files/ describing the procedure (seed, run, grade, tear down), and keep the runnable scripts in the internal skill package. It explains that outside contributors lack the live resources and the public repository must not carry code that needs credentials to be useful.",
+      "files": [],
+      "assertions": [
+        {"id": "readme-only", "text": "Says to keep only a README under evals/files/ in this repository"},
+        {"id": "scripts-internal", "text": "Says the runnable scripts belong in the internal skill package"},
+        {"id": "no-credentials", "text": "Does not ask for or handle the PAT itself"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "out-of-scope-user-task",
+      "prompt": "Scan this repo for leaked secrets before I push.",
+      "expected_output": "This is a request to use a GitGuardian skill, not to write one. The write-skill workflow does not start; the agent routes to scan-secrets (or install-hooks for recurring protection).",
+      "files": [],
+      "assertions": [
+        {"id": "not-authoring", "text": "Does not start the skill-authoring workflow (no new skill folder, no PR template)"},
+        {"id": "routes", "text": "Handles the request as a scan through scan-secrets, or offers install-hooks for recurring protection"}
+      ]
+    }
+  ]
+}

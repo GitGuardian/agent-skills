@@ -31,10 +31,11 @@ skills/<name>/         # one folder per skill (folder name = SKILL.md frontmatte
 kiro/                  #   legacy Kiro power copy (Kiro now installs from the root); not kept in sync
 docs/maintainers/      # task-gated reference for working ON this repo (see bottom of this file)
 README.md              # user-facing: what / install / what-you-can-do
+CONTRIBUTING.md        # contributor entry point (GitHub links it from new PRs); .github/PULL_REQUEST_TEMPLATE.md is the checklist
 LICENSE                # MIT
 ```
 
-The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`. Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `hook-selection.md` for scanning/hook setup) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
+The six user-facing skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-hmsl`, `install-hooks`, `triage-incidents`. A seventh, `write-skill`, is for contributors to this repo (`metadata.internal: "true"`, so skills.sh skips it unless asked for by name). Shared references (`ggshield-cli-setup.md`, `gitguardian-platform.md`, and `hook-selection.md` for scanning/hook setup) are duplicated into every skill that links to them — see [Skills are self-contained](#skills-are-self-contained--references-live-inside-each-skill).
 
 ## Skills index
 
@@ -46,6 +47,7 @@ The six skills are `scan-secrets`, `create-honeytokens`, `scan-machine`, `check-
 | [`check-hmsl`](skills/check-hmsl/SKILL.md) | Check whether a *known* credential has been seen leaking publicly via the HasMySecretLeaked (HMSL) hash-lookup service. Inverse of `scan-secrets`: that finds unknown secrets in code, this checks known secrets against the HMSL public GitHub corpus. Can run anonymously with lower quota, or authenticated for higher quota. |
 | [`install-hooks`](skills/install-hooks/SKILL.md) | Install recurring secret protection through Git pre-commit or pre-push hooks, or through supported AI hooks. Reuse protection that works, offer a missing installation one time, keep hook managers, and avoid duplicate agent scans. Pre-push checks outgoing commits. It does not prevent local commits. |
 | [`triage-incidents`](skills/triage-incidents/SKILL.md) | Read, prioritize, and drive remediation on secret incidents already detected in the GitGuardian dashboard, via the GitGuardian Developer MCP server. Covers internal and Public Monitoring incidents, ranks them by validity/severity/blast radius/exposure, and closes the loop with confirmation-gated assign/tag/resolve writes. The one MCP-first skill in the bundle. |
+| [`write-skill`](skills/write-skill/SKILL.md) | Contributor skill. Write, extend, or review a skill in this repo and open a pull request that can merge: repo rules, CLI- versus MCP-backed design, evals, gg-mcp tool-contract checks, local checks, and the PR template. Marked internal, so skills.sh skips it by default; it still ships in the Claude Code, Cursor, and Codex plugins. |
 
 ## Slash commands
 
@@ -59,6 +61,7 @@ Every skill is invokable as a slash command — `/gitguardian:<skill-name>` (Cla
 | `/gitguardian:check-hmsl` | `skills/check-hmsl/SKILL.md` |
 | `/gitguardian:install-hooks` | `skills/install-hooks/SKILL.md` |
 | `/gitguardian:triage-incidents` | `skills/triage-incidents/SKILL.md` |
+| `/gitguardian:write-skill` | `skills/write-skill/SKILL.md` (contributors) |
 
 The skill description (frontmatter) is what shows up in the slash-command autocomplete dropdown. Keep it action-verb-first ("Scan code for hardcoded secrets…", "Generate a GitGuardian honeytoken…") so it reads as a label, with the auto-trigger conditions following ("Auto-triggers when …") so model-driven invocation still works.
 
