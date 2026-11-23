@@ -90,6 +90,19 @@ Read the secret incidents already detected in your GitGuardian dashboard, rank t
 
 </details>
 
+<details>
+<summary><strong>Manage honeytokens</strong> — <code>/gitguardian:manage-honeytokens</code></summary>
+
+[`manage-honeytokens`](skills/manage-honeytokens/SKILL.md)
+
+Run the honeytoken lifecycle at scale: deploy decoys into the sources GitGuardian already scans (Slack, Microsoft Teams, Jira, ServiceNow, Confluence, SharePoint, OneDrive, integrated repositories), reconcile what is deployed with what the server knows, see which ones triggered and whether the rest are still in place, then reset, revoke and clean up, or rotate them.
+
+**Use when:** planting honeytokens across chat, ticketing, wiki, file-storage or repository sources, listing honeytokens or checking which triggered, resetting a false alarm, decommissioning a honeytoken, or rotating decoys after an offboarding or exposure change.
+
+**Key rule:** same model as endpoint protection — a deployment is one honeytoken in one place, reconcile emits `write` / `delete`, every write is planned and shown first, and the key pair goes from the API straight into the source without ever entering the conversation. Each plant records its deployment on the honeytoken itself (custom tags plus a `GG-DEPLOYMENT` note); that registry is what reconcile, clean-up and rotation run on. The source must be monitored by the same workspace that minted the token. Endpoints stay with `ggshield honeytoken plant`.
+
+</details>
+
 Skills also route from context. Recurring protection while you edit credential-handling code or prepare commits and pushes belongs to `install-hooks`. An existing effective hook does the check, so the agent does not run another scan. An explicit scan or a suspected leak activates `scan-secrets`. A question about whether a known token has leaked activates `check-hmsl`.
 
 ## Quick Start
@@ -199,6 +212,16 @@ Plant a tripwire credential so I know if anyone clones our archived repos
 Create a honeytoken for the staging deploy script
 ```
 
+### Manage Honeytokens
+
+```text
+Plant honeytokens in our Confluence OPS runbooks before we open the space to the vendor
+Which of our honeytokens triggered this month, and are the others still where we put them?
+That trigger was one of our devs — reset the honeytoken and allowlist the office IP
+Rotate every honeytoken we have in Jira, the contractor just left
+Remove the honeytoken from #infra-oncall and revoke it
+```
+
 ### Scan A Whole Machine
 
 ```text
@@ -280,7 +303,8 @@ agent-skills/
 |   |-- scan-machine/       # endpoint-wide credential inventory
 |   |-- check-hmsl/         # user-run public leak checks for known credentials
 |   |-- install-hooks/      # install ggshield as a git or AI-assistant hook
-|   `-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
+|   |-- triage-incidents/   # triage & remediate dashboard incidents via the GG Developer MCP
+|   `-- manage-honeytokens/ # deploy into integrated sources, reconcile, reset/revoke/rotate honeytokens
 |-- kiro/                   # Kiro power (Agent Plugins format: plugin.json + skills/ + mcp.json)
 |-- test/                   # install-flow sanity tests
 `-- assets/                 # README visual assets

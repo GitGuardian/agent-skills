@@ -1,0 +1,98 @@
+[
+  {
+    "query": "We're opening our Confluence OPS space to an external vendor next week. Plant a few honeytokens in the runbooks so we know if they go rummaging.",
+    "should_trigger": true
+  },
+  {
+    "query": "Which of our GitGuardian honeytokens have triggered this quarter, and are the other ones still where we put them?",
+    "should_trigger": true
+  },
+  {
+    "query": "honeytoken confluence-ops-postgres-failover-2026-10 just fired, it was one of our devs testing the runbook. reset it and stop the alerts",
+    "should_trigger": true
+  },
+  {
+    "query": "The contractor who had access to our Jira INFRA project left on Friday. Rotate every honeytoken we have in Jira.",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the honeytoken we left in the #infra-oncall Slack channel, we don't need that one anymore.",
+    "should_trigger": true
+  },
+  {
+    "query": "Can you reconcile our honeytokens? I want to know which deployments drifted or are stale after the wiki reorg.",
+    "should_trigger": true
+  },
+  {
+    "query": "Seed decoy AWS keys across the SharePoint folders the ops team shares with the MSP, one per folder, and keep track of where each one went.",
+    "should_trigger": true
+  },
+  {
+    "query": "A honeytoken shows 'publicly exposed' in the dashboard. What do I do with it and the place it was planted?",
+    "should_trigger": true
+  },
+  {
+    "query": "List all active honeytokens in the workspace with where they are deployed and when they were last rotated.",
+    "should_trigger": true
+  },
+  {
+    "query": "We archived the legacy-payments GitLab repo last month. Revoke the tripwire credential we had in there and clean it out.",
+    "should_trigger": true
+  },
+  {
+    "query": "Seed decoy credentials across every repo in our GitHub org so scanners find them but the developers never see them on main.",
+    "should_trigger": true
+  },
+  {
+    "query": "Which honeytoken is deployed in which repository, and did any of them get copied into a fork?",
+    "should_trigger": true
+  },
+  {
+    "query": "I have five minutes: put a honeytoken somewhere in our ops Slack and prove to me the alert actually fires.",
+    "should_trigger": true
+  },
+  {
+    "query": "Drop a honeytoken in my .env.example before I publish this repo.",
+    "should_trigger": false
+  },
+  {
+    "query": "Generate a decoy AWS credential wrapped in a Python boto3 snippet and write it to tests/fixtures/aws_backup.py.",
+    "should_trigger": false
+  },
+  {
+    "query": "Just give me one honeytoken's access key and secret, I'll paste it into the wiki myself.",
+    "should_trigger": true
+  },
+  {
+    "query": "Plant honeytokens on all our developers' laptops and keep them in sync with the dashboard.",
+    "should_trigger": false
+  },
+  {
+    "query": "Triage my GitGuardian secret incidents and tell me which real credentials to rotate first.",
+    "should_trigger": false
+  },
+  {
+    "query": "GitGuardian flagged one of our Stripe keys leaking on public GitHub. Walk me through remediating the incident.",
+    "should_trigger": false
+  },
+  {
+    "query": "Scan this repository's full git history for leaked AWS keys.",
+    "should_trigger": false
+  },
+  {
+    "query": "Rotate the real AWS access key our deploy pipeline uses and update the GitHub Actions secret.",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Slack notifications so the security channel gets an alert whenever a honeytoken is triggered.",
+    "should_trigger": false
+  },
+  {
+    "query": "How does ggshield honeytoken plant decide which AWS credentials file to write on a machine?",
+    "should_trigger": false
+  },
+  {
+    "query": "Our trufflehog CI job keeps flagging an AWS key in an old commit of the payments repo. Is it a real leak and how do I remediate it?",
+    "should_trigger": false
+  }
+]
